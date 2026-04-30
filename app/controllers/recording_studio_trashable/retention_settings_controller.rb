@@ -23,7 +23,8 @@ module RecordingStudioTrashable
 
     def load_scope_recording
       @scope_recording = find_recording!(params[:recording_id])
-      authorize_mounted_page!(:settings, recording: @scope_recording)
+      return unless authorize_mounted_page!(:settings, recording: @scope_recording)
+
       @retention_setting = RecordingStudioTrashable.retention_setting_for(@scope_recording)
     end
 

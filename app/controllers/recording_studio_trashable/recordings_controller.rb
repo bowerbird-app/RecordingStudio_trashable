@@ -22,7 +22,8 @@ module RecordingStudioTrashable
 
     def update_recording!(action, method_name, success_message:)
       @recording = find_recording!(params[:id])
-      authorize_mounted_page!(action, recording: @recording)
+      return unless authorize_mounted_page!(action, recording: @recording)
+
       @recording.public_send(
         method_name,
         actor: current_trashable_actor,

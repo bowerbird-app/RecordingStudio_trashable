@@ -9,6 +9,7 @@
 
 /* Tailwind CSS - Scan FlatPack components for classes */
 @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";
+@source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flat_pack-*/app/components/**/*.{rb,erb}";
 
 /* Extend Tailwind theme with FlatPack design tokens */
 @theme {
@@ -70,4 +71,3 @@
 
 /* Include the engine's views in the Tailwind build */
 @source "../../../../../app/views/**/*.erb";
-

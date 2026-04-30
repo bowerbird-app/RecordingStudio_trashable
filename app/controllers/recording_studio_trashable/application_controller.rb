@@ -24,10 +24,11 @@ module RecordingStudioTrashable
     end
 
     def authorize_mounted_page!(action, recording: nil)
-      return if recording_studio_trashable_page_authorized?(action, recording: recording)
+      return true if recording_studio_trashable_page_authorized?(action, recording: recording)
 
       redirect_back fallback_location: root_path,
                     alert: "You are not authorized to manage trash here."
+      false
     end
 
     def recording_studio_trashable_action_authorized?(action, recording)

@@ -7,6 +7,12 @@ class RecordingStudioTrashableTest < Minitest::Test
     refute_nil RecordingStudioTrashable::VERSION
   end
 
+  def test_version_matches_latest_changelog_release
+    changelog = File.read(File.expand_path("../CHANGELOG.md", __dir__))
+
+    assert_includes changelog, "## [#{RecordingStudioTrashable::VERSION}]"
+  end
+
   def test_engine_exists
     assert_kind_of Class, RecordingStudioTrashable::Engine
   end
