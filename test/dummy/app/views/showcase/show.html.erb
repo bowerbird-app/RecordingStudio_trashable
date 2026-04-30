@@ -1,0 +1,13 @@
+<div class="mx-auto flex w-full max-w-4xl flex-col gap-6">
+  <%= render FlatPack::PageTitle::Component.new(
+    title: @page.fetch(:title),
+    subtitle: "Static dummy-app documentation for the Recording Studio Trashable addon.",
+    variant: :h1
+  ) %>
+
+  <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+    <% card.body do %>
+      <p class="text-sm leading-7"><%= @page.fetch(:body) %></p>
+    <% end %>
+  <% end %>
+</div>

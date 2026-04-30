@@ -1,30 +1,61 @@
-# This file should ensure the existence of records required to run the application in every environment (production,
-# development, test). The code here should be idempotent so that it can be executed at any point in every environment.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
-
-# Create the admin user
-user = User.find_or_create_by!(email: "admin@admin.com") do |u|
-  u.password = "Password"
-  u.password_confirmation = "Password"
+user = User.find_or_create_by!(email: "admin@admin.com") do |record|
+  record.password = "Password"
+  record.password_confirmation = "Password"
 end
 
-# Create the workspace recordable
-workspace = Workspace.find_or_create_by!(name: "Studio Workspace")
+Current.actor = user
 
-# Create the root recording
-root_recording = RecordingStudio::Recording.unscoped.find_or_create_by!(
+workspace = Workspace.find_or_create_by!(name: "Studio Workspace")
+workspace_recording = RecordingStudio::Recording.recording_studio_trashable_including_trashed.find_or_create_by!(
   recordable: workspace,
   parent_recording_id: nil
 )
 
-# Grant root-level admin access to the admin user
-Current.actor = user
 access = RecordingStudio::Access.find_or_create_by!(actor: user, role: :admin)
-RecordingStudio::Recording.unscoped.find_or_create_by!(
-  root_recording_id: root_recording.id,
-  parent_recording_id: root_recording.id,
+RecordingStudio::Recording.recording_studio_trashable_including_trashed.find_or_create_by!(
+  root_recording_id: workspace_recording.id,
+  parent_recording_id: workspace_recording.id,
   recordable: access
 )
 
+project_recording = DemoRecordingLookup.by_slug(type: "Project", slug: "album-launch")
+unless project_recording
+  project_recording = workspace_recording.record(Project, actor: user, metadata: { seed: true }, parent_recording: workspace_recording) do |project|
+    project.name = "Album Launch"
+    project.slug = "album-launch"
+  end
+end
+
+folder_recording = DemoRecordingLookup.by_slug(type: "Folder", slug: "reference-assets")
+unless folder_recording
+  folder_recording = workspace_recording.record(Folder, actor: user, metadata: { seed: true }, parent_recording: project_recording) do |folder|
+    folder.name = "Reference Assets"
+    folder.slug = "reference-assets"
+  end
+end
+
+mix_notes_recording = DemoRecordingLookup.by_slug(type: "Page", slug: "mix-notes")
+unless mix_notes_recording
+  mix_notes_recording = workspace_recording.record(Page, actor: user, metadata: { seed: true }, parent_recording: project_recording) do |page|
+    page.title = "Mix Notes"
+    page.slug = "mix-notes"
+    page.body = "Active page used for the trash flow demo."
+  end
+end
+
+archived_recording = DemoRecordingLookup.by_slug(type: "Page", slug: "archived-lyrics")
+unless archived_recording
+  archived_recording = workspace_recording.record(Page, actor: user, metadata: { seed: true }, parent_recording: folder_recording) do |page|
+    page.title = "Archived Lyrics"
+    page.slug = "archived-lyrics"
+    page.body = "Trashed page used for restore and purge demos."
+  end
+  archived_recording.recording_studio_trashable_trash!(actor: user)
+end
+
+retention_setting = RecordingStudioTrashable::RetentionSetting.find_or_initialize_by(recording: project_recording)
+retention_setting.update!(purge_after_days: 14)
+
 puts "Seeded: admin@admin.com / Password"
-puts "Seeded: Workspace '#{workspace.name}' with root recording ##{root_recording.id}"
+puts "Seeded workspace trash bin: /recording_studio_trashable/recordings/#{workspace_recording.id}/trash_bin"
+puts "Seeded project trash bin: /recording_studio_trashable/recordings/#{project_recording.id}/trash_bin"

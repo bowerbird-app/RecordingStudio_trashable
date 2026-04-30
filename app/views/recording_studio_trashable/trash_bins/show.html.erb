@@ -1,0 +1,73 @@
+<div class="mx-auto flex w-full max-w-6xl flex-col gap-6">
+  <%= render FlatPack::PageTitle::Component.new(
+    title: "Trash bin: #{recording_studio_trashable_recording_label(@scope_recording)}",
+    subtitle: "Trashed descendants are ordered by trashed_at descending. Restore uses the addon-owned namespaced lifecycle API; purge logs a permanent delete as `purged`.",
+    variant: :h1
+  ) %>
+
+  <div class="flex flex-wrap gap-3">
+    <%= render FlatPack::Button::Component.new(
+      text: "Retention settings",
+      style: :secondary,
+      url: edit_recording_retention_setting_path(@scope_recording)
+    ) %>
+    <%= render FlatPack::Button::Component.new(
+      text: "Addon overview",
+      style: :ghost,
+      url: root_path
+    ) %>
+  </div>
+
+  <% if @trashed_recordings.empty? %>
+    <%= render FlatPack::Alert::Component.new(
+      title: "Trash bin is empty",
+      description: "Trash a recording from the host app demo to see restore and purge controls here.",
+      style: :info
+    ) %>
+  <% end %>
+
+  <div class="grid gap-4">
+    <% @trashed_recordings.each do |recording| %>
+      <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+        <% card.header do %>
+          <%= render FlatPack::PageTitle::Component.new(
+            title: recording_studio_trashable_recording_label(recording),
+            subtitle: "#{recording.recordable_type} • trashed #{time_ago_in_words(recording.trashed_at)} ago",
+            variant: :h3,
+            class: "mb-0 pb-0"
+          ) %>
+        <% end %>
+
+        <% card.body do %>
+          <dl class="grid gap-3 text-sm md:grid-cols-3">
+            <div>
+              <dt class="text-[var(--surface-muted-content-color)]">Recording</dt>
+              <dd class="font-mono text-xs"><%= recording.id %></dd>
+            </div>
+            <div>
+              <dt class="text-[var(--surface-muted-content-color)]">Trashed at</dt>
+              <dd><%= l(recording.trashed_at, format: :long) %></dd>
+            </div>
+            <div>
+              <dt class="text-[var(--surface-muted-content-color)]">Retention</dt>
+              <dd><%= recording_studio_trashable_retention_label(recording, @scope_recording) %></dd>
+            </div>
+          </dl>
+        <% end %>
+
+        <% card.footer do %>
+          <div class="flex flex-wrap gap-3">
+            <%= form_with url: restore_recording_path(recording), method: :patch do %>
+              <%= hidden_field_tag :return_to_recording_id, @scope_recording.id %>
+              <%= render FlatPack::Button::Component.new(text: "Restore", style: :secondary, type: "submit") %>
+            <% end %>
+            <%= form_with url: purge_recording_path(recording), method: :delete do %>
+              <%= hidden_field_tag :return_to_recording_id, @scope_recording.id %>
+              <%= render FlatPack::Button::Component.new(text: "Purge", style: :error, type: "submit") %>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

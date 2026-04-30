@@ -1,0 +1,60 @@
+<div class="mx-auto flex w-full max-w-5xl flex-col gap-6">
+  <%= render FlatPack::PageTitle::Component.new(
+    title: "Recording Studio Trashable",
+    subtitle: "Opt-in trash, restore, purge, retention, and mounted trash bins for RecordingStudio.",
+    variant: :h1
+  ) %>
+
+  <div class="grid gap-6 lg:grid-cols-2">
+    <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+      <% card.header do %>
+        <%= render FlatPack::PageTitle::Component.new(
+          title: "What this addon owns",
+          subtitle: "Mounted UI and namespaced lifecycle APIs that stay out of RecordingStudio core.",
+          variant: :h3,
+          class: "mb-0 pb-0"
+        ) %>
+      <% end %>
+
+      <% card.body do %>
+        <ul class="space-y-3 text-sm leading-6 text-[var(--surface-content-color)]">
+          <li><code>recording_studio_trashable_trash!</code> for soft delete.</li>
+          <li><code>recording_studio_trashable_restore!</code> for bringing a recording back.</li>
+          <li><code>recording_studio_trashable_purge!</code> for permanent delete.</li>
+          <li>Explicit query helpers instead of another default scope.</li>
+          <li>Retention settings stored per subtree root recording.</li>
+        </ul>
+      <% end %>
+    <% end %>
+
+    <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+      <% card.header do %>
+        <%= render FlatPack::PageTitle::Component.new(
+          title: "Default authorization",
+          subtitle: "Built-in Accessible integration can be kept, disabled, or replaced.",
+          variant: :h3,
+          class: "mb-0 pb-0"
+        ) %>
+      <% end %>
+
+      <% card.body do %>
+        <dl class="space-y-3 text-sm">
+          <% @configuration.authorization_roles.each do |action, role| %>
+            <div>
+              <dt class="text-[var(--surface-muted-content-color)]"><%= action %></dt>
+              <dd class="font-medium"><%= role %></dd>
+            </div>
+          <% end %>
+        </dl>
+      <% end %>
+
+      <% card.footer do %>
+        <%= render FlatPack::Button::Component.new(
+          text: "Read the README",
+          style: :primary,
+          url: "https://github.com/bowerbird-app/RecordingStudio_trashable"
+        ) %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

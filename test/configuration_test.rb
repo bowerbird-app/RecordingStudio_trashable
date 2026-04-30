@@ -4,49 +4,36 @@ require "test_helper"
 
 class ConfigurationTest < Minitest::Test
   def setup
-    @configuration = GemTemplate::Configuration.new
+    @configuration = RecordingStudioTrashable::Configuration.new
   end
 
-  def test_merge_updates_known_attributes
-    @configuration.merge!(api_key: "abc123", timeout: 9, enable_feature_x: true)
+  def test_merge_updates_known_attributes_and_roles
+    @configuration.merge!(
+      accessible_integration_enabled: false,
+      default_purge_after_days: 21,
+      authorization_roles: { purge: :edit }
+    )
 
-    assert_equal "abc123", @configuration.api_key
-    assert_equal 9, @configuration.timeout
-    assert_equal true, @configuration.enable_feature_x
+    assert_equal false, @configuration.accessible_integration_enabled
+    assert_equal 21, @configuration.default_purge_after_days
+    assert_equal :edit, @configuration.role_for(:purge)
+    assert_equal :edit, @configuration.role_for(:trash)
   end
 
   def test_merge_ignores_unknown_keys
-    @configuration.merge!(unknown_key: "ignored", timeout: 7)
+    @configuration.merge!(unknown_key: "ignored")
 
     refute_respond_to @configuration, :unknown_key
-    assert_equal 7, @configuration.timeout
+    assert_equal true, @configuration.accessible_integration_enabled
   end
 
-  def test_merge_with_non_enumerable_is_noop
-    original = @configuration.to_h
-
-    @configuration.merge!(nil)
-
-    assert_nil @configuration.api_key if original[:api_key].nil?
-    assert_equal original[:api_key], @configuration.api_key unless original[:api_key].nil?
-    assert_equal original[:timeout], @configuration.timeout
-    assert_equal original[:enable_feature_x], @configuration.enable_feature_x
-  end
-
-  def test_to_h_reports_registered_hook_counts
+  def test_to_h_reports_hook_counts
     @configuration.hooks.before_initialize { nil }
-    @configuration.hooks.before_initialize { nil }
-    @configuration.hooks.after_service { nil }
+    @configuration.hooks.after_initialize { nil }
 
     result = @configuration.to_h
 
-    assert_equal 2, result.fetch(:hooks_registered).fetch(:before_initialize)
-    assert_equal 1, result.fetch(:hooks_registered).fetch(:after_service)
-  end
-
-  def test_configure_without_block_is_safe
-    GemTemplate.configure
-
-    assert_kind_of GemTemplate::Configuration, GemTemplate.configuration
+    assert_equal 1, result.fetch(:hooks_registered).fetch(:before_initialize)
+    assert_equal 1, result.fetch(:hooks_registered).fetch(:after_initialize)
   end
 end

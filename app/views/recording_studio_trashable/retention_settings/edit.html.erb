@@ -1,0 +1,45 @@
+<div class="mx-auto flex w-full max-w-3xl flex-col gap-6">
+  <%= render FlatPack::PageTitle::Component.new(
+    title: "Retention settings",
+    subtitle: "Configure automatic purge timing for the trash bin scoped to #{recording_studio_trashable_recording_label(@scope_recording)}.",
+    variant: :h1
+  ) %>
+
+  <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+    <% card.body do %>
+      <% if @retention_setting.errors.any? %>
+        <%= render FlatPack::Alert::Component.new(
+          title: "Could not save retention settings",
+          description: @retention_setting.errors.full_messages.to_sentence,
+          style: :danger
+        ) %>
+      <% end %>
+
+      <%= form_with model: @retention_setting,
+                    url: recording_retention_setting_path(@scope_recording),
+                    method: :patch,
+                    class: "space-y-4" do |form| %>
+        <div class="space-y-2">
+          <%= form.label :purge_after_days, "Purge after days", class: "block text-sm font-medium" %>
+          <%= form.number_field :purge_after_days,
+                                min: 1,
+                                step: 1,
+                                placeholder: "Leave blank to disable automatic purge timing",
+                                class: "w-full rounded-lg border border-[var(--card-border-color)] bg-[var(--card-background-color)] px-3 py-2 text-sm" %>
+          <p class="text-sm text-[var(--surface-muted-content-color)]">
+            Blank keeps purging manual. A saved value is used only for this subtree trash bin.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <%= render FlatPack::Button::Component.new(text: "Save retention", style: :primary, type: "submit") %>
+          <%= render FlatPack::Button::Component.new(
+            text: "Back to trash bin",
+            style: :ghost,
+            url: recording_trash_bin_path(@scope_recording)
+          ) %>
+        </div>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>
