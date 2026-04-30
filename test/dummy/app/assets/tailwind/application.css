@@ -8,6 +8,8 @@
 
 
 /* Tailwind CSS - Scan FlatPack components for classes */
+@source "../../vendor/bundle/**/flatpack/app/components/**/*.{rb,erb}";
+@source "../../vendor/bundle/**/flat_pack/app/components/**/*.{rb,erb}";
 @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flat_pack-*/app/components/**/*.{rb,erb}";
 

@@ -49,19 +49,7 @@ module RecordingStudioTrashable
     end
 
     def capability_options_for(recording_or_type)
-      type_name =
-        case recording_or_type
-        when nil
-          nil
-        when String
-          recording_or_type
-        when Symbol
-          recording_or_type.to_s
-        when Class
-          recording_or_type.name
-        else
-          recording_or_type.respond_to?(:recordable_type) ? recording_or_type.recordable_type : recording_or_type.class.name
-        end
+      type_name = capability_type_name(recording_or_type)
 
       return {} if type_name.blank?
 
@@ -70,7 +58,7 @@ module RecordingStudioTrashable
       {}
     end
 
-    def include_children_for(recording:, include_children: nil)
+    def include_children?(recording:, include_children: nil)
       return include_children == true unless include_children.nil?
 
       capability_options = capability_options_for(recording)
@@ -91,6 +79,23 @@ module RecordingStudioTrashable
         as_of: as_of,
         metadata: metadata
       ).purge!
+    end
+
+    private
+
+    def capability_type_name(recording_or_type)
+      return if recording_or_type.nil?
+      return recording_or_type if recording_or_type.is_a?(String)
+      return recording_or_type.to_s if recording_or_type.is_a?(Symbol)
+      return recording_or_type.name if recording_or_type.is_a?(Class)
+
+      capability_type_name_from_record(recording_or_type)
+    end
+
+    def capability_type_name_from_record(recording_or_type)
+      return recording_or_type.recordable_type if recording_or_type.respond_to?(:recordable_type)
+
+      recording_or_type.class.name
     end
   end
 end

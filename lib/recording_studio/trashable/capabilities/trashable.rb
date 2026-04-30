@@ -42,12 +42,13 @@ module RecordingStudio
           options.to_h.transform_keys(&:to_sym)
         end
 
+        # rubocop:disable Metrics/ModuleLength, Metrics/MethodLength
         module RecordingMethods
           include RecordingStudio::Capability
 
           def recording_studio_trashable_trash!(actor: nil, impersonator: nil, metadata: {}, include_children: nil)
             recording_studio_trashable_assert_capability!
-            include_children = recording_studio_trashable_include_children(include_children)
+            include_children = recording_studio_trashable_include_children?(include_children)
             recording_studio_trashable_authorize!(:trash, actor: actor)
             recording_studio_trashable_with_locked_targets(include_children: include_children) do |targets|
               targets.reverse_each do |recording|
@@ -67,7 +68,7 @@ module RecordingStudio
 
           def recording_studio_trashable_restore!(actor: nil, impersonator: nil, metadata: {}, include_children: nil)
             recording_studio_trashable_assert_capability!
-            include_children = recording_studio_trashable_include_children(include_children)
+            include_children = recording_studio_trashable_include_children?(include_children)
             recording_studio_trashable_authorize!(:restore, actor: actor)
             recording_studio_trashable_with_locked_targets(include_children: include_children) do |targets|
               targets.each do |recording|
@@ -87,7 +88,7 @@ module RecordingStudio
 
           def recording_studio_trashable_purge!(actor: nil, impersonator: nil, metadata: {}, include_children: nil)
             recording_studio_trashable_assert_capability!
-            include_children = recording_studio_trashable_include_children(include_children)
+            include_children = recording_studio_trashable_include_children?(include_children)
             recording_studio_trashable_authorize!(:purge, actor: actor)
             recording_studio_trashable_assert_purgeable!(include_children: include_children)
             recording_studio_trashable_with_locked_targets(include_children: include_children) do |targets|
@@ -130,8 +131,8 @@ module RecordingStudio
             metadata.to_h.merge(include_children: include_children == true)
           end
 
-          def recording_studio_trashable_include_children(include_children)
-            RecordingStudioTrashable.include_children_for(recording: self, include_children: include_children)
+          def recording_studio_trashable_include_children?(include_children)
+            RecordingStudioTrashable.include_children?(recording: self, include_children: include_children)
           end
 
           def recording_studio_trashable_assert_purgeable!(include_children:)
@@ -167,9 +168,9 @@ module RecordingStudio
 
             until frontier.empty?
               children = self.class.recording_studio_trashable_including_trashed
-                                   .where(parent_recording_id: frontier)
-                                   .reorder(created_at: :asc)
-                                   .to_a
+                             .where(parent_recording_id: frontier)
+                             .reorder(created_at: :asc)
+                             .to_a
               descendants.concat(children)
               frontier = children.map(&:id)
             end
@@ -177,6 +178,7 @@ module RecordingStudio
             descendants
           end
         end
+        # rubocop:enable Metrics/ModuleLength, Metrics/MethodLength
       end
     end
   end

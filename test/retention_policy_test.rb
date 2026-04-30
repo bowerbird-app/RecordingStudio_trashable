@@ -4,7 +4,7 @@ require "test_helper"
 
 class RetentionPolicyTest < Minitest::Test
   DummySetting = Struct.new(:purge_after_days)
-  DummyRecording = Struct.new(:trashed_at)
+  DummyRecording = Struct.new(:trashed_at, :recordable_type)
 
   def setup
     @original_configuration = RecordingStudioTrashable.instance_variable_get(:@configuration)
@@ -61,10 +61,11 @@ class RetentionPolicyTest < Minitest::Test
   end
 
   def test_due_reports_true_once_deadline_passes
-    recording = DummyRecording.new(Time.now - 10.days)
+    recording = DummyRecording.new(Time.now - 10.days, "Page")
 
     RecordingStudioTrashable::RetentionPolicy.stub(:purge_after_days_for, 7) do
-      assert RecordingStudioTrashable::RetentionPolicy.due?(recording: recording, scope_recording: :scope, as_of: Time.now)
+      assert RecordingStudioTrashable::RetentionPolicy.due?(recording: recording, scope_recording: :scope,
+                                                            as_of: Time.now)
     end
   end
 end

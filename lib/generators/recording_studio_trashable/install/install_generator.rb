@@ -44,12 +44,17 @@ module RecordingStudioTrashable
       def tailwind_source_lines
         [
           '@source "../../vendor/bundle/**/recording_studio_trashable/app/views/**/*.erb";',
-          '@source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/recording_studio_trashable-*/app/views/**/*.erb";',
+          bundled_engine_source_line,
           '@source "../../vendor/bundle/**/flatpack/app/components/**/*.{rb,erb}";',
           '@source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";',
           '@source "../../vendor/bundle/**/flat_pack/app/components/**/*.{rb,erb}";',
           '@source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flat_pack-*/app/components/**/*.{rb,erb}";'
         ]
+      end
+
+      def bundled_engine_source_line
+        '@source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/' \
+          'recording_studio_trashable-*/app/views/**/*.erb";'
       end
     end
   end

@@ -22,16 +22,17 @@ module RecordingStudioTrashable
 
     def update_recording!(action, method_name, success_message:)
       @recording = find_recording!(params[:id])
-      return unless authorize_mounted_page!(action, recording: @recording)
+      authorize_mounted_page!(action, recording: @recording)
+      return if performed?
 
-      @recording.public_send(
-        method_name,
-        actor: current_trashable_actor,
-        impersonator: current_trashable_impersonator,
-        metadata: lifecycle_metadata,
-        include_children: params.key?(:include_children) ? boolean_param(params[:include_children]) : nil
-      )
+      update_recording_lifecycle!(method_name)
       redirect_to fallback_redirect_path, notice: success_message
+    end
+
+    def include_children_param
+      return unless params.key?(:include_children)
+
+      boolean_param(params[:include_children])
     end
 
     def lifecycle_metadata
@@ -39,6 +40,16 @@ module RecordingStudioTrashable
       metadata = raw_metadata.respond_to?(:permit!) ? raw_metadata.permit!.to_h : {}
 
       { source: "recording_studio_trashable_ui" }.merge(metadata)
+    end
+
+    def update_recording_lifecycle!(method_name)
+      @recording.public_send(
+        method_name,
+        actor: current_trashable_actor,
+        impersonator: current_trashable_impersonator,
+        metadata: lifecycle_metadata,
+        include_children: include_children_param
+      )
     end
 
     def fallback_redirect_path

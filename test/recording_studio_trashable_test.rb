@@ -25,10 +25,19 @@ class RecordingStudioTrashableTest < Minitest::Test
     sidebar_path = File.expand_path("dummy/app/views/layouts/flat_pack/_sidebar.html.erb", __dir__)
     source = File.read(sidebar_path)
 
+    assert_includes source, "main_app.root_path"
+    assert_includes source, "main_app.showcase_path"
+    assert_includes source, "main_app.destroy_user_session_path"
     assert_includes source, "Workspace trash bin"
     assert_includes source, "Project trash bin"
     assert_includes source, "Adding to a recordable"
     assert_includes source, "Cascading"
     assert_includes source, "Methods"
+  end
+
+  def test_dummy_current_supports_actor_and_impersonator
+    current_model = File.read(File.expand_path("dummy/app/models/current.rb", __dir__))
+
+    assert_includes current_model, "attribute :actor, :impersonator"
   end
 end

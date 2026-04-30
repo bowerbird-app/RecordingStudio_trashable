@@ -24,11 +24,10 @@ module RecordingStudioTrashable
     end
 
     def authorize_mounted_page!(action, recording: nil)
-      return true if recording_studio_trashable_page_authorized?(action, recording: recording)
+      return if recording_studio_trashable_page_authorized?(action, recording: recording)
 
       redirect_back fallback_location: root_path,
                     alert: "You are not authorized to manage trash here."
-      false
     end
 
     def recording_studio_trashable_action_authorized?(action, recording)
@@ -58,10 +57,17 @@ module RecordingStudioTrashable
     end
 
     def recording_studio_trashable_retention_label(recording, scope_recording)
-      purge_at = RecordingStudioTrashable::RetentionPolicy.purge_at(recording: recording, scope_recording: scope_recording)
+      purge_at = RecordingStudioTrashable::RetentionPolicy.purge_at(
+        recording: recording,
+        scope_recording: scope_recording
+      )
       return "No automatic purge window" if purge_at.blank?
 
-      RecordingStudioTrashable::RetentionPolicy.due?(recording: recording, scope_recording: scope_recording) ? "Due now" : "Purges #{helpers.l(purge_at, format: :long)}"
+      if RecordingStudioTrashable::RetentionPolicy.due?(recording: recording, scope_recording: scope_recording)
+        "Due now"
+      else
+        "Purges #{helpers.l(purge_at, format: :long)}"
+      end
     end
 
     def boolean_param(value)
