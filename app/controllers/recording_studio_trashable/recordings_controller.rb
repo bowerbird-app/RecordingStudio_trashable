@@ -28,7 +28,7 @@ module RecordingStudioTrashable
         actor: current_trashable_actor,
         impersonator: current_trashable_impersonator,
         metadata: lifecycle_metadata,
-        include_children: boolean_param(params[:include_children])
+        include_children: params.key?(:include_children) ? boolean_param(params[:include_children]) : nil
       )
       redirect_to fallback_redirect_path, notice: success_message
     end

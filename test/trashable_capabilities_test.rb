@@ -147,6 +147,21 @@ class TrashableCapabilitiesTest < Minitest::Test
     assert_equal({ reason: "cleanup", include_children: false }, recording.logged_events.first[:metadata])
   end
 
+  def test_trash_uses_recordable_include_children_default_when_omitted
+    parent = FakeRecording.new(id: "parent")
+    child = FakeRecording.new(id: "child", parent_recording_id: "parent")
+
+    RecordingStudio.stub(:capability_options, { include_children: true }) do
+      stub_authorized do
+        parent.recording_studio_trashable_trash!(actor: :editor)
+      end
+    end
+
+    assert parent.trashed_at
+    assert child.trashed_at
+    assert_equal true, parent.logged_events.first[:metadata][:include_children]
+  end
+
   def test_restore_cascades_to_children_when_requested
     parent = FakeRecording.new(id: "parent", trashed_at: Time.now - 1.day)
     child = FakeRecording.new(id: "child", parent_recording_id: "parent", trashed_at: Time.now - 1.day)
@@ -183,6 +198,16 @@ class TrashableCapabilitiesTest < Minitest::Test
     assert parent.destroyed
     assert_equal "purged", child.logged_events.first[:action]
     assert_equal "purged", parent.logged_events.first[:action]
+  end
+
+  def test_purge_requires_targets_to_already_be_trashed
+    recording = FakeRecording.new(id: "page-1")
+
+    error = assert_raises(ArgumentError) do
+      stub_authorized { recording.recording_studio_trashable_purge!(actor: :admin) }
+    end
+
+    assert_equal "Purging requires all targeted recordings to already be trashed", error.message
   end
 
   def test_lifecycle_raises_when_not_authorized

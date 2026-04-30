@@ -45,8 +45,9 @@ module RecordingStudio
         module RecordingMethods
           include RecordingStudio::Capability
 
-          def recording_studio_trashable_trash!(actor: nil, impersonator: nil, metadata: {}, include_children: false)
+          def recording_studio_trashable_trash!(actor: nil, impersonator: nil, metadata: {}, include_children: nil)
             recording_studio_trashable_assert_capability!
+            include_children = recording_studio_trashable_include_children(include_children)
             recording_studio_trashable_authorize!(:trash, actor: actor)
             recording_studio_trashable_with_locked_targets(include_children: include_children) do |targets|
               targets.reverse_each do |recording|
@@ -64,8 +65,9 @@ module RecordingStudio
             reload
           end
 
-          def recording_studio_trashable_restore!(actor: nil, impersonator: nil, metadata: {}, include_children: false)
+          def recording_studio_trashable_restore!(actor: nil, impersonator: nil, metadata: {}, include_children: nil)
             recording_studio_trashable_assert_capability!
+            include_children = recording_studio_trashable_include_children(include_children)
             recording_studio_trashable_authorize!(:restore, actor: actor)
             recording_studio_trashable_with_locked_targets(include_children: include_children) do |targets|
               targets.each do |recording|
@@ -83,11 +85,13 @@ module RecordingStudio
             reload
           end
 
-          def recording_studio_trashable_purge!(actor: nil, impersonator: nil, metadata: {}, include_children: false)
+          def recording_studio_trashable_purge!(actor: nil, impersonator: nil, metadata: {}, include_children: nil)
             recording_studio_trashable_assert_capability!
+            include_children = recording_studio_trashable_include_children(include_children)
             recording_studio_trashable_authorize!(:purge, actor: actor)
             recording_studio_trashable_assert_purgeable!(include_children: include_children)
             recording_studio_trashable_with_locked_targets(include_children: include_children) do |targets|
+              recording_studio_trashable_assert_purge_targets!(targets)
               targets.reverse_each do |recording|
                 recording.log_event!(
                   action: "purged",
@@ -126,11 +130,22 @@ module RecordingStudio
             metadata.to_h.merge(include_children: include_children == true)
           end
 
+          def recording_studio_trashable_include_children(include_children)
+            RecordingStudioTrashable.include_children_for(recording: self, include_children: include_children)
+          end
+
           def recording_studio_trashable_assert_purgeable!(include_children:)
             return if include_children
             return if recording_studio_trashable_descendants.empty?
 
             raise ArgumentError, "Purging a recording with descendants requires include_children: true"
+          end
+
+          def recording_studio_trashable_assert_purge_targets!(targets)
+            invalid_targets = targets.reject { |recording| recording.trashed_at.present? }
+            return if invalid_targets.empty?
+
+            raise ArgumentError, "Purging requires all targeted recordings to already be trashed"
           end
 
           def recording_studio_trashable_with_locked_targets(include_children: false)

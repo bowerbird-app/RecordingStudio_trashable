@@ -4,7 +4,10 @@ module RecordingStudioTrashable
   class ApplicationController < ::ApplicationController
     protect_from_forgery with: :exception
 
-    helper_method :recording_studio_trashable_recording_label, :recording_studio_trashable_retention_label
+    helper_method :recording_studio_trashable_recording_label,
+                  :recording_studio_trashable_retention_label,
+                  :recording_studio_trashable_action_authorized?,
+                  :recording_studio_trashable_page_authorized?
 
     private
 
@@ -21,15 +24,28 @@ module RecordingStudioTrashable
     end
 
     def authorize_mounted_page!(action, recording: nil)
-      return if RecordingStudioTrashable.mounted_page_authorized?(
+      return if recording_studio_trashable_page_authorized?(action, recording: recording)
+
+      redirect_back fallback_location: root_path,
+                    alert: "You are not authorized to manage trash here."
+    end
+
+    def recording_studio_trashable_action_authorized?(action, recording)
+      RecordingStudioTrashable.authorized?(
         action: action,
         actor: current_trashable_actor,
         recording: recording,
         controller: self
       )
+    end
 
-      redirect_back fallback_location: root_path,
-                    alert: "You are not authorized to manage trash here."
+    def recording_studio_trashable_page_authorized?(action, recording: nil)
+      RecordingStudioTrashable.mounted_page_authorized?(
+        action: action,
+        actor: current_trashable_actor,
+        recording: recording,
+        controller: self
+      )
     end
 
     def recording_studio_trashable_recording_label(recording)

@@ -27,7 +27,7 @@ class EngineTest < Minitest::Test
   end
 
   def test_load_config_merges_yaml_and_x_configuration
-    xcfg = Struct.new(:recording_studio_trashable).new({ default_purge_after_days: 45 })
+    xcfg = Struct.new(:recording_studio_trashable).new({ default_include_children: true, default_purge_after_days: 45 })
     app_config = Struct.new(:x).new(xcfg)
     app = Struct.new(:config) do
       def config_for(_name)
@@ -38,6 +38,7 @@ class EngineTest < Minitest::Test
     find_initializer("recording_studio_trashable.load_config").block.call(app)
 
     assert_equal false, RecordingStudioTrashable.configuration.accessible_integration_enabled
+    assert_equal true, RecordingStudioTrashable.configuration.default_include_children
     assert_equal 45, RecordingStudioTrashable.configuration.default_purge_after_days
   end
 

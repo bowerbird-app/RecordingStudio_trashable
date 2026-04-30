@@ -59,6 +59,7 @@ RecordingStudioTrashable.configure do |config|
     settings: :admin,
     trash_bin: :edit
   }
+  config.default_include_children = false
   config.default_purge_after_days = nil
 end
 ```
@@ -69,7 +70,10 @@ Recordables stay opt-in. Include the capability only on the recordable models th
 
 ```ruby
 class Page < ApplicationRecord
-  include RecordingStudio::Capabilities::Trashable.to
+  include RecordingStudio::Capabilities::Trashable.to(
+    include_children: true,
+    purge_after_days: 14
+  )
 end
 ```
 
@@ -95,7 +99,9 @@ recording.recording_studio_trashable_purge!(actor: Current.actor, include_childr
 
 - `include_children: false` only changes the target recording.
 - `include_children: true` traverses descendants for trash, restore, and purge.
+- omitting `include_children:` falls back to per-recordable capability options, then addon config.
 - purge refuses descendant trees unless `include_children: true` is supplied, so the addon does not orphan child recordings.
+- purge only deletes recordings that are already trashed; active recordings must be trashed first.
 
 ## Query helpers
 
@@ -163,7 +169,23 @@ The mounted views are FlatPack-first and intentionally light on custom markup.
 
 Retention settings are stored in the addon-owned `recording_studio_trashable_retention_settings` table and scoped to a subtree root recording.
 
-A saved `purge_after_days` value does not auto-delete by itself; it provides persisted policy data for trash bins, manual review, and future scheduled purge jobs.
+Retention resolves in this order:
+
+1. subtree retention setting saved through the mounted UI
+2. per-recordable capability option such as `purge_after_days: 14`
+3. addon-wide `config.default_purge_after_days`
+
+Run retention-driven purging explicitly:
+
+```ruby
+RecordingStudioTrashable.purge_due_recordings(
+  scope_recording: workspace_recording,
+  actor: Current.actor,
+  metadata: { source: "nightly_retention_job" }
+)
+```
+
+The retention purger walks due recordings leaf-first so parent recordings are only removed after due descendants are gone. Items that still require `include_children: true` stay skipped for later review.
 
 ## Dummy app showcase
 

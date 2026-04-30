@@ -11,3 +11,11 @@ The mounted UI is subtree-scoped. Pass a root recording id to the trash bin rout
 ## Retention persistence
 
 Retention settings are intentionally addon-owned so future scheduled purge jobs can evolve without reintroducing addon state into RecordingStudio core.
+
+## Capability options
+
+Per-recordable capability options can supply defaults such as `include_children:` and `purge_after_days:`.
+
+## Purge workflow
+
+Manual purge and retention-driven purge both require targeted recordings to already be trashed.

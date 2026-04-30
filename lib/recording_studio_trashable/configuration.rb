@@ -13,12 +13,13 @@ module RecordingStudioTrashable
     }.freeze
 
     attr_accessor :accessible_integration_enabled,
-                  :authorization_resolver,
-                  :current_actor_resolver,
-                  :current_impersonator_resolver,
-                  :mounted_page_authorizer,
-                  :full_page_layout,
-                  :default_purge_after_days
+                   :authorization_resolver,
+                   :current_actor_resolver,
+                   :current_impersonator_resolver,
+                   :mounted_page_authorizer,
+                   :full_page_layout,
+                   :default_include_children,
+                   :default_purge_after_days
     attr_reader :hooks
 
     def initialize
@@ -28,6 +29,7 @@ module RecordingStudioTrashable
       @current_impersonator_resolver = nil
       @mounted_page_authorizer = nil
       @full_page_layout = nil
+      @default_include_children = false
       @default_purge_after_days = nil
       @authorization_roles = DEFAULT_AUTHORIZATION_ROLES.dup
       @hooks = Hooks.new
@@ -51,6 +53,7 @@ module RecordingStudioTrashable
         accessible_integration_enabled: accessible_integration_enabled,
         authorization_roles: authorization_roles,
         full_page_layout: full_page_layout,
+        default_include_children: default_include_children,
         default_purge_after_days: default_purge_after_days,
         hooks_registered: hooks.instance_variable_get(:@registry).transform_values(&:size)
       }

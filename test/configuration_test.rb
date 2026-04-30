@@ -10,11 +10,13 @@ class ConfigurationTest < Minitest::Test
   def test_merge_updates_known_attributes_and_roles
     @configuration.merge!(
       accessible_integration_enabled: false,
+      default_include_children: true,
       default_purge_after_days: 21,
       authorization_roles: { purge: :edit }
     )
 
     assert_equal false, @configuration.accessible_integration_enabled
+    assert_equal true, @configuration.default_include_children
     assert_equal 21, @configuration.default_purge_after_days
     assert_equal :edit, @configuration.role_for(:purge)
     assert_equal :edit, @configuration.role_for(:trash)
@@ -33,6 +35,7 @@ class ConfigurationTest < Minitest::Test
 
     result = @configuration.to_h
 
+    assert_equal false, result.fetch(:default_include_children)
     assert_equal 1, result.fetch(:hooks_registered).fetch(:before_initialize)
     assert_equal 1, result.fetch(:hooks_registered).fetch(:after_initialize)
   end

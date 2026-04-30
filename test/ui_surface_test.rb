@@ -10,6 +10,9 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, "FlatPack::PageTitle::Component"
     assert_includes trash_bin_view, "FlatPack::Card::Component"
     assert_includes trash_bin_view, "FlatPack::Alert::Component"
+    assert_includes trash_bin_view, "recording_studio_trashable_page_authorized?(:settings"
+    assert_includes trash_bin_view, "recording_studio_trashable_action_authorized?(:restore"
+    assert_includes trash_bin_view, "recording_studio_trashable_action_authorized?(:purge"
     assert_includes retention_view, "FlatPack::Button::Component"
   end
 

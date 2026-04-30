@@ -6,11 +6,13 @@
   ) %>
 
   <div class="flex flex-wrap gap-3">
-    <%= render FlatPack::Button::Component.new(
-      text: "Retention settings",
-      style: :secondary,
-      url: edit_recording_retention_setting_path(@scope_recording)
-    ) %>
+    <% if recording_studio_trashable_page_authorized?(:settings, recording: @scope_recording) %>
+      <%= render FlatPack::Button::Component.new(
+        text: "Retention settings",
+        style: :secondary,
+        url: edit_recording_retention_setting_path(@scope_recording)
+      ) %>
+    <% end %>
     <%= render FlatPack::Button::Component.new(
       text: "Addon overview",
       style: :ghost,
@@ -57,13 +59,17 @@
 
         <% card.footer do %>
           <div class="flex flex-wrap gap-3">
-            <%= form_with url: restore_recording_path(recording), method: :patch do %>
-              <%= hidden_field_tag :return_to_recording_id, @scope_recording.id %>
-              <%= render FlatPack::Button::Component.new(text: "Restore", style: :secondary, type: "submit") %>
+            <% if recording_studio_trashable_action_authorized?(:restore, recording) %>
+              <%= form_with url: restore_recording_path(recording), method: :patch do %>
+                <%= hidden_field_tag :return_to_recording_id, @scope_recording.id %>
+                <%= render FlatPack::Button::Component.new(text: "Restore", style: :secondary, type: "submit") %>
+              <% end %>
             <% end %>
-            <%= form_with url: purge_recording_path(recording), method: :delete do %>
-              <%= hidden_field_tag :return_to_recording_id, @scope_recording.id %>
-              <%= render FlatPack::Button::Component.new(text: "Purge", style: :error, type: "submit") %>
+            <% if recording_studio_trashable_action_authorized?(:purge, recording) %>
+              <%= form_with url: purge_recording_path(recording), method: :delete do %>
+                <%= hidden_field_tag :return_to_recording_id, @scope_recording.id %>
+                <%= render FlatPack::Button::Component.new(text: "Purge", style: :error, type: "submit") %>
+              <% end %>
             <% end %>
           </div>
         <% end %>

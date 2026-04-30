@@ -40,6 +40,16 @@ class RetentionPolicyTest < Minitest::Test
     end
   end
 
+  def test_purge_after_days_uses_recordable_capability_override_before_default
+    RecordingStudioTrashable.configure { |config| config.default_purge_after_days = 30 }
+
+    RecordingStudioTrashable::RetentionSetting.stub(:find_by, nil) do
+      RecordingStudio.stub(:capability_options, { purge_after_days: 14 }) do
+        assert_equal 14, RecordingStudioTrashable::RetentionPolicy.purge_after_days_for(:scope, recordable_type: "Page")
+      end
+    end
+  end
+
   def test_due_reports_true_once_deadline_passes
     recording = DummyRecording.new(Time.now - 10.days)
 
