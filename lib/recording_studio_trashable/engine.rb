@@ -6,6 +6,13 @@ module RecordingStudioTrashable
   class Engine < ::Rails::Engine
     isolate_namespace RecordingStudioTrashable
 
+    initializer "recording_studio_trashable.importmap", before: "importmap" do |app|
+      next unless app.config.respond_to?(:importmap)
+
+      app.config.importmap.paths << Engine.root.join("config/importmap.rb")
+      app.config.assets.paths << Engine.root.join("app/javascript")
+    end
+
     config.to_prepare do
       next unless defined?(RecordingStudio::Recording)
 
@@ -22,7 +29,10 @@ module RecordingStudioTrashable
 
     initializer "recording_studio_trashable.load_config" do |app|
       RecordingStudioTrashable::Engine.send(:load_yaml_config, app)
-      RecordingStudioTrashable::Engine.send(:load_x_config, app.config.x.recording_studio_trashable) if app.config.respond_to?(:x) && app.config.x.respond_to?(:recording_studio_trashable)
+      if app.config.respond_to?(:x) && app.config.x.respond_to?(:recording_studio_trashable)
+        RecordingStudioTrashable::Engine.send(:load_x_config,
+                                              app.config.x.recording_studio_trashable)
+      end
       RecordingStudioTrashable::Hooks.run(:on_configuration, RecordingStudioTrashable.configuration)
     end
 
@@ -39,21 +49,21 @@ module RecordingStudioTrashable
 
         yaml = app.config_for(:recording_studio_trashable)
         RecordingStudioTrashable.configuration.merge!(yaml) if yaml.respond_to?(:each)
-      rescue StandardError => error
-        log_configuration_load_error("config_for(:recording_studio_trashable)", error)
+      rescue StandardError => e
+        log_configuration_load_error("config_for(:recording_studio_trashable)", e)
       end
 
       def load_x_config(config)
         values = if config.respond_to?(:to_h)
                    config.to_h
                  elsif config.respond_to?(:each_pair)
-                   config.each_pair.each_with_object({}) { |(key, value), result| result[key] = value }
+                   config.each_pair.with_object({}) { |(key, value), result| result[key] = value }
                  else
                    {}
                  end
         RecordingStudioTrashable.configuration.merge!(values) if values.any?
-      rescue StandardError => error
-        log_configuration_load_error("config.x.recording_studio_trashable", error)
+      rescue StandardError => e
+        log_configuration_load_error("config.x.recording_studio_trashable", e)
       end
 
       def log_configuration_load_error(source, error)

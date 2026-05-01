@@ -27,7 +27,9 @@ class EngineTest < Minitest::Test
   end
 
   def test_load_config_merges_yaml_and_x_configuration
-    xcfg = Struct.new(:recording_studio_trashable).new({ default_include_children: true, default_purge_after_days: 45 })
+    xcfg = Struct.new(:recording_studio_trashable).new(
+      { default_include_children: true, default_purge_after_days: 45, allow_user_retention_settings: true }
+    )
     app_config = Struct.new(:x).new(xcfg)
     app = Struct.new(:config) do
       def config_for(_name)
@@ -40,15 +42,16 @@ class EngineTest < Minitest::Test
     assert_equal false, RecordingStudioTrashable.configuration.accessible_integration_enabled
     assert_equal true, RecordingStudioTrashable.configuration.default_include_children
     assert_equal 45, RecordingStudioTrashable.configuration.default_purge_after_days
+    assert_equal true, RecordingStudioTrashable.configuration.allow_user_retention_settings
   end
 
   def test_routes_are_drawn_under_engine_namespace
     routes = File.read(File.expand_path("../config/routes.rb", __dir__))
 
-    assert_includes routes, 'resource :trash_bin'
-    assert_includes routes, 'resource :retention_setting'
-    assert_includes routes, 'patch :restore'
-    assert_includes routes, 'delete :purge'
+    assert_includes routes, "resource :trash_bin"
+    assert_includes routes, "resource :trash_settings"
+    assert_includes routes, "patch :restore"
+    assert_includes routes, "delete :purge"
   end
 
   private

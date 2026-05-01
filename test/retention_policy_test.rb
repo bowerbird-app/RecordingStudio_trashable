@@ -33,7 +33,10 @@ class RetentionPolicyTest < Minitest::Test
 
   def test_purge_after_days_uses_scope_setting_before_default
     scope_recording = :scope
-    RecordingStudioTrashable.configure { |config| config.default_purge_after_days = 30 }
+    RecordingStudioTrashable.configure do |config|
+      config.default_purge_after_days = 30
+      config.allow_user_retention_settings = true
+    end
 
     RecordingStudioTrashable::RetentionSetting.stub(:find_by, DummySetting.new(7)) do
       assert_equal 7, RecordingStudioTrashable::RetentionPolicy.purge_after_days_for(scope_recording)
@@ -41,11 +44,24 @@ class RetentionPolicyTest < Minitest::Test
   end
 
   def test_purge_after_days_treats_persisted_blank_scope_setting_as_manual_only
-    RecordingStudioTrashable.configure { |config| config.default_purge_after_days = 30 }
+    RecordingStudioTrashable.configure do |config|
+      config.default_purge_after_days = 30
+      config.allow_user_retention_settings = true
+    end
 
     RecordingStudioTrashable::RetentionSetting.stub(:find_by, DummySetting.new(nil)) do
       RecordingStudio.stub(:capability_options, { purge_after_days: 14 }) do
         assert_nil RecordingStudioTrashable::RetentionPolicy.purge_after_days_for(:scope, recordable_type: "Page")
+      end
+    end
+  end
+
+  def test_purge_after_days_ignores_scope_setting_when_user_retention_settings_are_disabled
+    RecordingStudioTrashable.configure { |config| config.default_purge_after_days = 30 }
+
+    RecordingStudioTrashable::RetentionSetting.stub(:find_by, DummySetting.new(7)) do
+      RecordingStudio.stub(:capability_options, { purge_after_days: 14 }) do
+        assert_equal 14, RecordingStudioTrashable::RetentionPolicy.purge_after_days_for(:scope, recordable_type: "Page")
       end
     end
   end

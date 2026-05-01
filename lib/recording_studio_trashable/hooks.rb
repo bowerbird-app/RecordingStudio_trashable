@@ -14,27 +14,27 @@ module RecordingStudioTrashable
       @mutex = Mutex.new
     end
 
-    def before_initialize(handler = nil, priority: DEFAULT_PRIORITY, &block)
-      register(:before_initialize, handler, priority: priority, &block)
+    def before_initialize(handler = nil, priority: DEFAULT_PRIORITY, &)
+      register(:before_initialize, handler, priority: priority, &)
     end
 
-    def after_initialize(handler = nil, priority: DEFAULT_PRIORITY, &block)
-      register(:after_initialize, handler, priority: priority, &block)
+    def after_initialize(handler = nil, priority: DEFAULT_PRIORITY, &)
+      register(:after_initialize, handler, priority: priority, &)
     end
 
-    def on_configuration(handler = nil, priority: DEFAULT_PRIORITY, &block)
-      register(:on_configuration, handler, priority: priority, &block)
+    def on_configuration(handler = nil, priority: DEFAULT_PRIORITY, &)
+      register(:on_configuration, handler, priority: priority, &)
     end
 
-    def on(event_name, handler = nil, priority: DEFAULT_PRIORITY, &block)
-      register(event_name, handler, priority: priority, &block)
+    def on(event_name, handler = nil, priority: DEFAULT_PRIORITY, &)
+      register(event_name, handler, priority: priority, &)
     end
 
     def run(event_name, *args)
       @registry[event_name].sort_by { |hook| hook[:priority] }.map do |hook|
         execute_hook(hook[:handler], *args)
-      rescue StandardError => error
-        handle_hook_error(error, event_name)
+      rescue StandardError => e
+        handle_hook_error(e, event_name)
       end
     end
 
@@ -59,8 +59,8 @@ module RecordingStudioTrashable
       end
     end
 
-    def execute_hook(handler, *args)
-      handler.call(*args)
+    def execute_hook(handler, *)
+      handler.call(*)
     end
 
     def handle_hook_error(error, event_name)
@@ -72,8 +72,8 @@ module RecordingStudioTrashable
     end
 
     class << self
-      def run(event_name, *args)
-        RecordingStudioTrashable.configuration.hooks.run(event_name, *args)
+      def run(event_name, *)
+        RecordingStudioTrashable.configuration.hooks.run(event_name, *)
       end
     end
   end

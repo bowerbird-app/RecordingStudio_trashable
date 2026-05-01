@@ -8,7 +8,9 @@ Gem::Specification.new do |spec|
   spec.authors     = ["Bowerbird"]
   spec.homepage    = "https://github.com/bowerbird-app/RecordingStudio_trashable"
   spec.summary     = "Trash and retention addon for RecordingStudio"
-  spec.description = "Recording Studio Trashable extracts trash bin, restore, purge, retention, and mounted UI behavior into an opt-in Rails engine addon."
+  spec.description =
+    "Recording Studio Trashable extracts trash bin, restore, purge, retention, and mounted UI " \
+    "behavior into an opt-in Rails engine addon."
   spec.license     = "MIT"
   spec.required_ruby_version = ">= 3.3.0"
 

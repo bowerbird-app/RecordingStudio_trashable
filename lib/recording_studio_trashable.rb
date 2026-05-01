@@ -28,6 +28,10 @@ module RecordingStudioTrashable
       yield(configuration) if block_given?
     end
 
+    def allow_user_retention_settings?
+      configuration.allow_user_retention_settings == true
+    end
+
     def authorized?(action:, actor:, recording:, controller: nil)
       Authorization.authorized?(action: action, actor: actor, recording: recording, controller: controller)
     end

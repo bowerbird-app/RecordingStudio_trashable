@@ -2,8 +2,8 @@
 
 source "https://rubygems.org"
 
-gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v0.1.0-alpha"
 gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.33"
+gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v0.1.0-alpha"
 
 gemspec
 

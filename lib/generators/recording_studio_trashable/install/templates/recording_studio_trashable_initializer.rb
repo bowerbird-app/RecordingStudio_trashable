@@ -16,6 +16,9 @@ RecordingStudioTrashable.configure do |config|
   # Optional subtree-level default when no retention setting record exists.
   config.default_purge_after_days = nil
 
+  # Opt in if subtree admins should be allowed to override retention timing in the mounted UI.
+  config.allow_user_retention_settings = false
+
   # Override either resolver if your host app does not use Current.actor / Current.impersonator.
   # config.current_actor_resolver = ->(controller:) { controller.current_user }
   # config.authorization_resolver = ->(action:, actor:, recording:, **) { true }

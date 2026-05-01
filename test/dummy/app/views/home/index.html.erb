@@ -1,138 +1,85 @@
 <div class="mx-auto flex w-full max-w-6xl flex-col gap-6">
   <%= render FlatPack::PageTitle::Component.new(
-    title: @workspace&.name || "Recording Studio Trashable demo",
-    subtitle: "Workspace and project scoped trash bins using addon-owned restore, purge, retention, and authorization behavior.",
+    title: "Trash demo",
+    subtitle: "Recoding Studio Trash functionality",
     variant: :h1
   ) %>
 
-  <div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-    <div class="flex flex-col gap-6">
-      <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
-        <% card.header do %>
-          <%= render FlatPack::PageTitle::Component.new(
-            title: "Demo flows",
-            subtitle: "Pages opt in to trashing. Folders stay active-only to show explicit capability boundaries.",
-            variant: :h3,
-            class: "mb-0 pb-0"
-          ) %>
-        <% end %>
-
-        <% card.body do %>
-          <div class="space-y-4 text-sm leading-6">
-            <p><strong>Workspace trash bin:</strong> <%= recording_studio_trashable.recording_trash_bin_path(@workspace_recording) if @workspace_recording %></p>
-            <p><strong>Project trash bin:</strong> <%= recording_studio_trashable.recording_trash_bin_path(@project_recording) if @project_recording %></p>
-            <p><strong>Folder demo:</strong> <%= @folder_recording&.recordable&.name %> remains non-trashable.</p>
-          </div>
-        <% end %>
-
-        <% card.footer do %>
-          <div class="flex flex-wrap gap-3">
-            <% if @active_page_recording %>
-              <%= form_with url: recording_studio_trashable.trash_recording_path(@active_page_recording), method: :patch do %>
-                <%= hidden_field_tag :return_to_recording_id, @project_recording&.id %>
-                <%= render FlatPack::Button::Component.new(text: "Trash #{@active_page_recording.recordable.title}", style: :primary, type: "submit") %>
-              <% end %>
-            <% end %>
-            <% if @trashed_page_recording %>
-              <%= form_with url: recording_studio_trashable.restore_recording_path(@trashed_page_recording), method: :patch do %>
-                <%= hidden_field_tag :return_to_recording_id, @project_recording&.id %>
-                <%= render FlatPack::Button::Component.new(text: "Restore #{@trashed_page_recording.recordable.title}", style: :secondary, type: "submit") %>
-              <% end %>
-              <%= form_with url: recording_studio_trashable.purge_recording_path(@trashed_page_recording), method: :delete do %>
-                <%= hidden_field_tag :return_to_recording_id, @project_recording&.id %>
-                <%= render FlatPack::Button::Component.new(text: "Purge #{@trashed_page_recording.recordable.title}", style: :error, type: "submit") %>
-              <% end %>
-            <% end %>
-          </div>
-        <% end %>
-      <% end %>
-
-      <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
-        <% card.header do %>
-          <%= render FlatPack::PageTitle::Component.new(
-            title: "Scoped trash bins",
-            subtitle: "Both routes are mounted from the addon engine and scoped to a subtree root recording.",
-            variant: :h3,
-            class: "mb-0 pb-0"
-          ) %>
-        <% end %>
-
-        <% card.body do %>
-          <div class="flex flex-wrap gap-3">
-            <% if @workspace_recording %>
-              <%= render FlatPack::Button::Component.new(
-                text: "Workspace trash bin",
-                style: :secondary,
-                url: recording_studio_trashable.recording_trash_bin_path(@workspace_recording)
-              ) %>
-            <% end %>
-            <% if @project_recording %>
-              <%= render FlatPack::Button::Component.new(
-                text: "Project trash bin",
-                style: :secondary,
-                url: recording_studio_trashable.recording_trash_bin_path(@project_recording)
-              ) %>
-            <% end %>
-          </div>
-        <% end %>
-      <% end %>
+  <% if @workspace_recording %>
+    <div class="flex flex-wrap gap-3">
+      <%= render FlatPack::Button::Component.new(
+        text: "Trash can",
+        style: :primary,
+        url: recording_studio_trashable.recording_trash_bin_path(
+          @workspace_recording,
+          back_path: main_app.root_path
+        )
+      ) %>
+      <%= render FlatPack::Button::Component.new(
+        text: "Trash settings",
+        style: :secondary,
+        url: recording_studio_trashable.edit_recording_trash_settings_path(
+          @workspace_recording,
+          back_path: main_app.root_path
+        )
+      ) %>
     </div>
+  <% end %>
 
-    <div class="flex flex-col gap-6">
-      <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
-        <% card.header do %>
-          <%= render FlatPack::PageTitle::Component.new(
-            title: "Seeded recordings",
-            subtitle: "These records demonstrate active, trashed, and non-trashable examples.",
-            variant: :h3,
-            class: "mb-0 pb-0"
-          ) %>
+  <div class="overflow-hidden rounded-xl border border-(--surface-border-color) bg-(--surface-color) shadow-sm">
+    <table class="min-w-full divide-y divide-(--surface-border-color) text-left text-sm">
+      <thead class="bg-(--surface-raised-color) text-(--surface-muted-content-color)">
+        <tr>
+          <th class="px-4 py-3 font-medium">name</th>
+          <th class="px-4 py-3 font-medium">type</th>
+          <th class="px-4 py-3 font-medium">status</th>
+          <th class="px-4 py-3 font-medium">action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-(--surface-border-color)">
+        <% @table_recordings.each do |recording| %>
+          <% status = recording.trashed_at.present? ? "trashed" : "active" %>
+          <% name = recording.recordable.respond_to?(:title) ? recording.recordable.title : recording.recordable.respond_to?(:name) ? recording.recordable.name : recording.recordable_type %>
+          <tr>
+            <td class="px-4 py-4 font-medium text-(--surface-content-color)"><%= name %></td>
+            <td class="px-4 py-4 text-(--surface-muted-content-color)"><%= recording.recordable_type %></td>
+            <td class="px-4 py-4">
+              <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium <%= recording.trashed_at.present? ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700" %>">
+                <%= status %>
+              </span>
+            </td>
+            <td class="px-4 py-4">
+              <div class="flex flex-wrap gap-2">
+                <% if recording.recordable_type == "Page" && recording.trashed_at.blank? %>
+                  <%= form_with url: recording_studio_trashable.trash_recording_path(recording), method: :patch do %>
+                    <%= hidden_field_tag :return_to_recording_id, @workspace_recording.id %>
+                    <%= render FlatPack::Button::Component.new(text: "Trash", style: :primary, type: "submit") %>
+                  <% end %>
+                <% elsif recording.recordable_type == "Page" %>
+                  <%= form_with url: recording_studio_trashable.restore_recording_path(recording), method: :patch do %>
+                    <%= hidden_field_tag :return_to_recording_id, @workspace_recording.id %>
+                    <%= render FlatPack::Button::Component.new(text: "Restore", style: :secondary, type: "submit") %>
+                  <% end %>
+                  <%= form_with url: recording_studio_trashable.purge_recording_path(recording), method: :delete do %>
+                    <%= hidden_field_tag :return_to_recording_id, @workspace_recording.id %>
+                    <%= render FlatPack::Button::Component.new(text: "Purge", style: :error, type: "submit") %>
+                  <% end %>
+                <% else %>
+                  <% trigger_id = "trash-not-enabled-#{recording.id}" %>
+                  <button id="<%= trigger_id %>" type="button" class="text-(--surface-muted-content-color) underline decoration-dotted underline-offset-2">
+                    Trash not enabled
+                  </button>
+                  <%= render FlatPack::Popover::Component.new(trigger_id: trigger_id, placement: :top) do |popover| %>
+                    <% popover.content do %>
+                      This recordable type has not had trash enabled.
+                    <% end %>
+                  <% end %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
         <% end %>
-
-        <% card.body do %>
-          <dl class="space-y-3 text-sm">
-            <div>
-              <dt class="text-[var(--surface-muted-content-color)]">Workspace root</dt>
-              <dd class="font-medium"><%= @workspace&.name %></dd>
-            </div>
-            <div>
-              <dt class="text-[var(--surface-muted-content-color)]">Project</dt>
-              <dd class="font-medium"><%= @project_recording&.recordable&.name %></dd>
-            </div>
-            <div>
-              <dt class="text-[var(--surface-muted-content-color)]">Active page</dt>
-              <dd class="font-medium"><%= @active_page_recording&.recordable&.title %></dd>
-            </div>
-            <div>
-              <dt class="text-[var(--surface-muted-content-color)]">Trashed page</dt>
-              <dd class="font-medium"><%= @trashed_page_recording&.recordable&.title %></dd>
-            </div>
-            <div>
-              <dt class="text-[var(--surface-muted-content-color)]">Folder</dt>
-              <dd class="font-medium"><%= @folder_recording&.recordable&.name %></dd>
-            </div>
-          </dl>
-        <% end %>
-      <% end %>
-
-      <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
-        <% card.header do %>
-          <%= render FlatPack::PageTitle::Component.new(
-            title: "Addon assumptions",
-            subtitle: "The addon keeps public trash APIs out of RecordingStudio core.",
-            variant: :h3,
-            class: "mb-0 pb-0"
-          ) %>
-        <% end %>
-
-        <% card.body do %>
-          <ul class="space-y-3 text-sm leading-6">
-            <li>Pages opt in with <code>RecordingStudio::Capabilities::Trashable.to</code>.</li>
-            <li>Events use <code>trashed</code>, <code>restored</code>, and <code>purged</code>.</li>
-            <li>Retention settings live in addon-owned storage.</li>
-          </ul>
-        <% end %>
-      <% end %>
-    </div>
+      </tbody>
+    </table>
   </div>
 </div>

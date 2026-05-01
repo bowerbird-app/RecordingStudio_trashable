@@ -8,7 +8,11 @@ module RecordingStudioTrashable
       return if performed?
 
       @retention_setting = RecordingStudioTrashable.retention_setting_for(@scope_recording)
-      @trashed_recordings = RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for(@scope_recording)
+      @search_query = params[:q].to_s.strip
+      @trashed_recordings = RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for_query(
+        @scope_recording,
+        query: @search_query
+      ).to_a
     end
   end
 end

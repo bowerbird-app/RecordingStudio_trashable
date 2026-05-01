@@ -31,7 +31,9 @@ class RenameVerificationTest < Minitest::Test
 
   def test_no_old_template_ruby_references_remain_outside_docs_and_dummy
     ruby_files = Dir.glob(File.join(@root, "**", "*.rb"))
-    ruby_files.reject! { |path| path.include?("docs/") || path.include?("test/dummy") || path.include?("rename_verification_test.rb") }
+    ruby_files.reject! do |path|
+      path.include?("docs/") || path.include?("test/dummy") || path.include?("rename_verification_test.rb")
+    end
 
     offenders = ruby_files.select do |path|
       content = File.read(path)
@@ -39,8 +41,7 @@ class RenameVerificationTest < Minitest::Test
     end
 
     assert offenders.empty?, "Found old template references in:
-#{offenders.join("
-")}"
+#{offenders.join("\n")}"
   end
 
   private

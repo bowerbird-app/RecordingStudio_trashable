@@ -3,6 +3,8 @@ user = User.find_or_create_by!(email: "admin@admin.com") do |record|
   record.password_confirmation = "Password"
 end
 
+trashed_demo_page_count = 100
+
 Current.actor = user
 
 workspace = Workspace.find_or_create_by!(name: "Studio Workspace")
@@ -53,9 +55,25 @@ unless archived_recording
   archived_recording.recording_studio_trashable_trash!(actor: user)
 end
 
+trashed_demo_page_count.times do |index|
+  slug = format("archived-demo-page-%03d", index + 1)
+  trashed_page_recording = DemoRecordingLookup.by_slug(type: "Page", slug: slug)
+
+  unless trashed_page_recording
+    trashed_page_recording = workspace_recording.record(Page, actor: user, metadata: { seed: true }, parent_recording: folder_recording) do |page|
+      page.title = format("Archived Demo Page %03d", index + 1)
+      page.slug = slug
+      page.body = format("Seeded trashed page %03d for pagination demos.", index + 1)
+    end
+  end
+
+  trashed_page_recording.recording_studio_trashable_trash!(actor: user) if trashed_page_recording.trashed_at.blank?
+end
+
 retention_setting = RecordingStudioTrashable::RetentionSetting.find_or_initialize_by(recording: project_recording)
 retention_setting.update!(purge_after_days: 14)
 
 puts "Seeded: admin@admin.com / Password"
+puts "Seeded #{trashed_demo_page_count + 1} trashed pages for trash-bin pagination demos"
 puts "Seeded workspace trash bin: /recording_studio_trashable/recordings/#{workspace_recording.id}/trash_bin"
 puts "Seeded project trash bin: /recording_studio_trashable/recordings/#{project_recording.id}/trash_bin"

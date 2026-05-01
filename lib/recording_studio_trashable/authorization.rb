@@ -5,25 +5,12 @@ module RecordingStudioTrashable
     class << self
       def authorized?(action:, actor:, recording:, controller: nil)
         configuration = RecordingStudioTrashable.configuration
-        custom_result = resolve_custom_authorization(
-          configuration.authorization_resolver,
-          action: action,
-          actor: actor,
-          recording: recording,
-          controller: controller,
-          role: configuration.role_for(action)
-        )
+        role = configuration.role_for(action)
+        payload = { action: action, actor: actor, recording: recording, controller: controller, role: role }
+        custom_result = resolve_custom_authorization(configuration.authorization_resolver, **payload)
         return custom_result unless custom_result.nil?
 
-        return true unless configuration.accessible_integration_enabled
-        return true unless defined?(RecordingStudioAccessible) && RecordingStudioAccessible.respond_to?(:authorized?)
-        return false if recording.nil? || actor.nil?
-
-        RecordingStudioAccessible.authorized?(
-          actor: actor,
-          recording: recording,
-          role: configuration.role_for(action)
-        )
+        accessible_authorized?(configuration, actor: actor, recording: recording, role: role)
       end
 
       def mounted_page_authorized?(action:, actor:, recording:, controller: nil)
@@ -52,6 +39,18 @@ module RecordingStudioTrashable
         !!resolver.call(**payload)
       end
 
+      def accessible_authorized?(configuration, actor:, recording:, role:)
+        return true unless configuration.accessible_integration_enabled
+        return true unless accessible_authorizer_available?
+        return false if recording.nil? || actor.nil?
+
+        RecordingStudioAccessible.authorized?(actor: actor, recording: recording, role: role)
+      end
+
+      def accessible_authorizer_available?
+        defined?(RecordingStudioAccessible) && RecordingStudioAccessible.respond_to?(:authorized?)
+      end
+
       def resolve_context(resolver, controller)
         return unless resolver
 
@@ -65,7 +64,7 @@ module RecordingStudioTrashable
       end
 
       def controller_current_user(controller)
-        return unless controller&.respond_to?(:current_user, true)
+        return unless controller.respond_to?(:current_user, true)
 
         controller.send(:current_user)
       end

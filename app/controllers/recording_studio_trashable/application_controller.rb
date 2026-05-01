@@ -3,11 +3,16 @@
 module RecordingStudioTrashable
   class ApplicationController < ::ApplicationController
     protect_from_forgery with: :exception
+    layout "recording_studio_trashable/application"
 
     helper_method :recording_studio_trashable_recording_label,
                   :recording_studio_trashable_retention_label,
                   :recording_studio_trashable_action_authorized?,
-                  :recording_studio_trashable_page_authorized?
+                  :recording_studio_trashable_page_authorized?,
+                  :recording_studio_trashable_retention_settings_enabled?,
+                  :recording_studio_trashable_host_root_path,
+                  :recording_studio_trashable_back_path,
+                  :recording_studio_trashable_back_link_params
 
     private
 
@@ -48,6 +53,10 @@ module RecordingStudioTrashable
       )
     end
 
+    def recording_studio_trashable_retention_settings_enabled?
+      RecordingStudioTrashable.allow_user_retention_settings?
+    end
+
     def recording_studio_trashable_recording_label(recording)
       recordable = recording.recordable
       return recordable.title if recordable.respond_to?(:title) && recordable.title.present?
@@ -72,6 +81,20 @@ module RecordingStudioTrashable
 
     def boolean_param(value)
       ActiveModel::Type::Boolean.new.cast(value)
+    end
+
+    def recording_studio_trashable_host_root_path
+      main_app.root_path
+    rescue NoMethodError
+      "/"
+    end
+
+    def recording_studio_trashable_back_path(fallback: recording_studio_trashable_host_root_path)
+      url_from(params[:back_path].presence) || url_from(request.referer) || fallback
+    end
+
+    def recording_studio_trashable_back_link_params(fallback: recording_studio_trashable_host_root_path)
+      { back_path: recording_studio_trashable_back_path(fallback: fallback) }
     end
   end
 end

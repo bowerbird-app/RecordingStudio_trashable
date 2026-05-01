@@ -61,6 +61,7 @@ RecordingStudioTrashable.configure do |config|
   }
   config.default_include_children = false
   config.default_purge_after_days = nil
+  config.allow_user_retention_settings = false
 end
 ```
 
@@ -171,9 +172,13 @@ Retention settings are stored in the addon-owned `recording_studio_trashable_ret
 
 Retention resolves in this order:
 
-1. subtree retention setting saved through the mounted UI
+1. subtree retention setting saved through the mounted UI when `config.allow_user_retention_settings = true`
 2. per-recordable capability option such as `purge_after_days: 14`
 3. addon-wide `config.default_purge_after_days`
+
+By default, subtree users cannot override retention through the mounted UI. When
+`config.allow_user_retention_settings` is left `false`, saved subtree settings are ignored and
+the mounted retention settings page is hidden and redirected away from if visited directly.
 
 Run retention-driven purging explicitly:
 

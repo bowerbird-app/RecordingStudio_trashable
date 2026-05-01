@@ -4,6 +4,18 @@ require_relative "hooks"
 
 module RecordingStudioTrashable
   class Configuration
+    DEFAULTS = {
+      accessible_integration_enabled: true,
+      authorization_resolver: nil,
+      current_actor_resolver: nil,
+      current_impersonator_resolver: nil,
+      mounted_page_authorizer: nil,
+      full_page_layout: nil,
+      default_include_children: false,
+      default_purge_after_days: nil,
+      allow_user_retention_settings: false
+    }.freeze
+
     DEFAULT_AUTHORIZATION_ROLES = {
       trash: :edit,
       restore: :edit,
@@ -13,24 +25,20 @@ module RecordingStudioTrashable
     }.freeze
 
     attr_accessor :accessible_integration_enabled,
-                   :authorization_resolver,
-                   :current_actor_resolver,
-                   :current_impersonator_resolver,
-                   :mounted_page_authorizer,
-                   :full_page_layout,
-                   :default_include_children,
-                   :default_purge_after_days
+                  :authorization_resolver,
+                  :current_actor_resolver,
+                  :current_impersonator_resolver,
+                  :mounted_page_authorizer,
+                  :full_page_layout,
+                  :default_include_children,
+                  :default_purge_after_days,
+                  :allow_user_retention_settings
     attr_reader :hooks
 
     def initialize
-      @accessible_integration_enabled = true
-      @authorization_resolver = nil
-      @current_actor_resolver = nil
-      @current_impersonator_resolver = nil
-      @mounted_page_authorizer = nil
-      @full_page_layout = nil
-      @default_include_children = false
-      @default_purge_after_days = nil
+      DEFAULTS.each do |name, value|
+        instance_variable_set("@#{name}", value)
+      end
       @authorization_roles = DEFAULT_AUTHORIZATION_ROLES.dup
       @hooks = Hooks.new
     end
@@ -55,6 +63,7 @@ module RecordingStudioTrashable
         full_page_layout: full_page_layout,
         default_include_children: default_include_children,
         default_purge_after_days: default_purge_after_days,
+        allow_user_retention_settings: allow_user_retention_settings,
         hooks_registered: hooks.instance_variable_get(:@registry).transform_values(&:size)
       }
     end
@@ -78,9 +87,7 @@ module RecordingStudioTrashable
     def normalize_hash(value)
       return {} unless value.respond_to?(:to_h)
 
-      value.to_h.each_with_object({}) do |(key, entry), result|
-        result[key.to_sym] = entry
-      end
+      value.to_h.transform_keys(&:to_sym)
     end
   end
 end

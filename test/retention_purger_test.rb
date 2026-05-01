@@ -63,10 +63,12 @@ class RetentionPurgerTest < Minitest::Test
       self.class.records[id] = self
     end
 
+    # rubocop:disable Naming/PredicateMethod
     def update!(attributes)
       self.trashed_at = attributes[:trashed_at] if attributes.key?(:trashed_at)
       true
     end
+    # rubocop:enable Naming/PredicateMethod
 
     def destroy!
       self.class.destroyed_ids ||= []
@@ -119,7 +121,7 @@ class RetentionPurgerTest < Minitest::Test
   end
 
   def test_purge_due_recordings_skips_parent_records_that_still_have_descendants
-    parent = FakeRecording.new(id: "parent", trashed_at: Time.now - 10.days)
+    FakeRecording.new(id: "parent", trashed_at: Time.now - 10.days)
     FakeRecording.new(id: "child", parent_recording_id: "parent")
 
     RecordingStudioTrashable::SubtreeQuery.stub(:recordings_for, FakeRecording.records.values) do

@@ -77,11 +77,13 @@ class TrashableCapabilitiesTest < Minitest::Test
       self
     end
 
+    # rubocop:disable Naming/PredicateMethod
     def update!(attributes)
       self.updated_with = attributes
       self.trashed_at = attributes[:trashed_at] if attributes.key?(:trashed_at)
       true
     end
+    # rubocop:enable Naming/PredicateMethod
 
     def destroy!
       self.destroyed = true
@@ -108,8 +110,8 @@ class TrashableCapabilitiesTest < Minitest::Test
     FakeRecording.lock_proxy = nil
   end
 
-  def stub_authorized(value = true, &block)
-    RecordingStudioTrashable.stub(:authorized?, value, &block)
+  def stub_authorized(value: true, &)
+    RecordingStudioTrashable.stub(:authorized?, value, &)
   end
 
   def test_capability_builder_registers_capability_options
@@ -214,7 +216,7 @@ class TrashableCapabilitiesTest < Minitest::Test
     recording = FakeRecording.new(id: "page-1")
 
     error = assert_raises(ArgumentError) do
-      stub_authorized(false) { recording.recording_studio_trashable_trash!(actor: :viewer) }
+      stub_authorized(value: false) { recording.recording_studio_trashable_trash!(actor: :viewer) }
     end
 
     assert_match(/Not authorized to trash/, error.message)

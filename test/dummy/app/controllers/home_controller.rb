@@ -5,6 +5,6 @@ class HomeController < ApplicationController
     @project_recording = DemoRecordingLookup.by_slug(type: "Project", slug: "album-launch")
     @active_page_recording = DemoRecordingLookup.by_slug(type: "Page", slug: "mix-notes")
     @trashed_page_recording = DemoRecordingLookup.by_slug(type: "Page", slug: "archived-lyrics")
-    @folder_recording = DemoRecordingLookup.by_slug(type: "Folder", slug: "reference-assets")
+    @table_recordings = [@project_recording, @active_page_recording, @trashed_page_recording].compact
   end
 end

@@ -15,19 +15,7 @@ module RecordingStudioTrashable
     def purge!
       result = Result.new(purged_recordings: [], skipped_recordings: [])
 
-      due_recordings.each do |recording|
-        recording.recording_studio_trashable_purge!(
-          actor: @actor,
-          impersonator: @impersonator,
-          include_children: false,
-          metadata: @metadata.merge(source: "recording_studio_trashable_retention")
-        )
-        result.purged_recordings << recording
-      rescue ArgumentError => error
-        raise unless skippable_purge_error?(error)
-
-        result.skipped_recordings << recording
-      end
+      due_recordings.each { |recording| purge_recording(recording, result) }
 
       result
     end
@@ -37,24 +25,39 @@ module RecordingStudioTrashable
     def due_recordings
       recordings = RecordingStudioTrashable::SubtreeQuery.recordings_for(@scope_recording)
       index = recordings.index_by(&:id)
+      eligible_recordings = recordings.select { |recording| due_recording?(recording) }
 
-      recordings
-        .select do |recording|
-          recording.trashed_at.present? &&
-            RecordingStudioTrashable::RetentionPolicy.due?(
-              recording: recording,
-              scope_recording: @scope_recording,
-              as_of: @as_of
-            )
-        end
-        .sort_by { |recording| [-depth_for(recording, index), recording.trashed_at.to_f] }
+      eligible_recordings.sort_by { |recording| [-depth_for(recording, index), recording.trashed_at.to_f] }
+    end
+
+    def due_recording?(recording)
+      recording.trashed_at.present? &&
+        RecordingStudioTrashable::RetentionPolicy.due?(
+          recording: recording,
+          scope_recording: @scope_recording,
+          as_of: @as_of
+        )
+    end
+
+    def purge_recording(recording, result)
+      recording.recording_studio_trashable_purge!(
+        actor: @actor,
+        impersonator: @impersonator,
+        include_children: false,
+        metadata: @metadata.merge(source: "recording_studio_trashable_retention")
+      )
+      result.purged_recordings << recording
+    rescue ArgumentError => e
+      raise unless skippable_purge_error?(e)
+
+      result.skipped_recordings << recording
     end
 
     def depth_for(recording, index)
       depth = 0
       current = recording
 
-      while current&.respond_to?(:parent_recording_id) && current.parent_recording_id.present?
+      while current.respond_to?(:parent_recording_id) && current.parent_recording_id.present?
         current = index[current.parent_recording_id]
         depth += 1
       end

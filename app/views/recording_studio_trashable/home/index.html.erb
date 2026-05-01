@@ -1,11 +1,41 @@
-<div class="mx-auto flex w-full max-w-5xl flex-col gap-6">
-  <%= render FlatPack::PageTitle::Component.new(
-    title: "Recording Studio Trashable",
-    subtitle: "Opt-in trash, restore, purge, retention, and mounted trash bins for RecordingStudio.",
-    variant: :h1
-  ) %>
+<div class="mx-auto flex w-full max-w-5xl flex-col gap-8">
+  <div class="flex flex-col gap-4 border-b border-[var(--card-border-color)] pb-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <nav aria-label="Breadcrumb" class="flex items-center gap-3 text-sm text-[var(--surface-muted-content-color)]">
+        <%= render FlatPack::Button::Component.new(
+          text: "Back",
+          icon: "arrow-left",
+          style: :ghost,
+          url: recording_studio_trashable_host_root_path
+        ) %>
+        <span aria-hidden="true">/</span>
+        <span>Addon pages</span>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page" class="font-medium text-[var(--surface-content-color)]">Overview</span>
+      </nav>
+    </div>
 
-  <div class="grid gap-6 lg:grid-cols-2">
+    <%= render FlatPack::PageTitle::Component.new(
+      title: "Recording Studio Trashable",
+      subtitle: "Opt-in trash, restore, purge, retention, and mounted trash bins for RecordingStudio.",
+      variant: :h1
+    ) %>
+
+    <div class="flex flex-wrap gap-3">
+      <%= render FlatPack::Button::Component.new(
+        text: "Read the README",
+        style: :primary,
+        url: "https://github.com/bowerbird-app/RecordingStudio_trashable"
+      ) %>
+    </div>
+  </div>
+
+  <section id="capabilities" class="space-y-4 scroll-mt-8" aria-labelledby="capabilities-title">
+    <div class="flex items-center gap-2">
+      <h2 id="capabilities-title" class="text-xl font-semibold">Capabilities</h2>
+      <a href="#capabilities" class="text-sm text-[var(--surface-muted-content-color)] hover:text-[var(--surface-content-color)]">#</a>
+    </div>
+
     <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(
@@ -26,6 +56,13 @@
         </ul>
       <% end %>
     <% end %>
+  </section>
+
+  <section id="authorization" class="space-y-4 scroll-mt-8" aria-labelledby="authorization-title">
+    <div class="flex items-center gap-2">
+      <h2 id="authorization-title" class="text-xl font-semibold">Authorization</h2>
+      <a href="#authorization" class="text-sm text-[var(--surface-muted-content-color)] hover:text-[var(--surface-content-color)]">#</a>
+    </div>
 
     <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
       <% card.header do %>
@@ -47,14 +84,6 @@
           <% end %>
         </dl>
       <% end %>
-
-      <% card.footer do %>
-        <%= render FlatPack::Button::Component.new(
-          text: "Read the README",
-          style: :primary,
-          url: "https://github.com/bowerbird-app/RecordingStudio_trashable"
-        ) %>
-      <% end %>
     <% end %>
-  </div>
+  </section>
 </div>

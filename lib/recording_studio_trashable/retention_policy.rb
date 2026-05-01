@@ -13,8 +13,10 @@ module RecordingStudioTrashable
       end
 
       def purge_after_days_for(scope_recording, recordable_type: nil)
-        setting = scope_recording && RecordingStudioTrashable::RetentionSetting.find_by(recording: scope_recording)
-        return setting.purge_after_days if setting.present?
+        if RecordingStudioTrashable.allow_user_retention_settings?
+          setting = scope_recording && RecordingStudioTrashable::RetentionSetting.find_by(recording: scope_recording)
+          return setting.purge_after_days if setting.present?
+        end
 
         capability_options = RecordingStudioTrashable.capability_options_for(recordable_type)
         return capability_options[:purge_after_days] if capability_options[:purge_after_days].present?

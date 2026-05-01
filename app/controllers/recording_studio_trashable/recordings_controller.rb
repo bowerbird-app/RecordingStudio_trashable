@@ -56,7 +56,7 @@ module RecordingStudioTrashable
       scope_id = params[:return_to_recording_id].presence || params[:recording_id].presence
       return root_path if scope_id.blank?
 
-      recording_trash_bin_path(scope_id)
+      recording_trash_bin_path(scope_id, recording_studio_trashable_back_link_params)
     end
   end
 end
