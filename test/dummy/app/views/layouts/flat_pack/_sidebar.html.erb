@@ -9,15 +9,16 @@
 
   <% sidebar.items do %>
     <nav class="space-y-1 py-4" aria-label="Main navigation">
-      <% workspace_recording = DemoRecordingLookup.workspace_root %>
-      <% project_recording = DemoRecordingLookup.by_slug(type: "Project", slug: "album-launch") %>
       <%= render FlatPack::Sidebar::Item::Component.new(label: "Home", href: main_app.root_path, icon: :home) %>
-      <%= render FlatPack::Sidebar::Item::Component.new(label: "Workspace trash bin", href: recording_studio_trashable.recording_trash_bin_path(workspace_recording), icon: :trash) if workspace_recording %>
-      <%= render FlatPack::Sidebar::Item::Component.new(label: "Project trash bin", href: recording_studio_trashable.recording_trash_bin_path(project_recording), icon: :folder) if project_recording %>
+      <%= render FlatPack::Sidebar::Item::Component.new(label: "Overview", href: main_app.showcase_path("overview"), icon: :dashboard) %>
       <%= render FlatPack::Sidebar::Item::Component.new(label: "Setup", href: main_app.showcase_path("setup"), icon: :settings) %>
       <%= render FlatPack::Sidebar::Item::Component.new(label: "Configuration", href: main_app.showcase_path("configuration"), icon: :cog) %>
       <%= render FlatPack::Sidebar::Item::Component.new(label: "Adding to a recordable", href: main_app.showcase_path("adding-to-a-recordable"), icon: :plus) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(label: "Trash cans", href: main_app.showcase_path("trash-cans"), icon: :trash) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(label: "Retention", href: main_app.showcase_path("retention"), icon: :settings) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(label: "Events", href: main_app.events_path, icon: :table) %>
       <%= render FlatPack::Sidebar::Item::Component.new(label: "Cascading", href: main_app.showcase_path("cascading"), icon: :dashboard) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(label: "Responses", href: main_app.showcase_path("responses"), icon: :link) %>
       <%= render FlatPack::Sidebar::Item::Component.new(label: "Methods", href: main_app.showcase_path("methods"), icon: :file) %>
     </nav>
   <% end %>

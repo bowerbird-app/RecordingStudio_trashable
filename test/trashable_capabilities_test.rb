@@ -141,7 +141,34 @@ class TrashableCapabilitiesTest < Minitest::Test
     assert_includes source, "scope :recording_studio_trashable_active"
     assert_includes source, "scope :recording_studio_trashable_trashed"
     assert_includes source, "scope :recording_studio_trashable_including_trashed"
+    assert_includes source, "scope :recording_studio_trashable_filter"
     assert_includes source, "scope :recording_studio_trashable_trash_bin"
+  end
+
+  def test_filter_scope_dispatches_to_named_scopes_and_rejects_unknown_filters
+    scoped_model = Class.new do
+      class << self
+        def scope(name, body)
+          define_singleton_method(name) do |*args|
+            instance_exec(*args, &body)
+          end
+        end
+      end
+
+      include RecordingStudioTrashable::RecordingScopes
+    end
+
+    scoped_model.define_singleton_method(:recording_studio_trashable_active) { :active_relation }
+    scoped_model.define_singleton_method(:recording_studio_trashable_trashed) { :trashed_relation }
+    scoped_model.define_singleton_method(:recording_studio_trashable_including_trashed) { :all_relation }
+
+    assert_equal :active_relation, scoped_model.recording_studio_trashable_filter(:active)
+    assert_equal :trashed_relation, scoped_model.recording_studio_trashable_filter("trashed")
+    assert_equal :all_relation, scoped_model.recording_studio_trashable_filter(:all)
+
+    error = assert_raises(ArgumentError) { scoped_model.recording_studio_trashable_filter(:bogus) }
+    assert_includes error.message, "Unknown trash filter"
+    assert_includes error.message, "active, trashed, all"
   end
 
   def test_trash_logs_event_and_marks_recording_trashed

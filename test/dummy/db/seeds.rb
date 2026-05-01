@@ -28,6 +28,14 @@ unless project_recording
   end
 end
 
+second_project_recording = DemoRecordingLookup.by_slug(type: "Project", slug: "session-archive")
+unless second_project_recording
+  second_project_recording = workspace_recording.record(Project, actor: user, metadata: { seed: true }, parent_recording: workspace_recording) do |project|
+    project.name = "Session Archive"
+    project.slug = "session-archive"
+  end
+end
+
 folder_recording = DemoRecordingLookup.by_slug(type: "Folder", slug: "reference-assets")
 unless folder_recording
   folder_recording = workspace_recording.record(Folder, actor: user, metadata: { seed: true }, parent_recording: project_recording) do |folder|
@@ -42,6 +50,15 @@ unless mix_notes_recording
     page.title = "Mix Notes"
     page.slug = "mix-notes"
     page.body = "Active page used for the trash flow demo."
+  end
+end
+
+release_checklist_recording = DemoRecordingLookup.by_slug(type: "Page", slug: "release-checklist")
+unless release_checklist_recording
+  release_checklist_recording = workspace_recording.record(Page, actor: user, metadata: { seed: true }, parent_recording: second_project_recording) do |page|
+    page.title = "Release Checklist"
+    page.slug = "release-checklist"
+    page.body = "Second active page used to keep the homepage demo table populated."
   end
 end
 
@@ -74,6 +91,7 @@ retention_setting = RecordingStudioTrashable::RetentionSetting.find_or_initializ
 retention_setting.update!(purge_after_days: 14)
 
 puts "Seeded: admin@admin.com / Password"
+puts "Seeded homepage demo rows for 2 projects, 2 active pages, and 2 trashed pages"
 puts "Seeded #{trashed_demo_page_count + 1} trashed pages for trash-bin pagination demos"
 puts "Seeded workspace trash bin: /recording_studio_trashable/recordings/#{workspace_recording.id}/trash_bin"
 puts "Seeded project trash bin: /recording_studio_trashable/recordings/#{project_recording.id}/trash_bin"

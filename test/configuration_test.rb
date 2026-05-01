@@ -9,14 +9,14 @@ class ConfigurationTest < Minitest::Test
 
   def test_merge_updates_known_attributes_and_roles
     @configuration.merge!(
-      accessible_integration_enabled: false,
+      use_recording_studio_accessible: false,
       default_include_children: true,
       default_purge_after_days: 21,
       allow_user_retention_settings: true,
       authorization_roles: { purge: :edit }
     )
 
-    assert_equal false, @configuration.accessible_integration_enabled
+    assert_equal false, @configuration.use_recording_studio_accessible
     assert_equal true, @configuration.default_include_children
     assert_equal 21, @configuration.default_purge_after_days
     assert_equal true, @configuration.allow_user_retention_settings
@@ -28,7 +28,7 @@ class ConfigurationTest < Minitest::Test
     @configuration.merge!(unknown_key: "ignored")
 
     refute_respond_to @configuration, :unknown_key
-    assert_equal true, @configuration.accessible_integration_enabled
+    assert_equal true, @configuration.use_recording_studio_accessible
   end
 
   def test_to_h_reports_hook_counts
@@ -39,6 +39,8 @@ class ConfigurationTest < Minitest::Test
 
     assert_equal false, result.fetch(:default_include_children)
     assert_equal false, result.fetch(:allow_user_retention_settings)
+    assert_nil result.fetch(:retention_purge_actor_resolver)
+    assert_nil result.fetch(:retention_purge_impersonator_resolver)
     assert_equal 1, result.fetch(:hooks_registered).fetch(:before_initialize)
     assert_equal 1, result.fetch(:hooks_registered).fetch(:after_initialize)
   end

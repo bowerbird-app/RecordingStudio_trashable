@@ -119,15 +119,13 @@
                   <td class="px-4 py-4">
                     <div class="flex flex-wrap gap-2">
                       <% if recording_studio_trashable_action_authorized?(:restore, recording) %>
-                        <%= form_with url: restore_recording_path(recording), method: :patch do %>
-                          <%= hidden_field_tag :return_to_recording_id, @scope_recording.id %>
+                        <%= form_with url: restore_recording_path(recording), method: :patch, data: { turbo: false } do %>
                           <%= hidden_field_tag :back_path, recording_studio_trashable_back_path %>
                           <%= render FlatPack::Button::Component.new(text: "Restore", style: :secondary, type: "submit") %>
                         <% end %>
                       <% end %>
                       <% if recording_studio_trashable_action_authorized?(:purge, recording) %>
-                        <%= form_with url: purge_recording_path(recording), method: :delete do %>
-                          <%= hidden_field_tag :return_to_recording_id, @scope_recording.id %>
+                        <%= form_with url: purge_recording_path(recording), method: :delete, data: { turbo: false } do %>
                           <%= hidden_field_tag :back_path, recording_studio_trashable_back_path %>
                           <%= render FlatPack::Button::Component.new(text: "Purge", style: :error, type: "submit") %>
                         <% end %>

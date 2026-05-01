@@ -29,7 +29,14 @@
   <body>
     <%= render "layouts/icon_sprite" %>
 
-    <main class="container mx-auto mt-28 px-5 flex">
+    <main class="container mx-auto mt-28 flex flex-col gap-6 px-5">
+      <% flash.each do |type, message| %>
+        <% next if message.blank? %>
+
+        <% style = type.to_sym == :notice ? :success : :danger %>
+        <%= render FlatPack::Alert::Component.new(description: message, style: style) %>
+      <% end %>
+
       <%= yield %>
     </main>
   </body>

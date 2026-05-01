@@ -11,6 +11,7 @@ require "recording_studio_trashable/configuration"
 require "recording_studio_trashable/authorization"
 require "recording_studio_trashable/retention_policy"
 require "recording_studio_trashable/retention_purger"
+require "recording_studio_trashable/retention_purge_job"
 require "recording_studio_trashable/engine"
 require "recording_studio/trashable/capabilities/trashable"
 
@@ -22,6 +23,8 @@ if defined?(RecordingStudio::Recording)
 end
 
 module RecordingStudioTrashable
+  SweepResult = Struct.new(:purged_recordings, :skipped_recordings, :scope_recordings, keyword_init: true)
+
   class << self
     def configuration
       @configuration ||= Configuration.new
@@ -88,7 +91,66 @@ module RecordingStudioTrashable
       ).purge!
     end
 
+    def purge_due_recordings_for_all_scopes(scope_recordings: root_scope_recordings, **purge_options)
+      purge_options = default_purge_options.merge(purge_options)
+
+      Array(scope_recordings).compact.each_with_object(build_sweep_result) do |scope_recording, result|
+        append_scope_purge_result(
+          result: result,
+          scope_recording: scope_recording,
+          purge_options: purge_options
+        )
+      end
+    end
+
+    def root_scope_recordings
+      return [] unless defined?(RecordingStudio::Recording)
+
+      RecordingStudio::Recording
+        .recording_studio_trashable_including_trashed
+        .where(parent_recording_id: nil)
+        .reorder(created_at: :asc)
+        .to_a
+    rescue NoMethodError
+      []
+    end
+
+    def retention_purge_actor
+      resolve_retention_purge_context(configuration.retention_purge_actor_resolver)
+    end
+
+    def retention_purge_impersonator
+      resolve_retention_purge_context(configuration.retention_purge_impersonator_resolver)
+    end
+
     private
+
+    def resolve_retention_purge_context(resolver)
+      return unless resolver
+
+      resolver.call
+    end
+
+    def build_sweep_result
+      SweepResult.new(purged_recordings: [], skipped_recordings: [], scope_recordings: [])
+    end
+
+    def default_purge_options
+      {
+        actor: retention_purge_actor,
+        impersonator: retention_purge_impersonator,
+        as_of: Time.current,
+        metadata: {}
+      }
+    end
+
+    def append_scope_purge_result(result:, scope_recording:, purge_options:)
+      scope_result = purge_due_recordings(scope_recording: scope_recording, **purge_options)
+
+      result.scope_recordings << scope_recording
+      result.purged_recordings.concat(scope_result.purged_recordings)
+      result.skipped_recordings.concat(scope_result.skipped_recordings)
+    end
 
     def capability_type_name(recording_or_type)
       return if recording_or_type.nil?

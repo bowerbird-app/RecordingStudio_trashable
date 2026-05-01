@@ -40,7 +40,7 @@ module RecordingStudioTrashable
       end
 
       def accessible_authorized?(configuration, actor:, recording:, role:)
-        return true unless configuration.accessible_integration_enabled
+        return true unless configuration.use_recording_studio_accessible
         return true unless accessible_authorizer_available?
         return false if recording.nil? || actor.nil?
 

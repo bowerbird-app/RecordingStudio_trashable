@@ -65,7 +65,7 @@ class AuthorizationTest < Minitest::Test
 
   def test_authorized_uses_recording_studio_accessible_when_enabled
     RecordingStudioTrashable.configure do |config|
-      config.accessible_integration_enabled = true
+      config.use_recording_studio_accessible = true
       config.authorization_roles = { trash: :edit }
     end
     FakeAccessibleAuthorizer.last_payload = nil
@@ -109,13 +109,21 @@ class AuthorizationTest < Minitest::Test
     assert_includes source, "return if performed?"
     assert_includes(
       source,
+      "success_message: -> { \"\#{recording_studio_trashable_recording_label(@recording)} moved to trash\" }"
+    )
+    assert_includes(
+      source,
       "success_message: -> { \"\#{recording_studio_trashable_recording_label(@recording)} restored\" }"
+    )
+    assert_includes(
+      source,
+      "success_message: -> { \"\#{recording_studio_trashable_recording_label(@recording)} permantly deleted\" }"
     )
     assert_includes(
       source,
       "resolved_success_message = success_message.respond_to?(:call) ? " \
       "instance_exec(&success_message) : success_message"
     )
-    assert_includes source, "redirect_to fallback_redirect_path, notice: resolved_success_message"
+    assert_includes source, "respond_with_lifecycle_success(resolved_success_message)"
   end
 end

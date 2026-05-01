@@ -51,17 +51,23 @@
             <td class="px-4 py-4">
               <div class="flex flex-wrap gap-2">
                 <% if recording.recordable_type == "Page" && recording.trashed_at.blank? %>
-                  <%= form_with url: recording_studio_trashable.trash_recording_path(recording), method: :patch do %>
-                    <%= hidden_field_tag :return_to_recording_id, @workspace_recording.id %>
+                  <%= form_with url: recording_studio_trashable.trash_recording_path(recording),
+                                method: :patch,
+                                data: { turbo: false } do %>
+                    <%= hidden_field_tag :back_path, request.fullpath %>
                     <%= render FlatPack::Button::Component.new(text: "Trash", style: :primary, type: "submit") %>
                   <% end %>
                 <% elsif recording.recordable_type == "Page" %>
-                  <%= form_with url: recording_studio_trashable.restore_recording_path(recording), method: :patch do %>
-                    <%= hidden_field_tag :return_to_recording_id, @workspace_recording.id %>
+                  <%= form_with url: recording_studio_trashable.restore_recording_path(recording),
+                                method: :patch,
+                                data: { turbo: false } do %>
+                    <%= hidden_field_tag :back_path, request.fullpath %>
                     <%= render FlatPack::Button::Component.new(text: "Restore", style: :secondary, type: "submit") %>
                   <% end %>
-                  <%= form_with url: recording_studio_trashable.purge_recording_path(recording), method: :delete do %>
-                    <%= hidden_field_tag :return_to_recording_id, @workspace_recording.id %>
+                  <%= form_with url: recording_studio_trashable.purge_recording_path(recording),
+                                method: :delete,
+                                data: { turbo: false } do %>
+                    <%= hidden_field_tag :back_path, request.fullpath %>
                     <%= render FlatPack::Button::Component.new(text: "Purge", style: :error, type: "submit") %>
                   <% end %>
                 <% else %>

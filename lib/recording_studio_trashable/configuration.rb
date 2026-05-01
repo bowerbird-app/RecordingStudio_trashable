@@ -5,10 +5,12 @@ require_relative "hooks"
 module RecordingStudioTrashable
   class Configuration
     DEFAULTS = {
-      accessible_integration_enabled: true,
+      use_recording_studio_accessible: true,
       authorization_resolver: nil,
       current_actor_resolver: nil,
       current_impersonator_resolver: nil,
+      retention_purge_actor_resolver: nil,
+      retention_purge_impersonator_resolver: nil,
       mounted_page_authorizer: nil,
       full_page_layout: nil,
       default_include_children: false,
@@ -24,10 +26,12 @@ module RecordingStudioTrashable
       trash_bin: :edit
     }.freeze
 
-    attr_accessor :accessible_integration_enabled,
+    attr_accessor :use_recording_studio_accessible,
                   :authorization_resolver,
                   :current_actor_resolver,
                   :current_impersonator_resolver,
+                  :retention_purge_actor_resolver,
+                  :retention_purge_impersonator_resolver,
                   :mounted_page_authorizer,
                   :full_page_layout,
                   :default_include_children,
@@ -57,15 +61,7 @@ module RecordingStudioTrashable
     end
 
     def to_h
-      {
-        accessible_integration_enabled: accessible_integration_enabled,
-        authorization_roles: authorization_roles,
-        full_page_layout: full_page_layout,
-        default_include_children: default_include_children,
-        default_purge_after_days: default_purge_after_days,
-        allow_user_retention_settings: allow_user_retention_settings,
-        hooks_registered: hooks.instance_variable_get(:@registry).transform_values(&:size)
-      }
+      configuration_values.merge(hooks_registered: hooks_registered)
     end
 
     def merge!(hash)
@@ -83,6 +79,23 @@ module RecordingStudioTrashable
     end
 
     private
+
+    def configuration_values
+      {
+        use_recording_studio_accessible: use_recording_studio_accessible,
+        authorization_roles: authorization_roles,
+        full_page_layout: full_page_layout,
+        default_include_children: default_include_children,
+        default_purge_after_days: default_purge_after_days,
+        allow_user_retention_settings: allow_user_retention_settings,
+        retention_purge_actor_resolver: retention_purge_actor_resolver,
+        retention_purge_impersonator_resolver: retention_purge_impersonator_resolver
+      }
+    end
+
+    def hooks_registered
+      hooks.instance_variable_get(:@registry).transform_values(&:size)
+    end
 
     def normalize_hash(value)
       return {} unless value.respond_to?(:to_h)

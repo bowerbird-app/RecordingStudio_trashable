@@ -3,6 +3,8 @@
 require "test_helper"
 
 class RecordingStudioTrashableTest < Minitest::Test
+  FakeSweepResult = Struct.new(:purged_recordings, :skipped_recordings, keyword_init: true)
+
   def setup
     @original_configuration = RecordingStudioTrashable.instance_variable_get(:@configuration)
     RecordingStudioTrashable.instance_variable_set(:@configuration, RecordingStudioTrashable::Configuration.new)
@@ -30,16 +32,17 @@ class RecordingStudioTrashableTest < Minitest::Test
     assert_equal RecordingStudio::Trashable::Capabilities::Trashable, RecordingStudio::Capabilities::Trashable
   end
 
-  def test_dummy_sidebar_mentions_showcase_pages_and_trash_bins
+  def test_dummy_sidebar_mentions_showcase_pages
     sidebar_path = File.expand_path("dummy/app/views/layouts/flat_pack/_sidebar.html.erb", __dir__)
     source = File.read(sidebar_path)
 
     assert_includes source, "main_app.root_path"
     assert_includes source, "main_app.showcase_path"
     assert_includes source, "main_app.destroy_user_session_path"
-    assert_includes source, "Workspace trash bin"
-    assert_includes source, "Project trash bin"
+    refute_includes source, "Workspace trash bin"
+    refute_includes source, "Project trash bin"
     assert_includes source, "Adding to a recordable"
+    assert_includes source, "Trash cans"
     assert_includes source, "Cascading"
     assert_includes source, "Methods"
   end
@@ -173,5 +176,85 @@ class RecordingStudioTrashableTest < Minitest::Test
       },
       captured_arguments
     )
+  end
+
+  def test_purge_due_recordings_for_all_scopes_aggregates_results_using_retention_purge_resolvers
+    scope_recordings = %i[workspace project]
+    as_of = Time.utc(2026, 1, 2)
+    captured_arguments = []
+    results = [
+      FakeSweepResult.new(purged_recordings: [:first], skipped_recordings: [:skip_first]),
+      FakeSweepResult.new(purged_recordings: [:second], skipped_recordings: [])
+    ]
+
+    RecordingStudioTrashable.configure do |config|
+      config.retention_purge_actor_resolver = -> { :system_actor }
+      config.retention_purge_impersonator_resolver = -> { :system_impersonator }
+    end
+
+    RecordingStudioTrashable.stub(:purge_due_recordings, lambda { |**kwargs|
+      captured_arguments << kwargs
+      results.shift
+    }) do
+      result = RecordingStudioTrashable.purge_due_recordings_for_all_scopes(
+        scope_recordings: scope_recordings,
+        as_of: as_of,
+        metadata: { source: :job }
+      )
+
+      assert_equal scope_recordings, result.scope_recordings
+      assert_equal %i[first second], result.purged_recordings
+      assert_equal [:skip_first], result.skipped_recordings
+    end
+
+    assert_equal(
+      [
+        {
+          scope_recording: :workspace,
+          actor: :system_actor,
+          impersonator: :system_impersonator,
+          as_of: as_of,
+          metadata: { source: :job }
+        },
+        {
+          scope_recording: :project,
+          actor: :system_actor,
+          impersonator: :system_impersonator,
+          as_of: as_of,
+          metadata: { source: :job }
+        }
+      ],
+      captured_arguments
+    )
+  end
+
+  def test_root_scope_recordings_returns_top_level_recordings
+    relation = Object.new
+    scope_recordings = %i[root_a root_b]
+    recording_defined = RecordingStudio.const_defined?(:Recording, false)
+    original_recording = RecordingStudio.const_get(:Recording) if recording_defined
+
+    relation.define_singleton_method(:where) do |conditions|
+      raise "unexpected conditions" unless conditions == { parent_recording_id: nil }
+
+      self
+    end
+    relation.define_singleton_method(:reorder) do |*args|
+      raise "unexpected order" unless args == [{ created_at: :asc }]
+
+      self
+    end
+    relation.define_singleton_method(:to_a) { scope_recordings }
+
+    RecordingStudio.const_set(:Recording, Class.new) unless recording_defined
+    RecordingStudio::Recording.define_singleton_method(:recording_studio_trashable_including_trashed) { relation }
+
+    assert_equal scope_recordings, RecordingStudioTrashable.root_scope_recordings
+  ensure
+    if recording_defined
+      RecordingStudio.const_set(:Recording, original_recording)
+    elsif RecordingStudio.const_defined?(:Recording, false)
+      RecordingStudio.send(:remove_const, :Recording)
+    end
   end
 end

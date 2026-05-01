@@ -62,6 +62,7 @@ RecordingStudioTrashable.configure do |config|
   config.default_include_children = false
   config.default_purge_after_days = nil
   config.allow_user_retention_settings = false
+  config.retention_purge_actor_resolver = -> { User.find_by!(email: "system@example.com") }
 end
 ```
 
@@ -140,7 +141,7 @@ By default the addon behaves like this:
 
 ```ruby
 RecordingStudioTrashable.configure do |config|
-  config.accessible_integration_enabled = false
+  config.use_recording_studio_accessible = false
   config.authorization_resolver = lambda do |action:, actor:, recording:, **|
     actor.present? && action != :purge
   end
@@ -166,6 +167,22 @@ Mounted routes:
 
 The mounted views are FlatPack-first and intentionally light on custom markup.
 
+### Lifecycle responses
+
+- standard lifecycle form posts redirect back to `back_path` when supplied
+- when `back_path` is omitted, the controller falls back to the referrer and then a safe engine path
+- async callers can request JSON with `async: true` or a JSON format request
+
+For example, a synchronous form can just post the action and rely on the browser referrer for the default redirect-back behavior:
+
+```erb
+<%= form_with url: recording_studio_trashable.trash_recording_path(recording),
+              method: :patch,
+              data: { turbo: false } do %>
+  <%= render FlatPack::Button::Component.new(text: "Trash", style: :primary, type: "submit") %>
+<% end %>
+```
+
 ## Retention
 
 Retention settings are stored in the addon-owned `recording_studio_trashable_retention_settings` table and scoped to a subtree root recording.
@@ -188,6 +205,27 @@ RecordingStudioTrashable.purge_due_recordings(
   actor: Current.actor,
   metadata: { source: "nightly_retention_job" }
 )
+```
+
+Or let the addon sweep every root recording for you:
+
+```ruby
+RecordingStudioTrashable.purge_due_recordings_for_all_scopes
+```
+
+For background or cron-driven purging, the gem now ships with both of these entry points:
+
+- `RecordingStudioTrashable::RetentionPurgeJob.perform_later`
+- `bin/rails recording_studio_trashable:purge_due`
+
+The job and rake task default to sweeping every root recording (`parent_recording_id: nil`).
+If your app uses `RecordingStudioAccessible`, set `config.retention_purge_actor_resolver`
+so scheduled purges run as a real system actor that is allowed to purge.
+
+Example Sidekiq scheduler entry:
+
+```ruby
+RecordingStudioTrashable::RetentionPurgeJob.perform_later
 ```
 
 The retention purger walks due recordings leaf-first so parent recordings are only removed after due descendants are gone. Items that still require `include_children: true` stay skipped for later review.

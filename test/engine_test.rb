@@ -64,13 +64,13 @@ class EngineTest < Minitest::Test
     app_config = Struct.new(:x).new(xcfg)
     app = Struct.new(:config) do
       def config_for(_name)
-        { accessible_integration_enabled: false }
+        { use_recording_studio_accessible: false }
       end
     end.new(app_config)
 
     find_initializer("recording_studio_trashable.load_config").block.call(app)
 
-    assert_equal false, RecordingStudioTrashable.configuration.accessible_integration_enabled
+    assert_equal false, RecordingStudioTrashable.configuration.use_recording_studio_accessible
     assert_equal true, RecordingStudioTrashable.configuration.default_include_children
     assert_equal 45, RecordingStudioTrashable.configuration.default_purge_after_days
     assert_equal true, RecordingStudioTrashable.configuration.allow_user_retention_settings
@@ -137,6 +137,7 @@ class EngineTest < Minitest::Test
   def test_routes_are_drawn_under_engine_namespace
     routes = File.read(File.expand_path("../config/routes.rb", __dir__))
 
+    refute_includes routes, "resource :events"
     assert_includes routes, "resource :trash_bin"
     assert_includes routes, "resource :trash_settings"
     assert_includes routes, "patch :restore"

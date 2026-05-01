@@ -60,6 +60,12 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, "l(recording.trashed_at, format: :long)"
     assert_includes trash_bin_view, "recording_studio_trashable_action_authorized?(:restore"
     assert_includes trash_bin_view, "recording_studio_trashable_action_authorized?(:purge"
+    assert_includes trash_bin_view, "form_with url: restore_recording_path("
+    assert_includes trash_bin_view, "form_with url: purge_recording_path("
+    assert_includes trash_bin_view, "hidden_field_tag :back_path, recording_studio_trashable_back_path"
+    refute_includes trash_bin_view, 'redirect_target: "origin"'
+    refute_includes trash_bin_view, "origin_path: request.fullpath"
+    refute_includes trash_bin_view, "return_to_recording_id: @scope_recording.id"
     assert_includes retention_view, "aria-label=\"Breadcrumb\""
     assert_includes retention_view, 'icon: "arrow-left"'
     assert_includes retention_view, "FlatPack::Button::Component"
@@ -152,7 +158,13 @@ class UiSurfaceTest < Minitest::Test
 
   def test_dummy_home_mentions_workspace_and_project_trash_bins
     view_path = File.expand_path("dummy/app/views/home/index.html.erb", __dir__)
+    controller_path = File.expand_path("dummy/app/controllers/home_controller.rb", __dir__)
+    lookup_path = File.expand_path("dummy/app/models/demo_recording_lookup.rb", __dir__)
+    seeds_path = File.expand_path("dummy/db/seeds.rb", __dir__)
     source = File.read(view_path)
+    controller_source = File.read(controller_path)
+    lookup_source = File.read(lookup_path)
+    seeds_source = File.read(seeds_path)
 
     assert_includes source, 'title: "Trash demo"'
     assert_includes source, 'subtitle: "Recoding Studio Trash functionality"'
@@ -163,26 +175,275 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, ">type<"
     assert_includes source, ">status<"
     assert_includes source, ">action<"
-    assert_includes source, "recording_studio_trashable.trash_recording_path(recording)"
-    assert_includes source, "recording_studio_trashable.restore_recording_path(recording)"
-    assert_includes source, "recording_studio_trashable.purge_recording_path(recording)"
+    assert_includes source, "recording_studio_trashable.trash_recording_path("
+    assert_includes source, "recording_studio_trashable.restore_recording_path("
+    assert_includes source, "recording_studio_trashable.purge_recording_path("
+    assert_includes source, "data: { turbo: false }"
+    assert_includes source, "hidden_field_tag :back_path, request.fullpath"
+    refute_includes source, 'redirect_target: "origin"'
+    refute_includes source, "origin_path: request.fullpath"
+    refute_includes source, "return_to_recording_id: @workspace_recording.id"
     assert_includes source, "recording_studio_trashable.edit_recording_trash_settings_path("
     assert_includes source, "@workspace_recording,"
     assert_includes source, "back_path: main_app.root_path"
     assert_includes source, "Trash not enabled"
     assert_includes source, "FlatPack::Popover::Component"
     assert_includes source, "This recordable type has not had trash enabled."
+    assert_includes controller_source, "DemoRecordingLookup.recent_projects(@workspace_recording, limit: 2)"
+    assert_includes controller_source, "DemoRecordingLookup.recent_active_pages(@workspace_recording, limit: 2)"
+    assert_includes controller_source, "DemoRecordingLookup.recent_trashed_pages(@workspace_recording, limit: 2)"
+    assert_includes lookup_source, "DEFAULT_HOME_TABLE_LIMIT = 2"
+    assert_includes lookup_source, '.where(recordable_type: "Project")'
+    assert_includes lookup_source, '.where(recordable_type: "Page")'
+    assert_includes lookup_source, ".recording_studio_trashable_active"
+    assert_includes lookup_source, ".recording_studio_trashable_trashed"
+    assert_includes seeds_source, 'slug: "session-archive"'
+    assert_includes seeds_source, 'slug: "release-checklist"'
+  end
+
+  def test_dummy_layout_renders_flash_messages_with_flat_pack_alerts
+    layout_path = File.expand_path("dummy/app/views/layouts/application.html.erb", __dir__)
+    sidebar_layout_path = File.expand_path("dummy/app/views/layouts/flat_pack_sidebar.html.erb", __dir__)
+    source = File.read(layout_path)
+    sidebar_source = File.read(sidebar_layout_path)
+
+    assert_includes source, "flash.each do |type, message|"
+    assert_includes source, "type.to_sym == :notice ? :success : :danger"
+    assert_includes source, "FlatPack::Alert::Component"
+    assert_includes sidebar_source, "flash.each do |type, message|"
+    assert_includes sidebar_source, "type.to_sym == :notice ? :success : :danger"
+    assert_includes sidebar_source, "FlatPack::Alert::Component"
+  end
+
+  def test_dummy_events_page_is_owned_by_dummy_app
+    routes_source = File.read(File.expand_path("dummy/config/routes.rb", __dir__))
+    controller_source = File.read(File.expand_path("dummy/app/controllers/events_controller.rb", __dir__))
+    view_source = File.read(File.expand_path("dummy/app/views/events/show.html.erb", __dir__))
+    sidebar_source = File.read(File.expand_path("dummy/app/views/layouts/flat_pack/_sidebar.html.erb", __dir__))
+
+    assert_includes routes_source, 'get "events", to: "events#show", as: :events'
+    assert_includes controller_source, "class EventsController < ApplicationController"
+    assert_includes(
+      controller_source,
+      "RecordingStudio::Event.includes(:recording, :recordable, " \
+      ":previous_recordable, :actor, :impersonator).recent"
+    )
+    assert_includes controller_source, "helper_method :event_recording_label, :event_actor_label, :event_metadata"
+    assert_includes controller_source, "\"\#{event.recordable_type} #\#{event.recordable_id.to_s.first(8)}\""
+    assert_includes view_source, 'title: "Events"'
+    assert_includes view_source, 'subtitle: "All Recording Studio events in the dummy app"'
+    assert_includes view_source, "main_app.root_path"
+    assert_includes view_source, "FlatPack::Popover::Component"
+    assert_includes view_source, "event_recording_label(event)"
+    assert_includes view_source, "event_actor_label(event)"
+    assert_includes view_source, "event_metadata(event)"
+    assert_includes view_source, "No events recorded yet."
+    assert_includes sidebar_source, 'label: "Events"'
+    assert_includes sidebar_source, "href: main_app.events_path"
+    refute_includes sidebar_source, "recording_studio_trashable.recording_events_path"
+  end
+
+  def test_recordings_controller_redirects_back_by_default_and_supports_async_responses
+    source = read_repo_file("../app/controllers/recording_studio_trashable/recordings_controller.rb")
+    application_controller_source = read_repo_file("../app/controllers/recording_studio_trashable/application_controller.rb")
+
+    assert_includes source, "respond_with_lifecycle_success(resolved_success_message)"
+    assert_includes source, "respond_with_lifecycle_error(error.message)"
+    assert_includes source, "return render json: { ok: true, notice: message } if async_response?"
+    assert_includes(
+      source,
+      "return render json: { ok: false, alert: message }, status: :unprocessable_entity if async_response?"
+    )
+    assert_includes source, 'request.format.json? || boolean_param(params[:async]) || params[:redirect_target].to_s == "async"'
+    assert_includes source, "redirect_to sync_redirect_path"
+    assert_includes source, "recording_studio_trashable_back_path(fallback: fallback_redirect_path)"
+    assert_includes source, "params[:return_to_recording_id].presence || params[:recording_id].presence || fallback_scope_id"
+    assert_includes source, "@recording.root_recording_id.presence || @recording.id"
+    assert_includes application_controller_source, "url_from(params[:back_path].presence)"
+    assert_includes application_controller_source, "url_from(request.referer)"
+    assert_includes application_controller_source, "|| fallback"
+    refute_includes source, 'return unless params[:redirect_target].to_s == "origin"'
+    refute_includes source, "url_from(params[:origin_path].presence)"
   end
 
   def test_showcase_controller_lists_required_pages
     controller_path = File.expand_path("dummy/app/controllers/showcase_controller.rb", __dir__)
+    showcase_view_path = File.expand_path("dummy/app/views/showcase/show.html.erb", __dir__)
     source = File.read(controller_path)
+    showcase_view = File.read(showcase_view_path)
 
     assert_includes source, '"setup"'
+    assert_includes(
+      source,
+      "subtitle: \"Install the addon, run the generators, migrate the schema, and wire up retention purging.\""
+    )
+    assert_includes source, 'title: "Install the gem"'
+    assert_includes source, 'anchor_id: "install-the-gem"'
+    assert_includes source, 'code_title: "Gemfile and optional manual mount"'
+    assert_includes source, 'gem "recording_studio_trashable"'
+    assert_includes source, 'mount RecordingStudioTrashable::Engine, at: "/recording_studio_trashable"'
+    assert_includes source, 'title: "Run the generators"'
+    assert_includes source, 'anchor_id: "run-the-generators"'
+    assert_includes source, "bin/rails generate recording_studio_trashable:install"
+    assert_includes source, "bin/rails generate recording_studio_trashable:migrations"
+    assert_includes source, 'title: "Apply the database changes"'
+    assert_includes source, 'anchor_id: "apply-the-database-changes"'
+    assert_includes source, "add_column :recording_studio_recordings, :trashed_at, :datetime"
+    assert_includes source, "create_table :recording_studio_trashable_retention_settings, id: :uuid do |t|"
+    assert_includes source, 'title: "Schedule background purges"'
+    assert_includes source, 'anchor_id: "schedule-background-purges"'
+    assert_includes source, 'config.retention_purge_actor_resolver = -> { User.find_by!(email: "system@example.com") }'
+    assert_includes source, "RecordingStudioTrashable::RetentionPurgeJob.perform_later"
     assert_includes source, '"configuration"'
     assert_includes source, '"adding-to-a-recordable"'
+    assert_includes source, '"trash-cans"'
+    assert_includes source, '"retention"'
     assert_includes source, '"cascading"'
+    assert_includes source, '"responses"'
     assert_includes source, '"methods"'
+    assert_includes source, 'title: "Trash cans"'
+    assert_includes source, 'subtitle: "Trash-bin pages are scoped by the parent recording you pass in."'
+    assert_includes source, 'body: "A trash can shows the trashed items beneath a specific recording.'
+    assert_includes source, "recording_studio_trashable.recording_trash_bin_path(@project_recording)"
+    assert_includes source, "recording_studio_trashable.recording_trash_bin_path(@root_recording)"
+    assert_includes source, 'title: "Retention"'
+    assert_includes(
+      source,
+      'subtitle: "How the default retention window, optional user overrides, ' \
+      'and purge sweep fit together."'
+    )
+    assert_includes source, 'title: "App-level retention"'
+    assert_includes source, 'anchor_id: "app-level-retention"'
+    assert_includes source, "config.default_purge_after_days = 30"
+    assert_includes source, 'title: "Recordable level retention"'
+    assert_includes source, 'anchor_id: "recordable-level-retention"'
+    assert_includes source, 'subtitle: "Set different retention periods for different recordables"'
+    assert_includes source, "include RecordingStudio::Capabilities::Trashable.to(purge_after_days: 14)"
+    assert_includes source, 'title: "Allow users to set retention periods"'
+    assert_includes source, "config.allow_user_retention_settings = true"
+    assert_includes source, "settings: :admin"
+    assert_includes source, 'title: "How the purge background task works"'
+    assert_includes source, "RecordingStudioTrashable::RetentionPurgeJob"
+    assert_includes source, "bundle exec rake recording_studio_trashable:purge_due"
+    assert_includes source, "SCOPE_RECORDING_IDS=123,456"
+    assert_includes source, 'subtitle: "Set the default child behavior on the recordable type"'
+    assert_includes source, 'title: "Recordable default"'
+    assert_includes source, 'title: "Per-call override"'
+    assert_includes source, 'code_title: "Configure cascading on the recordable"'
+    assert_includes source, 'code_title: "Override cascading while trashing"'
+    assert_includes source, 'title: "Responses"'
+    assert_includes(
+      source,
+      'subtitle: "Lifecycle actions redirect back by default and only switch to JSON when async is requested."'
+    )
+    assert_includes source, 'title: "Reload existing page"'
+    assert_includes source, 'subtitle: "Default behaviour"'
+    assert_includes(
+      source,
+      'body: "After a recording is trashed, restored or purged the current page is refreshed and a flash message is returned."'
+    )
+    assert_includes source, 'title: "Async"'
+    assert_includes source, 'subtitle: "Opt-in JSON responses"'
+    assert_includes(
+      source,
+      'body: "Use async when the page should stay in place and handle the lifecycle result in JavaScript. Async requests skip the redirect and return a JSON payload with either a notice or an alert."'
+    )
+    refute_includes source, "hidden_field_tag :back_path, request.fullpath"
+    refute_includes source, "return_to_recording_id: @workspace_recording.id"
+    assert_includes source, 'code_title: "Return to the current page after trashing"'
+    assert_includes source, "include_children: true"
+    assert_includes source, "include RecordingStudio::Capabilities::Trashable.to(include_children: true)"
+    assert_includes source, "recording_studio_trashable_purge!("
+    assert_includes source, "recording_studio_trashable_filter(:active | :trashed | :all)"
+    assert_includes source, "methods: ["
+    assert_includes source, 'title: "Trash a recording"'
+    assert_includes source, 'title: "Filter recordings by trash state"'
+    assert_includes source, 'anchor_id: "filter-recordings-by-trash-state"'
+    assert_includes(
+      source,
+      "# Switch between active, trashed, or all recordings without changing the rest of the query."
+    )
+    assert_includes source, "project.recordings.recording_studio_trashable_filter(:trashed)"
+    assert_includes source, 'anchor_id: "trash-a-recording"'
+    assert_includes source, "# Soft delete the recording and record who performed the action."
+    assert_includes source, "# Remove the default trash filter so both active and trashed rows are returned."
+    assert_includes source, "recording_studio_trashable_active"
+    assert_includes source, "recording_studio_trashable_trash_bin"
+    assert_includes source, 'metadata: { source: "bulk-cleanup" }'
+    assert_includes source, "RecordingStudioTrashable.configure do |config|"
+    assert_includes source, "# Enables Accessible permission checks so trash actions respect the host app's role rules."
+    assert_includes source, "config.authorization_roles = {"
+    assert_includes source, "config.current_actor_resolver = ->(controller) { controller.current_user }"
+    assert_includes showcase_view, "FlatPack::CodeBlock::Component"
+    assert_includes showcase_view, "@page[:sections].present?"
+    assert_includes showcase_view, "@page.fetch(:sections).each do |section|"
+    assert_includes showcase_view, "title: section.fetch(:title)"
+    assert_includes showcase_view, "subtitle: section[:subtitle]"
+    assert_includes showcase_view, "anchor_id: section[:anchor_id]"
+    assert_includes showcase_view, "simple_format(section.fetch(:body), class: \"text-sm leading-7\")"
+    assert_includes showcase_view, "code: section.fetch(:code)"
+    assert_includes showcase_view, "language: section[:code_language] || :ruby"
+    assert_includes showcase_view, "@page[:methods].present?"
+    assert_includes showcase_view, "FlatPack::SectionTitle::Component.new("
+    assert_includes showcase_view, "title: method.fetch(:title)"
+    assert_includes showcase_view, "subtitle: method.fetch(:name)"
+    assert_includes showcase_view, "anchor_link: true"
+    assert_includes showcase_view, "anchor_id: method[:anchor_id]"
+    assert_includes showcase_view, "code: method.fetch(:code)"
+    assert_includes showcase_view, "language: method[:code_language] || :ruby"
+    assert_includes showcase_view, 'title: method[:code_title] || "Usage"'
+    assert_includes showcase_view, "@page.fetch(:table_rows)"
+    assert_includes showcase_view, "@page.fetch(:wrap_table_in_card, true)"
+    assert_includes showcase_view, 'FlatPack::Table::Component.new(data: rows, class: "text-sm")'
+    assert_includes showcase_view, '@page[:subtitle] || "Allow a recordable type to be trashed"'
+    assert_includes showcase_view, "@page[:code_language] || :ruby"
+    assert_includes showcase_view, '@page[:code_title] || "Code Example"'
+  end
+
+  def test_adding_to_a_recordable_owns_the_recordable_example_code
+    controller_path = File.expand_path("dummy/app/controllers/showcase_controller.rb", __dir__)
+    source = File.read(controller_path)
+
+    setup_section = source[/"setup"\s*=>\s*\{.*?\n\s*\},\n/m]
+    adding_section = source[/"adding-to-a-recordable"\s*=>\s*\{.*?\n\s*\},\n/m]
+
+    refute_nil setup_section
+    refute_nil adding_section
+    refute_includes setup_section, 'code_title: "Adding trashable to a recordable type"'
+    refute_includes setup_section, "include RecordingStudio::Capabilities::Trashable.to(include_children: true)"
+    assert_includes adding_section, 'code_title: "Adding trashable to a recordable type"'
+    assert_includes adding_section, "include RecordingStudio::Capabilities::Trashable.to(include_children: true)"
+    refute_includes(
+      adding_section,
+      'body: "Only models that include RecordingStudio::Capabilities::Trashable.to ' \
+      'receive the namespaced trash lifecycle on RecordingStudio::Recording."'
+    )
+  end
+
+  def test_cascading_page_documents_type_level_default_with_optional_call_override
+    controller_path = File.expand_path("dummy/app/controllers/showcase_controller.rb", __dir__)
+    source = File.read(controller_path)
+
+    cascading_section = source[/"cascading"\s*=>\s*\{.*?\n\s*\]\n\s*\},\n/m]
+
+    refute_nil cascading_section
+    assert_includes cascading_section, 'title: "Recordable default"'
+    assert_includes cascading_section, 'anchor_id: "recordable-default"'
+    assert_includes cascading_section, "include RecordingStudio::Capabilities::Trashable.to(include_children: true)"
+    assert_includes cascading_section, 'title: "Per-call override"'
+    assert_includes cascading_section, 'anchor_id: "per-call-override"'
+    assert_includes(
+      cascading_section,
+      'subtitle: "Pass include_children when one trash action needs different behavior."'
+    )
+    assert_includes cascading_section, "include_children: false,"
+    assert_includes cascading_section, 'metadata: { reason: "archive project only" }'
+    refute_includes(
+      cascading_section,
+      "The trash, restore, and purge methods can still override include_children per call"
+    )
+    assert_includes cascading_section, 'metadata: { reason: "archive project" }'
+    refute_includes cascading_section, "include_children: true,"
   end
 
   def test_dummy_sidebar_icons_exist_in_the_sprite
@@ -191,6 +452,17 @@ class UiSurfaceTest < Minitest::Test
     sidebar_source = File.read(sidebar_path)
     sprite_source = File.read(sprite_path)
 
+    assert_includes sidebar_source, 'label: "Overview"'
+    assert_includes sidebar_source, 'href: main_app.showcase_path("overview")'
+    assert_includes sidebar_source, 'label: "Events"'
+    assert_includes sidebar_source, "href: main_app.events_path"
+    assert_includes sidebar_source, 'label: "Retention"'
+    assert_includes sidebar_source, 'href: main_app.showcase_path("retention")'
+    assert_includes sidebar_source, 'label: "Responses"'
+    assert_includes sidebar_source, 'href: main_app.showcase_path("responses")'
+    assert_includes sidebar_source, 'label: "Trash cans"'
+    assert_includes sidebar_source, 'href: main_app.showcase_path("trash-cans")'
+
     sidebar_icons = sidebar_source.scan(/icon:\s*:(\w+(?:-\w+)*)/).flatten
 
     assert sidebar_icons.any?, "Expected the dummy sidebar to declare icons"
@@ -198,6 +470,27 @@ class UiSurfaceTest < Minitest::Test
     sidebar_icons.each do |icon_name|
       assert_includes sprite_source, %(id="icon-#{icon_name}"), "Expected icon #{icon_name} to exist in the sprite"
     end
+  end
+
+  def test_overview_page_explains_trash_setup_and_boundaries
+    controller_path = File.expand_path("dummy/app/controllers/showcase_controller.rb", __dir__)
+    source = File.read(controller_path)
+
+    overview_section = source[/"overview"\s*=>\s*\{.*?\n\s*\]\n\s*\},\n/m]
+
+    refute_nil overview_section
+    assert_includes overview_section, 'title: "Overview"'
+    assert_includes overview_section, 'title: "Recording Studio specific trash"'
+    assert_includes overview_section, 'title: "Timestamp based trash state"'
+    assert_includes overview_section, 'title: "Trash and restore behavior"'
+    assert_includes overview_section, 'title: "Children and cascading"'
+    assert_includes overview_section, 'title: "What is not trashed"'
+    assert_includes overview_section, "recording_studio_recordings"
+    assert_includes overview_section, "sets trashed_at to the current time"
+    assert_includes overview_section, "clears trashed_at back to nil"
+    assert_includes overview_section, "include_children resolves to true"
+    assert_includes overview_section, "does not soft-delete the underlying recordable data row"
+    assert_includes overview_section, "does not trash Recording Studio event rows"
   end
 
   private
