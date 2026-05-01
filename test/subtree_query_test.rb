@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "active_record"
 
 class SubtreeQueryTest < Minitest::Test
   class SearchPageRecordable
@@ -119,6 +120,32 @@ class SubtreeQueryTest < Minitest::Test
     end
   end
 
+  def test_recordings_for_walks_the_subtree_breadth_first
+    root = Struct.new(:id).new(1)
+    child_one = Struct.new(:id).new(2)
+    child_two = Struct.new(:id).new(3)
+    grandchild = Struct.new(:id).new(4)
+    calls = []
+
+    RecordingStudioTrashable::SubtreeQuery.stub(:child_recordings_for, lambda { |frontier|
+      calls << frontier
+
+      case frontier
+      when [1] then [child_one, child_two]
+      when [2, 3] then [grandchild]
+      else []
+      end
+    }) do
+      assert_equal [root, child_one, child_two, grandchild], RecordingStudioTrashable::SubtreeQuery.recordings_for(root)
+      assert_equal(
+        [child_one, child_two, grandchild],
+        RecordingStudioTrashable::SubtreeQuery.recordings_for(root, include_root: false)
+      )
+    end
+
+    assert_equal [[1], [2, 3], [4], [1], [2, 3], [4]], calls
+  end
+
   def test_trashed_recordings_for_query_limits_to_scope_and_builds_search_sql
     FakeRecordingModel.base_relation = FakeRelation.new(
       types: %w[SubtreeQueryTest::SearchPageRecordable SubtreeQueryTest::SearchFolderRecordable SubtreeQueryTest::SearchAccessRecordable],
@@ -160,5 +187,20 @@ class SubtreeQueryTest < Minitest::Test
     final_relation = FakeRelation.last_to_a_relation
     assert_equal 1, final_relation.where_arguments.length
     assert_equal({ id: "root-123" }, final_relation.where_arguments.first)
+  end
+
+  def test_trashed_recordings_for_query_escapes_wildcards_in_the_search_term
+    FakeRecordingModel.base_relation = FakeRelation.new(
+      types: %w[SubtreeQueryTest::SearchPageRecordable],
+      rows: [:match]
+    )
+    root_recording = Struct.new(:id).new("root-123")
+
+    RecordingStudioTrashable::SubtreeQuery.stub(:recording_model, FakeRecordingModel) do
+      RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for_query(root_recording, query: "100%_Mix").to_a
+    end
+
+    search_sql = FakeRelation.last_to_a_relation.where_arguments.last
+    assert_includes search_sql, "%100\\%\\_mix%"
   end
 end

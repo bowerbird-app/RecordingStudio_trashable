@@ -5,6 +5,23 @@ require "test_helper"
 class AuthorizationTest < Minitest::Test
   DummyController = Struct.new(:current_user)
 
+  class FakeAccessibleAuthorizer
+    class << self
+      attr_accessor :last_payload
+
+      def authorized?(**payload)
+        self.last_payload = payload
+        true
+      end
+    end
+  end
+
+  class FakeCurrent
+    class << self
+      attr_accessor :actor, :impersonator
+    end
+  end
+
   def setup
     @original_configuration = RecordingStudioTrashable.instance_variable_get(:@configuration)
     RecordingStudioTrashable.instance_variable_set(:@configuration, RecordingStudioTrashable::Configuration.new)
@@ -44,5 +61,61 @@ class AuthorizationTest < Minitest::Test
 
     assert RecordingStudioTrashable.mounted_page_authorized?(action: :settings, actor: nil, recording: nil)
     refute RecordingStudioTrashable.mounted_page_authorized?(action: :trash_bin, actor: nil, recording: nil)
+  end
+
+  def test_authorized_uses_recording_studio_accessible_when_enabled
+    RecordingStudioTrashable.configure do |config|
+      config.accessible_integration_enabled = true
+      config.authorization_roles = { trash: :edit }
+    end
+    FakeAccessibleAuthorizer.last_payload = nil
+
+    RecordingStudioTrashable.const_set(:RecordingStudioAccessible, FakeAccessibleAuthorizer)
+
+    assert RecordingStudioTrashable.authorized?(action: :trash, actor: :user, recording: :recording)
+    assert_equal(
+      { actor: :user, recording: :recording, role: :edit },
+      FakeAccessibleAuthorizer.last_payload
+    )
+  ensure
+    if RecordingStudioTrashable.const_defined?(:RecordingStudioAccessible, false)
+      RecordingStudioTrashable.send(:remove_const, :RecordingStudioAccessible)
+    end
+  end
+
+  def test_current_actor_and_impersonator_fall_back_to_current_attributes
+    FakeCurrent.actor = :current_actor
+    FakeCurrent.impersonator = :current_impersonator
+    Object.const_set(:Current, FakeCurrent)
+
+    assert_equal :current_actor, RecordingStudioTrashable.current_actor
+    assert_equal :current_impersonator, RecordingStudioTrashable.current_impersonator
+  ensure
+    Object.send(:remove_const, :Current) if Object.const_defined?(:Current, false)
+  end
+
+  def test_current_actor_falls_back_to_controller_current_user
+    controller = DummyController.new(:controller_user)
+
+    assert_equal :controller_user, RecordingStudioTrashable.current_actor(controller: controller)
+  end
+
+  def test_recordings_controller_uses_action_authorization_for_member_actions
+    source = File.read(
+      File.expand_path("../app/controllers/recording_studio_trashable/recordings_controller.rb", __dir__)
+    )
+
+    assert_includes source, "authorize_recording_action!(action, recording: @recording)"
+    assert_includes source, "return if performed?"
+    assert_includes(
+      source,
+      "success_message: -> { \"\#{recording_studio_trashable_recording_label(@recording)} restored\" }"
+    )
+    assert_includes(
+      source,
+      "resolved_success_message = success_message.respond_to?(:call) ? " \
+      "instance_exec(&success_message) : success_message"
+    )
+    assert_includes source, "redirect_to fallback_redirect_path, notice: resolved_success_message"
   end
 end

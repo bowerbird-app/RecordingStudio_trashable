@@ -87,7 +87,7 @@
               <th class="px-4 py-3 font-medium">Action</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-(--surface-border-color)">
+          <tbody class="divide-y divide-(--surface-border-color)" data-pagination-content>
             <% if @trashed_recordings.empty? %>
               <tr>
                 <td colspan="4" class="px-4 py-6 text-(--surface-muted-content-color)">
@@ -139,6 +139,12 @@
             <% end %>
           </tbody>
         </table>
+
+        <%= render FlatPack::Pagination::Component.new(
+          pagy: @pagy,
+          mode: :infinite,
+          loading_variant: :table
+        ) %>
       <% end %>
     </div>
   </div>

@@ -17,6 +17,10 @@ class TrashableCapabilitiesTest < Minitest::Test
       self
     end
 
+    def lock
+      FakeRecording.lock_proxy ||= FakeLock.new(@records.index_by(&:id))
+    end
+
     def to_a
       @records
     end
@@ -51,7 +55,10 @@ class TrashableCapabilitiesTest < Minitest::Test
       end
 
       def find(id)
-        records.fetch(id)
+        record = records.fetch(id)
+        raise KeyError, "missing active record #{id}" if record.trashed_at.present?
+
+        record
       end
 
       def recording_studio_trashable_including_trashed

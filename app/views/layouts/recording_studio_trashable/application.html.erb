@@ -17,6 +17,15 @@
 
   <body class="bg-(--surface-page-background-color) text-(--surface-content-color)">
     <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-8 sm:px-6 lg:px-8">
+      <% flash.each do |type, message| %>
+        <% next if message.blank? %>
+
+        <% style = type.to_sym == :notice ? :success : :danger %>
+        <div class="mb-6">
+          <%= render FlatPack::Alert::Component.new(description: message, style: style) %>
+        </div>
+      <% end %>
+
       <%= yield %>
     </main>
   </body>

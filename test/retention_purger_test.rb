@@ -17,6 +17,10 @@ class RetentionPurgerTest < Minitest::Test
       self
     end
 
+    def lock
+      FakeRecording.lock_proxy ||= FakeLock.new(@records.index_by(&:id))
+    end
+
     def to_a
       @records
     end

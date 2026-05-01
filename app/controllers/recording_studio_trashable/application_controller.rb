@@ -1,9 +1,16 @@
 # frozen_string_literal: true
 
+require "pagy"
+require "pagy/backend"
+require "pagy/frontend"
+
 module RecordingStudioTrashable
   class ApplicationController < ::ApplicationController
+    include ::Pagy::Backend
+
     protect_from_forgery with: :exception
     layout "recording_studio_trashable/application"
+    helper ::Pagy::Frontend
 
     helper_method :recording_studio_trashable_recording_label,
                   :recording_studio_trashable_retention_label,
@@ -30,6 +37,13 @@ module RecordingStudioTrashable
 
     def authorize_mounted_page!(action, recording: nil)
       return if recording_studio_trashable_page_authorized?(action, recording: recording)
+
+      redirect_back fallback_location: root_path,
+                    alert: "You are not authorized to manage trash here."
+    end
+
+    def authorize_recording_action!(action, recording:)
+      return if recording_studio_trashable_action_authorized?(action, recording)
 
       redirect_back fallback_location: root_path,
                     alert: "You are not authorized to manage trash here."

@@ -43,6 +43,10 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, 'turbo_frame_tag "trash-bin-results"'
     assert_includes trash_bin_view, "turbo:before-fetch-request->recording-studio-trashable--live-search#showLoading"
     assert_includes trash_bin_view, "turbo:frame-load->recording-studio-trashable--live-search#hideLoading"
+    assert_includes trash_bin_view, "data-pagination-content"
+    assert_includes trash_bin_view, "FlatPack::Pagination::Component"
+    assert_includes trash_bin_view, "mode: :infinite"
+    assert_includes trash_bin_view, "loading_variant: :table"
     assert_includes trash_bin_view, "hidden_field_tag :back_path, recording_studio_trashable_back_path"
     refute_includes trash_bin_view, 'FlatPack::Button::Component.new(text: "Search"'
     refute_includes trash_bin_view, 'text: "Clear"'
@@ -77,6 +81,8 @@ class UiSurfaceTest < Minitest::Test
     layout_view = read_repo_file("../app/views/layouts/recording_studio_trashable/application.html.erb")
 
     assert_includes application_controller, 'layout "recording_studio_trashable/application"'
+    assert_includes application_controller, "include ::Pagy::Backend"
+    assert_includes application_controller, "helper ::Pagy::Frontend"
     assert_includes application_controller, "recording_studio_trashable_retention_settings_enabled?"
     assert_includes application_controller, "def recording_studio_trashable_back_path"
     assert_includes application_controller, "def recording_studio_trashable_back_link_params"
@@ -106,9 +112,13 @@ class UiSurfaceTest < Minitest::Test
     assert_includes retention_controller, "return if performed?"
     assert_includes retention_controller, "unless recording_studio_trashable_retention_settings_enabled?"
     assert_includes trash_bin_controller, "return if performed?"
+    assert_includes trash_bin_controller, "PAGE_SIZE = 25"
     assert_includes trash_bin_controller, "@search_query = params[:q].to_s.strip"
     assert_includes trash_bin_controller, "trashed_recordings_for_query("
     assert_includes trash_bin_controller, "query: @search_query"
+    assert_includes trash_bin_controller, ".reorder(trashed_at: :desc, id: :desc)"
+    assert_includes trash_bin_controller, "@pagy, @trashed_recordings = pagy(trashed_recordings, limit: PAGE_SIZE)"
+    refute_includes trash_bin_controller, ").to_a"
   end
 
   def test_dummy_tailwind_sources_include_flat_pack_gem_paths

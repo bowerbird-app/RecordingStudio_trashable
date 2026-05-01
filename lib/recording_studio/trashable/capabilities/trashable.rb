@@ -153,7 +153,10 @@ module RecordingStudio
             self.class.transaction do
               targets = recording_studio_trashable_targets(include_children: include_children)
               ids = targets.map(&:id).compact.uniq.sort
-              ids.each { |recording_id| self.class.lock.find(recording_id) } if self.class.respond_to?(:lock)
+              if self.class.respond_to?(:lock)
+                relation = self.class.recording_studio_trashable_including_trashed
+                ids.each { |recording_id| relation.lock.find(recording_id) }
+              end
               yield targets
             end
           end

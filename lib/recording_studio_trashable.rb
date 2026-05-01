@@ -2,6 +2,9 @@
 
 require "recording_studio"
 require "flat_pack"
+require "pagy"
+require "pagy/backend"
+require "pagy/frontend"
 require "recording_studio_trashable/version"
 require "recording_studio_trashable/hooks"
 require "recording_studio_trashable/configuration"

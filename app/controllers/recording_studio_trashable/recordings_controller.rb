@@ -11,7 +11,11 @@ module RecordingStudioTrashable
     end
 
     def restore
-      update_recording!(:restore, :recording_studio_trashable_restore!, success_message: "Recording restored.")
+      update_recording!(
+        :restore,
+        :recording_studio_trashable_restore!,
+        success_message: -> { "#{recording_studio_trashable_recording_label(@recording)} restored" }
+      )
     end
 
     def purge
@@ -22,11 +26,12 @@ module RecordingStudioTrashable
 
     def update_recording!(action, method_name, success_message:)
       @recording = find_recording!(params[:id])
-      authorize_mounted_page!(action, recording: @recording)
+      authorize_recording_action!(action, recording: @recording)
       return if performed?
 
       update_recording_lifecycle!(method_name)
-      redirect_to fallback_redirect_path, notice: success_message
+      resolved_success_message = success_message.respond_to?(:call) ? instance_exec(&success_message) : success_message
+      redirect_to fallback_redirect_path, notice: resolved_success_message
     end
 
     def include_children_param
