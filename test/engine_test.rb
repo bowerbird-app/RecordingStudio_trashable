@@ -93,6 +93,39 @@ class EngineTest < Minitest::Test
     assert_empty assets.paths
   end
 
+  def test_install_recording_capabilities_applies_capabilities_and_scopes_once
+    recording_defined = RecordingStudio.const_defined?(:Recording, false)
+    original_recording = RecordingStudio.const_get(:Recording) if recording_defined
+    recording_class = Class.new do
+      class << self
+        def scope(name, body)
+          define_singleton_method(name) do |*args|
+            instance_exec(*args, &body)
+          end
+        end
+      end
+    end
+    applied_count = 0
+
+    RecordingStudio.const_set(:Recording, recording_class) unless recording_defined
+    RecordingStudio.const_set(:Recording, recording_class) if recording_defined
+
+    RecordingStudio.stub(:apply_capabilities!, -> { applied_count += 1 }) do
+      RecordingStudioTrashable.install_recording_capabilities!
+      RecordingStudioTrashable.install_recording_capabilities!
+    end
+
+    assert_equal 2, applied_count
+    assert_includes RecordingStudio::Recording.included_modules, RecordingStudioTrashable::RecordingScopes
+    assert_equal 1, RecordingStudio::Recording.included_modules.count(RecordingStudioTrashable::RecordingScopes)
+  ensure
+    if recording_defined
+      RecordingStudio.const_set(:Recording, original_recording)
+    elsif RecordingStudio.const_defined?(:Recording, false)
+      RecordingStudio.send(:remove_const, :Recording)
+    end
+  end
+
   def test_load_yaml_config_logs_and_swallows_configuration_errors
     logger = FakeLogger.new
     app = Object.new

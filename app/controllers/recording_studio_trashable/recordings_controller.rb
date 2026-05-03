@@ -43,10 +43,10 @@ module RecordingStudioTrashable
     end
 
     def lifecycle_metadata
-      raw_metadata = params[:metadata]
-      metadata = raw_metadata.respond_to?(:permit!) ? raw_metadata.permit!.to_h : {}
-
-      { source: "recording_studio_trashable_ui" }.merge(metadata)
+      {
+        source: "recording_studio_trashable_ui",
+        request_id: request.request_id
+      }.compact
     end
 
     def update_recording_lifecycle!(method_name)

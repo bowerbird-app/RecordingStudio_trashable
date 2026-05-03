@@ -3,7 +3,7 @@
 require "test_helper"
 
 class RecordingStudioTrashableTest < Minitest::Test
-  FakeSweepResult = Struct.new(:purged_recordings, :skipped_recordings, keyword_init: true)
+  FakeSweepResult = Struct.new(:purged_recordings, :skipped_recordings, :would_purge_recordings, keyword_init: true)
 
   def setup
     @original_configuration = RecordingStudioTrashable.instance_variable_get(:@configuration)
@@ -143,10 +143,34 @@ class RecordingStudioTrashableTest < Minitest::Test
         actor: :actor,
         impersonator: :impersonator,
         as_of: Time.utc(2026, 1, 1),
-        metadata: { source: :test }
+        metadata: { source: :test },
+        dry_run: false
       },
       captured_arguments
     )
+  end
+
+  def test_purge_due_recordings_passes_dry_run_to_purger
+    purger_result = Object.new
+    purger = Struct.new(:result) do
+      def purge! = result
+    end.new(purger_result)
+    captured_arguments = nil
+
+    RecordingStudioTrashable::RetentionPurger.stub(:new, lambda { |**kwargs|
+      captured_arguments = kwargs
+      purger
+    }) do
+      result = RecordingStudioTrashable.purge_due_recordings(
+        scope_recording: :scope,
+        actor: :actor,
+        dry_run: true
+      )
+
+      assert_same purger_result, result
+    end
+
+    assert_equal true, captured_arguments.fetch(:dry_run)
   end
 
   def test_purge_due_recordings_for_all_scopes_aggregates_results_using_retention_purge_resolvers
@@ -154,8 +178,8 @@ class RecordingStudioTrashableTest < Minitest::Test
     as_of = Time.utc(2026, 1, 2)
     captured_arguments = []
     results = [
-      FakeSweepResult.new(purged_recordings: [:first], skipped_recordings: [:skip_first]),
-      FakeSweepResult.new(purged_recordings: [:second], skipped_recordings: [])
+      FakeSweepResult.new(purged_recordings: [:first], skipped_recordings: [:skip_first], would_purge_recordings: []),
+      FakeSweepResult.new(purged_recordings: [:second], skipped_recordings: [], would_purge_recordings: [])
     ]
 
     RecordingStudioTrashable.configure do |config|
@@ -176,6 +200,7 @@ class RecordingStudioTrashableTest < Minitest::Test
       assert_equal scope_recordings, result.scope_recordings
       assert_equal %i[first second], result.purged_recordings
       assert_equal [:skip_first], result.skipped_recordings
+      assert_empty result.would_purge_recordings
     end
 
     assert_equal(
@@ -185,14 +210,16 @@ class RecordingStudioTrashableTest < Minitest::Test
           actor: :system_actor,
           impersonator: :system_impersonator,
           as_of: as_of,
-          metadata: { source: :job }
+          metadata: { source: :job },
+          dry_run: false
         },
         {
           scope_recording: :project,
           actor: :system_actor,
           impersonator: :system_impersonator,
           as_of: as_of,
-          metadata: { source: :job }
+          metadata: { source: :job },
+          dry_run: false
         }
       ],
       captured_arguments

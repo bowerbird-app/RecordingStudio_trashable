@@ -6,6 +6,7 @@ module RecordingStudioTrashable
   class Configuration
     DEFAULTS = {
       use_recording_studio_accessible: true,
+      allow_unconfigured_authorization: false,
       authorization_resolver: nil,
       current_actor_resolver: nil,
       current_impersonator_resolver: nil,
@@ -26,6 +27,7 @@ module RecordingStudioTrashable
     }.freeze
 
     attr_accessor :use_recording_studio_accessible,
+                  :allow_unconfigured_authorization,
                   :authorization_resolver,
                   :current_actor_resolver,
                   :current_impersonator_resolver,
@@ -81,6 +83,7 @@ module RecordingStudioTrashable
     def configuration_values
       {
         use_recording_studio_accessible: use_recording_studio_accessible,
+        allow_unconfigured_authorization: allow_unconfigured_authorization,
         authorization_roles: authorization_roles,
         full_page_layout: full_page_layout,
         default_purge_after_days: default_purge_after_days,

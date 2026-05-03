@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+module RecordingStudioTrashable
+  class PurgeTargetsNotTrashedError < ArgumentError; end
+end
+
 require "recording_studio"
 require "flat_pack"
 require "pagy"
@@ -15,17 +19,25 @@ require "recording_studio_trashable/retention_purge_job"
 require "recording_studio_trashable/engine"
 require "recording_studio/trashable/capabilities/trashable"
 
-if defined?(RecordingStudio::Recording)
-  RecordingStudio.apply_capabilities!
-  unless RecordingStudio::Recording.included_modules.include?(RecordingStudioTrashable::RecordingScopes)
-    RecordingStudio::Recording.include(RecordingStudioTrashable::RecordingScopes)
-  end
-end
-
 module RecordingStudioTrashable
-  SweepResult = Struct.new(:purged_recordings, :skipped_recordings, :scope_recordings, keyword_init: true)
+  SweepResult = Struct.new(
+    :purged_recordings,
+    :skipped_recordings,
+    :would_purge_recordings,
+    :scope_recordings,
+    keyword_init: true
+  )
 
   class << self
+    def install_recording_capabilities!
+      return unless defined?(RecordingStudio::Recording)
+
+      RecordingStudio.apply_capabilities!
+      return if RecordingStudio::Recording.included_modules.include?(RecordingStudioTrashable::RecordingScopes)
+
+      RecordingStudio::Recording.include(RecordingStudioTrashable::RecordingScopes)
+    end
+
     def configuration
       @configuration ||= Configuration.new
     end
@@ -68,15 +80,25 @@ module RecordingStudioTrashable
       {}
     end
 
-    def purge_due_recordings(scope_recording:, actor: nil, impersonator: nil, as_of: Time.current, metadata: {})
+    # rubocop:disable Metrics/ParameterLists
+    def purge_due_recordings(
+      scope_recording:,
+      actor: nil,
+      impersonator: nil,
+      as_of: Time.current,
+      metadata: {},
+      dry_run: false
+    )
       RetentionPurger.new(
         scope_recording: scope_recording,
         actor: actor,
         impersonator: impersonator,
         as_of: as_of,
-        metadata: metadata
+        metadata: metadata,
+        dry_run: dry_run
       ).purge!
     end
+    # rubocop:enable Metrics/ParameterLists
 
     def purge_due_recordings_for_all_scopes(scope_recordings: root_scope_recordings, **purge_options)
       purge_options = default_purge_options.merge(purge_options)
@@ -88,6 +110,23 @@ module RecordingStudioTrashable
           purge_options: purge_options
         )
       end
+    end
+
+    def purge_summary_message(result, dry_run: false)
+      purge_count = dry_run ? result.would_purge_recordings.size : result.purged_recordings.size
+      skipped_count = result.skipped_recordings.size
+
+      message = if dry_run
+                  purge_count.positive? ? "Dry run: #{count_label(purge_count, "recording")} would be purged." : "Dry run: no recordings would be purged."
+                elsif purge_count.positive?
+                  "Purged #{count_label(purge_count, "recording")}."
+                else
+                  "No recordings were purged."
+                end
+
+      return message if skipped_count.zero?
+
+      "#{message} Skipped #{count_label(skipped_count, "recording")}."
     end
 
     def root_scope_recordings
@@ -119,7 +158,7 @@ module RecordingStudioTrashable
     end
 
     def build_sweep_result
-      SweepResult.new(purged_recordings: [], skipped_recordings: [], scope_recordings: [])
+      SweepResult.new(purged_recordings: [], skipped_recordings: [], would_purge_recordings: [], scope_recordings: [])
     end
 
     def default_purge_options
@@ -127,7 +166,8 @@ module RecordingStudioTrashable
         actor: retention_purge_actor,
         impersonator: retention_purge_impersonator,
         as_of: Time.current,
-        metadata: {}
+        metadata: {},
+        dry_run: false
       }
     end
 
@@ -137,6 +177,7 @@ module RecordingStudioTrashable
       result.scope_recordings << scope_recording
       result.purged_recordings.concat(scope_result.purged_recordings)
       result.skipped_recordings.concat(scope_result.skipped_recordings)
+      result.would_purge_recordings.concat(scope_result.would_purge_recordings)
     end
 
     def capability_type_name(recording_or_type)
@@ -153,5 +194,11 @@ module RecordingStudioTrashable
 
       recording_or_type.class.name
     end
+
+    def count_label(count, noun)
+      "#{count} #{noun.pluralize(count)}"
+    end
   end
 end
+
+RecordingStudioTrashable.install_recording_capabilities!

@@ -4,6 +4,10 @@ RecordingStudioTrashable.configure do |config|
   # Keep Accessible integration enabled when the addon is installed.
   config.use_recording_studio_accessible = true
 
+  # Deny lifecycle actions unless a resolver or Accessible authorizer is available.
+  # Set this to true only if your host app intentionally wants permissive fallback behavior.
+  config.allow_unconfigured_authorization = false
+
   # Defaults: trash/edit, restore/edit, purge/admin, settings/admin
   config.authorization_roles = {
     trash: :edit,

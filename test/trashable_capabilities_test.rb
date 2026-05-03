@@ -261,7 +261,7 @@ class TrashableCapabilitiesTest < Minitest::Test
     parent = FakeRecording.new(id: "parent", trashed_at: Time.now - 1.day)
     FakeRecording.new(id: "child", parent_recording_id: "parent")
 
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(RecordingStudioTrashable::PurgeTargetsNotTrashedError) do
       stub_authorized { parent.recording_studio_trashable_purge!(actor: :admin) }
     end
 
@@ -285,7 +285,7 @@ class TrashableCapabilitiesTest < Minitest::Test
   def test_purge_requires_targets_to_already_be_trashed
     recording = FakeRecording.new(id: "page-1")
 
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(RecordingStudioTrashable::PurgeTargetsNotTrashedError) do
       stub_authorized { recording.recording_studio_trashable_purge!(actor: :admin) }
     end
 

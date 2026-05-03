@@ -118,6 +118,7 @@ class RetentionPurgerTest < Minitest::Test
           assert_equal %w[child parent], FakeRecording.destroyed_ids
           assert_equal %w[child parent], result.purged_recordings.map(&:id)
           assert_empty result.skipped_recordings
+          assert_empty result.would_purge_recordings
           assert_equal "recording_studio_trashable_retention", child.logged_events.first[:metadata][:source]
         end
       end
@@ -135,6 +136,50 @@ class RetentionPurgerTest < Minitest::Test
 
           assert_empty result.purged_recordings
           assert_equal ["parent"], result.skipped_recordings.map(&:id)
+          assert_empty result.would_purge_recordings
+        end
+      end
+    end
+  end
+
+  def test_purge_due_recordings_dry_run_collects_would_purge_without_destroying_records
+    parent = FakeRecording.new(id: "parent", trashed_at: Time.now - 10.days)
+    child = FakeRecording.new(id: "child", parent_recording_id: "parent", trashed_at: Time.now - 9.days)
+
+    RecordingStudioTrashable::SubtreeQuery.stub(:recordings_for, [parent, child]) do
+      RecordingStudioTrashable::RetentionPolicy.stub(:due?, true) do
+        RecordingStudioTrashable.stub(:authorized?, true) do
+          result = RecordingStudioTrashable.purge_due_recordings(
+            scope_recording: :workspace,
+            actor: :system,
+            dry_run: true
+          )
+
+          assert_empty FakeRecording.destroyed_ids
+          assert_empty result.purged_recordings
+          assert_empty result.skipped_recordings
+          assert_equal %w[child parent], result.would_purge_recordings.map(&:id)
+          assert_empty child.logged_events
+        end
+      end
+    end
+  end
+
+  def test_purge_due_recordings_reraises_unrelated_argument_errors
+    parent = FakeRecording.new(id: "parent", trashed_at: Time.now - 10.days)
+
+    parent.define_singleton_method(:recording_studio_trashable_validate_purge!) do |**|
+      raise ArgumentError, "boom"
+    end
+
+    RecordingStudioTrashable::SubtreeQuery.stub(:recordings_for, [parent]) do
+      RecordingStudioTrashable::RetentionPolicy.stub(:due?, true) do
+        RecordingStudioTrashable.stub(:authorized?, true) do
+          error = assert_raises(ArgumentError) do
+            RecordingStudioTrashable.purge_due_recordings(scope_recording: :workspace, actor: :system)
+          end
+
+          assert_equal "boom", error.message
         end
       end
     end

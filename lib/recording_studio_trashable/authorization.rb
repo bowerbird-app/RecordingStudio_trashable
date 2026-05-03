@@ -40,15 +40,28 @@ module RecordingStudioTrashable
       end
 
       def accessible_authorized?(configuration, actor:, recording:, role:)
-        return true unless configuration.use_recording_studio_accessible
-        return true unless accessible_authorizer_available?
-        return false if recording.nil? || actor.nil?
+        return configuration.allow_unconfigured_authorization unless configuration.use_recording_studio_accessible
+        return configuration.allow_unconfigured_authorization unless accessible_authorizer_available?
+        return configuration.allow_unconfigured_authorization if recording.nil? || actor.nil?
 
-        RecordingStudioAccessible.authorized?(actor: actor, recording: recording, role: role)
+        if accessible_authorizer.respond_to?(:authorized?)
+          accessible_authorizer.authorized?(actor: actor, recording: recording, role: role)
+        else
+          accessible_authorizer.allowed?(actor: actor, recording: recording, role: role)
+        end
       end
 
       def accessible_authorizer_available?
-        defined?(RecordingStudioAccessible) && RecordingStudioAccessible.respond_to?(:authorized?)
+        !accessible_authorizer.nil?
+      end
+
+      def accessible_authorizer
+        if defined?(RecordingStudioAccessible) && RecordingStudioAccessible.respond_to?(:authorized?)
+          RecordingStudioAccessible
+        elsif defined?(::RecordingStudio::Services::AccessCheck) &&
+              ::RecordingStudio::Services::AccessCheck.respond_to?(:allowed?)
+          ::RecordingStudio::Services::AccessCheck
+        end
       end
 
       def resolve_context(resolver, controller)

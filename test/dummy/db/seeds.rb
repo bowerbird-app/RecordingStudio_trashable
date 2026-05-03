@@ -13,13 +13,13 @@ trashed_demo_page_count = 100
 Current.actor = user
 
 workspace = Workspace.find_or_create_by!(name: "Studio Workspace")
-workspace_recording = RecordingStudio::Recording.recording_studio_trashable_including_trashed.find_or_create_by!(
+workspace_recording = RecordingStudio::Recording.with_trashed.find_or_create_by!(
   recordable: workspace,
   parent_recording_id: nil
 )
 
 access = RecordingStudio::Access.find_or_create_by!(actor: user, role: :admin)
-RecordingStudio::Recording.recording_studio_trashable_including_trashed.find_or_create_by!(
+RecordingStudio::Recording.with_trashed.find_or_create_by!(
   root_recording_id: workspace_recording.id,
   parent_recording_id: workspace_recording.id,
   recordable: access

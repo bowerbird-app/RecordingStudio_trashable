@@ -6,6 +6,19 @@ require "tmpdir"
 require "generators/recording_studio_trashable/install/install_generator"
 
 class InstallGeneratorTest < Minitest::Test
+  def test_install_template_mentions_optional_host_default_scope
+    template_path = File.expand_path(
+      "../lib/generators/recording_studio_trashable/install/templates/INSTALL.md",
+      __dir__
+    )
+    template = File.read(template_path)
+
+    assert_includes template, "Optionally hide trashed recordings by default in your host app"
+    assert_includes template, "default_scope { where(trashed_at: nil) }"
+    assert_includes template, "scope :not_trashed"
+    assert_includes template, "scope :with_trashed"
+  end
+
   def with_temp_app
     Dir.mktmpdir do |dir|
       FileUtils.mkdir_p(File.join(dir, "app/assets/tailwind"))

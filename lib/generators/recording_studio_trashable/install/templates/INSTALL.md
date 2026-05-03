@@ -9,4 +9,15 @@ Next steps:
 
    include RecordingStudio::Capabilities::Trashable.to
 
-5. Mount path: <%= options[:mount_path] %>
+5. Optionally hide trashed recordings by default in your host app:
+
+    Rails.application.config.to_prepare do
+       RecordingStudio::Recording.class_eval do
+          default_scope { where(trashed_at: nil) }
+
+          scope :not_trashed, -> { recording_studio_trashable_active }
+          scope :with_trashed, -> { recording_studio_trashable_including_trashed }
+       end
+   end
+
+6. Mount path: <%= options[:mount_path] %>

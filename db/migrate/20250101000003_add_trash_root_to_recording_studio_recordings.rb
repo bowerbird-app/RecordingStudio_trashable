@@ -2,6 +2,19 @@
 
 class AddTrashRootToRecordingStudioRecordings < ActiveRecord::Migration[8.1]
   INDEX_NAME = "idx_rs_recordings_trashed_at_trash_root"
+  BACKFILL_TRASH_ROOTS_SQL = <<~SQL.squish
+    UPDATE recording_studio_recordings AS recordings
+    SET trash_root = CASE
+      WHEN recordings.trashed_at IS NULL THEN FALSE
+      WHEN EXISTS (
+        SELECT 1
+        FROM recording_studio_recordings AS parents
+        WHERE parents.id = recordings.parent_recording_id
+          AND parents.trashed_at IS NOT NULL
+      ) THEN FALSE
+      ELSE TRUE
+    END
+  SQL
 
   def up
     return unless table_exists?(:recording_studio_recordings)
@@ -30,18 +43,6 @@ class AddTrashRootToRecordingStudioRecordings < ActiveRecord::Migration[8.1]
   private
 
   def backfill_trash_roots
-    execute <<~SQL.squish
-      UPDATE recording_studio_recordings AS recordings
-      SET trash_root = CASE
-        WHEN recordings.trashed_at IS NULL THEN FALSE
-        WHEN EXISTS (
-          SELECT 1
-          FROM recording_studio_recordings AS parents
-          WHERE parents.id = recordings.parent_recording_id
-            AND parents.trashed_at IS NOT NULL
-        ) THEN FALSE
-        ELSE TRUE
-      END
-    SQL
+    execute(BACKFILL_TRASH_ROOTS_SQL)
   end
 end

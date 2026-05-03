@@ -2,18 +2,28 @@
 
 module RecordingStudioTrashable
   class RetentionPurger
-    Result = Struct.new(:purged_recordings, :skipped_recordings, keyword_init: true)
+    Result = Struct.new(:purged_recordings, :skipped_recordings, :would_purge_recordings, keyword_init: true)
 
-    def initialize(scope_recording:, actor: nil, impersonator: nil, as_of: Time.current, metadata: {})
+    # rubocop:disable Metrics/ParameterLists
+    def initialize(
+      scope_recording:,
+      actor: nil,
+      impersonator: nil,
+      as_of: Time.current,
+      metadata: {},
+      dry_run: false
+    )
       @scope_recording = scope_recording
       @actor = actor
       @impersonator = impersonator
       @as_of = as_of
       @metadata = metadata.to_h
+      @dry_run = dry_run == true
     end
+    # rubocop:enable Metrics/ParameterLists
 
     def purge!
-      result = Result.new(purged_recordings: [], skipped_recordings: [])
+      result = Result.new(purged_recordings: [], skipped_recordings: [], would_purge_recordings: [])
 
       due_recordings.each { |recording| purge_recording(recording, result) }
 
@@ -40,16 +50,33 @@ module RecordingStudioTrashable
     end
 
     def purge_recording(recording, result)
-      recording.recording_studio_trashable_purge!(
+      validate_purge_recording!(recording)
+
+      if @dry_run
+        mark_would_purge(result, recording)
+        return
+      end
+
+      recording.recording_studio_trashable_purge!(**purge_options)
+      result.purged_recordings << recording
+    rescue RecordingStudioTrashable::PurgeTargetsNotTrashedError
+      result.skipped_recordings << recording
+    end
+
+    def mark_would_purge(result, recording)
+      result.would_purge_recordings << recording
+    end
+
+    def purge_options
+      {
         actor: @actor,
         impersonator: @impersonator,
         metadata: @metadata.merge(source: "recording_studio_trashable_retention")
-      )
-      result.purged_recordings << recording
-    rescue ArgumentError => e
-      raise unless skippable_purge_error?(e)
+      }
+    end
 
-      result.skipped_recordings << recording
+    def validate_purge_recording!(recording)
+      recording.recording_studio_trashable_validate_purge!(actor: @actor)
     end
 
     def depth_for(recording, index)
@@ -62,10 +89,6 @@ module RecordingStudioTrashable
       end
 
       depth
-    end
-
-    def skippable_purge_error?(error)
-      error.message.include?("already be trashed")
     end
   end
 end

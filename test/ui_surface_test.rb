@@ -159,20 +159,26 @@ class UiSurfaceTest < Minitest::Test
     view_path = File.expand_path("dummy/app/views/home/index.html.erb", __dir__)
     controller_path = File.expand_path("dummy/app/controllers/home_controller.rb", __dir__)
     lookup_path = File.expand_path("dummy/app/models/demo_recording_lookup.rb", __dir__)
+    trashable_initializer_path = File.expand_path("dummy/config/initializers/recording_studio_trashable.rb", __dir__)
     seeds_path = File.expand_path("dummy/db/seeds.rb", __dir__)
     routes_path = File.expand_path("dummy/config/routes.rb", __dir__)
     source = File.read(view_path)
     controller_source = File.read(controller_path)
     lookup_source = File.read(lookup_path)
+    trashable_initializer_source = File.read(trashable_initializer_path)
     seeds_source = File.read(seeds_path)
     routes_source = File.read(routes_path)
+    authorization_guard =
+      "@can_purge_due = @workspace_recording.present? && RecordingStudioTrashable.authorized?("
+    expired_default_retention = "expired_default_retention_recording.update!(trashed_at: 45.days.ago)"
+    expired_scope_retention = "expired_scope_retention_recording.update!(trashed_at: 21.days.ago)"
 
-    assert_includes source, 'title: "Trash demo"'
-  assert_includes source, 'subtitle: "Recording Studio Trash functionality"'
-    assert_includes source, 'text: "Trash can"'
-    assert_includes source, 'text: "Trash settings"'
-    assert_includes source, 'text: "Purge"'
-    assert_includes source, 'main_app.purge_due_recordings_path'
+    assert_includes source, "title: \"Trash demo\""
+    assert_includes source, "subtitle: \"Recording Studio Trash functionality\""
+    assert_includes source, "text: \"Trash can\""
+    assert_includes source, "text: \"Trash settings\""
+    assert_includes source, "text: \"Purge\""
+    assert_includes source, "main_app.purge_due_recordings_path"
     assert_includes source, "back_path: main_app.root_path"
     assert_includes source, ">name<"
     assert_includes source, ">type<"
@@ -194,8 +200,8 @@ class UiSurfaceTest < Minitest::Test
     assert_includes controller_source, "def purge_due"
     assert_includes controller_source, "RecordingStudioTrashable.purge_due_recordings_for_all_scopes("
     assert_includes controller_source, 'metadata: { source: "dummy_home_manual_purge" }'
-    assert_includes controller_source, 'action: :purge'
-    assert_includes controller_source, '@can_purge_due = @workspace_recording.present? && RecordingStudioTrashable.authorized?('
+    assert_includes controller_source, "action: :purge"
+    assert_includes controller_source, authorization_guard
     assert_includes source, "Trash not enabled"
     assert_includes source, "FlatPack::Popover::Component"
     assert_includes source, "This recordable type has not had trash enabled."
@@ -205,17 +211,23 @@ class UiSurfaceTest < Minitest::Test
     assert_includes lookup_source, "DEFAULT_HOME_TABLE_LIMIT = 2"
     assert_includes lookup_source, '.where(recordable_type: "Project")'
     assert_includes lookup_source, '.where(recordable_type: "Page")'
-    assert_includes lookup_source, ".recording_studio_trashable_active"
+    assert_includes lookup_source, ".not_trashed"
+    assert_includes lookup_source, "RecordingStudio::Recording.with_trashed"
     assert_includes lookup_source, ".recording_studio_trashable_trash_roots"
+    assert_includes trashable_initializer_source, "Rails.application.config.to_prepare do"
+    assert_includes trashable_initializer_source, "RecordingStudio::Recording.class_eval do"
+    assert_includes trashable_initializer_source, "default_scope { where(trashed_at: nil) }"
+    assert_includes trashable_initializer_source, "scope :not_trashed"
+    assert_includes trashable_initializer_source, "scope :with_trashed"
     assert_includes routes_source, 'post "purge_due", to: "home#purge_due", as: :purge_due_recordings'
-    assert_includes seeds_source, 'slug: "session-archive"'
-    assert_includes seeds_source, 'slug: "release-checklist"'
-    assert_includes seeds_source, 'slug: "expired-default-retention"'
-    assert_includes seeds_source, 'slug: "expired-scope-retention"'
-    assert_includes seeds_source, 'slug: "fresh-retention"'
-    assert_includes seeds_source, 'expired_default_retention_recording.update!(trashed_at: 45.days.ago)'
-    assert_includes seeds_source, 'expired_scope_retention_recording.update!(trashed_at: 21.days.ago)'
-    assert_includes seeds_source, 'fresh_retention_recording.update!(trashed_at: 5.days.ago)'
+    assert_includes seeds_source, "slug: \"session-archive\""
+    assert_includes seeds_source, "slug: \"release-checklist\""
+    assert_includes seeds_source, "slug: \"expired-default-retention\""
+    assert_includes seeds_source, "slug: \"expired-scope-retention\""
+    assert_includes seeds_source, "slug: \"fresh-retention\""
+    assert_includes seeds_source, expired_default_retention
+    assert_includes seeds_source, expired_scope_retention
+    assert_includes seeds_source, "fresh_retention_recording.update!(trashed_at: 5.days.ago)"
   end
 
   def test_dummy_layout_renders_flash_messages_with_flat_pack_alerts
@@ -230,6 +242,17 @@ class UiSurfaceTest < Minitest::Test
     assert_includes sidebar_source, "flash.each do |type, message|"
     assert_includes sidebar_source, "type.to_sym == :notice ? :success : :danger"
     assert_includes sidebar_source, "FlatPack::Alert::Component"
+  end
+
+  def test_dummy_application_controller_provisions_demo_access_for_signed_in_users
+    source = File.read(File.expand_path("dummy/app/controllers/application_controller.rb", __dir__))
+
+    assert_includes source, "before_action :ensure_demo_access!"
+    assert_includes source, "workspace_recording = DemoRecordingLookup.workspace_root"
+    assert_includes source, "RecordingStudio::Access.find_or_initialize_by(actor: current_user)"
+    assert_includes source, "access.role = :admin"
+    assert_includes source, "access.save! if access.new_record? || access.changed?"
+    assert_includes source, "recordable: access"
   end
 
   def test_devise_sign_in_view_keeps_form_in_normal_layout_flow
@@ -303,6 +326,8 @@ class UiSurfaceTest < Minitest::Test
     showcase_view_path = File.expand_path("dummy/app/views/showcase/show.html.erb", __dir__)
     source = File.read(controller_path)
     showcase_view = File.read(showcase_view_path)
+    trash_root_migration =
+      "add_column :recording_studio_recordings, :trash_root, :boolean, default: false, null: false"
 
     assert_includes source, '"setup"'
     assert_includes(
@@ -321,7 +346,7 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, 'title: "Apply the database changes"'
     assert_includes source, 'anchor_id: "apply-the-database-changes"'
     assert_includes source, "add_column :recording_studio_recordings, :trashed_at, :datetime"
-    assert_includes source, "add_column :recording_studio_recordings, :trash_root, :boolean, default: false, null: false"
+    assert_includes source, trash_root_migration
     assert_includes source, "create_table :recording_studio_trashable_retention_settings, id: :uuid do |t|"
     assert_includes source, 'title: "Schedule background purges"'
     assert_includes source, 'anchor_id: "schedule-background-purges"'
@@ -400,6 +425,11 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, "methods: ["
     assert_includes source, 'title: "Trash a recording"'
     assert_includes source, 'title: "Filter recordings by trash state"'
+    assert_includes source, 'title: "Hide trashed recordings by default"'
+    assert_includes source, 'anchor_id: "hide-trashed-recordings-by-default"'
+    assert_includes source, "default_scope { where(trashed_at: nil) }"
+    assert_includes source, "scope :not_trashed"
+    assert_includes source, "scope :with_trashed"
     assert_includes source, 'anchor_id: "filter-recordings-by-trash-state"'
     assert_includes(
       source,
@@ -408,15 +438,22 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, "project.recordings.recording_studio_trashable_filter(:trashed)"
     assert_includes source, 'anchor_id: "trash-a-recording"'
     assert_includes source, "# Soft delete the recording, cascade to descendants, and record who performed the action."
-    assert_includes source, "# Remove the default trash filter so both active and trashed rows are returned."
+    assert_includes source, "# Remove the host app's default trash filter so both active and trashed rows are returned."
     assert_includes source, "recording_studio_trashable_active"
+    assert_includes source, "project.recordings.not_trashed"
+    assert_includes source, "project.recordings.with_trashed"
     assert_includes source, "recording_studio_trashable_trash_roots"
     assert_includes source, "recording_studio_trashable_trash_bin"
     assert_includes source, 'metadata: { source: "bulk-cleanup" }'
     assert_includes source, "RecordingStudioTrashable.configure do |config|"
     assert_includes source, "# Enables Accessible permission checks so trash actions respect the host app's role rules."
+    assert_includes source, "config.allow_unconfigured_authorization = false"
     assert_includes source, "config.authorization_roles = {"
-    assert_includes source, "config.current_actor_resolver = ->(controller) { controller.current_user }"
+    assert_includes source, "settings: :admin"
+    assert_includes source, "trash_bin: :edit"
+    refute_includes source, "manage_retention: :admin"
+    assert_includes source, "config.current_actor_resolver = ->(controller:) { controller.current_user }"
+    assert_includes source, "config.current_impersonator_resolver = ->(controller:) { controller.true_user }"
     assert_includes showcase_view, "FlatPack::CodeBlock::Component"
     assert_includes showcase_view, "@page[:sections].present?"
     assert_includes showcase_view, "@page.fetch(:sections).each do |section|"
@@ -511,6 +548,21 @@ class UiSurfaceTest < Minitest::Test
     assert_includes overview_section, "operate on the targeted recording subtree"
     assert_includes overview_section, "does not soft-delete the underlying recordable data row"
     assert_includes overview_section, "does not trash Recording Studio event rows"
+  end
+
+  def test_readme_and_notes_document_optional_host_default_scope
+    readme = read_repo_file("../README.md")
+    notes = read_repo_file("../docs/recording_studio_trashable.md")
+
+    assert_includes readme, "without forcing a global default scope on host apps"
+    assert_includes readme, "default_scope { where(trashed_at: nil) }"
+    assert_includes readme, "scope :not_trashed"
+    assert_includes readme, "scope :with_trashed"
+    assert_includes readme, "The addon does not introduce a new default scope."
+    assert_includes notes, "## Host app query defaults"
+    assert_includes notes, "default_scope { where(trashed_at: nil) }"
+    assert_includes notes, "scope :not_trashed"
+    assert_includes notes, "scope :with_trashed"
   end
 
   private

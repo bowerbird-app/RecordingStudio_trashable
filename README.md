@@ -2,7 +2,7 @@
 
 Recording Studio Trashable is the opt-in trash, restore, purge, retention, and mounted trash-bin addon for `RecordingStudio`.
 
-It extracts trash behavior from RecordingStudio core into addon-owned APIs without adding another default scope.
+It extracts trash behavior from RecordingStudio core into addon-owned APIs without forcing a global default scope on host apps.
 
 ## What the gem provides
 
@@ -14,7 +14,7 @@ It extracts trash behavior from RecordingStudio core into addon-owned APIs witho
   - `recording_studio_trashable_restore!`
   - `recording_studio_trashable_purge!`
 - subtree trash bins with restore, purge, and retention settings UI
-- optional `RecordingStudioAccessible.authorized?` integration
+- optional Recording Studio access-check integration
 - addon-owned migrations for `trashed_at`, `trash_root`, and retention settings
 
 ## Installation
@@ -34,6 +34,21 @@ bin/rails generate recording_studio_trashable:install
 bin/rails generate recording_studio_trashable:migrations
 bin/rails db:migrate
 ```
+
+If your host app wants ordinary recording queries to skip trashed rows by default, add a host-side extension like this:
+
+```ruby
+Rails.application.config.to_prepare do
+  RecordingStudio::Recording.class_eval do
+    default_scope { where(trashed_at: nil) }
+
+    scope :not_trashed, -> { recording_studio_trashable_active }
+    scope :with_trashed, -> { recording_studio_trashable_including_trashed }
+  end
+end
+```
+
+That keeps `RecordingStudio::Recording.all` on active rows while preserving `with_trashed` as an explicit escape hatch for trash bins, restore flows, seeds, and admin lookups.
 
 ## Setup
 
@@ -109,6 +124,8 @@ RecordingStudio::Recording.recording_studio_trashable_trash_roots
 RecordingStudio::Recording.recording_studio_trashable_trash_bin
 ```
 
+If your host app prefers a safer default, add a host-owned `default_scope { where(trashed_at: nil) }` and alias `recording_studio_trashable_active` to an app-facing scope such as `not_trashed`. The addon scopes that need trashed rows already call `unscope(where: :trashed_at)` so they can opt out deliberately.
+
 `recording_studio_trashable_trash_roots` returns only explicitly trashed subtree roots.
 
 `recording_studio_trashable_trash_bin` orders those trash roots by `trashed_at DESC` so cascade-trashed descendants do not flood the trash UI.
@@ -129,10 +146,12 @@ The addon uses:
 
 By default the addon behaves like this:
 
-- if `RecordingStudioAccessible` is loaded, authorization delegates to `RecordingStudioAccessible.authorized?`
-- if the accessible addon is unavailable, Trashable allows by default
+- if `RecordingStudioAccessible.authorized?` is loaded, authorization delegates to that adapter
+- otherwise, if `RecordingStudio::Services::AccessCheck.allowed?` is available, authorization delegates to Recording Studio directly
+- if no resolver or Accessible authorizer is available, Trashable denies by default
 - built-in Accessible integration can be disabled entirely
 - a custom resolver can replace the built-in behavior
+- host apps can explicitly allow permissive fallback with `config.allow_unconfigured_authorization = true`
 
 ```ruby
 RecordingStudioTrashable.configure do |config|
@@ -215,6 +234,8 @@ For background or cron-driven purging, the gem now ships with both of these entr
 - `RecordingStudioTrashable::RetentionPurgeJob.perform_later`
 - `bin/rails recording_studio_trashable:purge_due`
 
+Both entry points also support a dry-run mode so operators can preview what would be purged without deleting recordings.
+
 The job and rake task default to sweeping every root recording (`parent_recording_id: nil`).
 If your app uses `RecordingStudioAccessible`, set `config.retention_purge_actor_resolver`
 so scheduled purges run as a real system actor that is allowed to purge.
@@ -223,9 +244,16 @@ Example Sidekiq scheduler entry:
 
 ```ruby
 RecordingStudioTrashable::RetentionPurgeJob.perform_later
+RecordingStudioTrashable::RetentionPurgeJob.perform_later(dry_run: true)
 ```
 
 The retention purger walks due recordings leaf-first so parent recordings are only removed after due descendants are gone. Parents that still have active descendants stay skipped for later review.
+
+Preview the rake task without deleting anything:
+
+```bash
+bundle exec rake recording_studio_trashable:purge_due DRY_RUN=true
+```
 
 ## Dummy app showcase
 
@@ -262,4 +290,16 @@ If dummy app boot, routes, assets, or migrations change, also validate the dummy
 cd test/dummy
 bundle install
 bin/rails db:setup
+BUNDLE_GEMFILE=$PWD/Gemfile RAILS_ENV=test bundle exec ruby -e 'require_relative "config/environment"; puts Rails.application.class.name'
+bin/dev
 ```
+
+The `ruby -e` check confirms the dummy app boots in the test environment without needing to keep a server running.
+
+Then open the dummy app locally and verify the mounted surfaces still load:
+
+- `/`
+- `/recording_studio`
+- `/recording_studio_trashable`
+- `/recording_studio_trashable/recordings/:recording_id/trash_bin`
+- `/showcase/setup`

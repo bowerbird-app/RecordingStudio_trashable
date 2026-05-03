@@ -20,7 +20,7 @@ class HomeController < ApplicationController
     end
 
     result = RecordingStudioTrashable.purge_due_recordings_for_all_scopes(
-      scope_recordings: [@workspace_recording],
+      scope_recordings: [ @workspace_recording ],
       actor: current_user,
       as_of: Time.current,
       metadata: { source: "dummy_home_manual_purge" }
@@ -28,8 +28,7 @@ class HomeController < ApplicationController
 
     redirect_to(
       root_path,
-      notice: "Purged #{result.purged_recordings.size} recordings, skipped " \
-              "#{result.skipped_recordings.size} across #{result.scope_recordings.size} scope"
+      notice: RecordingStudioTrashable.purge_summary_message(result)
     )
   end
 

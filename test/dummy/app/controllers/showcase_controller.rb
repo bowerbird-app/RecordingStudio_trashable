@@ -89,6 +89,24 @@ class ShowcaseController < ApplicationController
           RUBY
         },
         {
+          title: "Hide trashed recordings by default",
+          anchor_id: "hide-trashed-recordings-by-default",
+          subtitle: "Opt into a host-app default scope so ordinary recording queries stay on active rows.",
+          body: "Trashable does not force a global default scope, but host apps can add one on RecordingStudio::Recording when they want ordinary queries to skip trashed rows. This dummy app keeps a not_trashed alias for explicit call sites and a with_trashed escape hatch for trash bins, restore flows, seeds, and admin lookups.",
+          code_title: "config/initializers/recording_studio_trashable.rb",
+          code_language: :ruby,
+          code: <<~RUBY
+            Rails.application.config.to_prepare do
+              RecordingStudio::Recording.class_eval do
+                default_scope { where(trashed_at: nil) }
+
+                scope :not_trashed, -> { recording_studio_trashable_active }
+                scope :with_trashed, -> { recording_studio_trashable_including_trashed }
+              end
+            end
+          RUBY
+        },
+        {
           title: "Schedule background purges",
           anchor_id: "schedule-background-purges",
           subtitle: "Run the retention sweep from a job queue or a scheduler once the app has a purge actor configured.",
@@ -114,6 +132,9 @@ class ShowcaseController < ApplicationController
           # Enables Accessible permission checks so trash actions respect the host app's role rules.
           config.use_recording_studio_accessible = true
 
+          # Deny lifecycle actions unless a resolver or Accessible authorizer is available.
+          config.allow_unconfigured_authorization = false
+
           # Purges trashed recordings after 30 days when no record-specific retention setting overrides it.
           config.default_purge_after_days = 30
 
@@ -125,14 +146,15 @@ class ShowcaseController < ApplicationController
             trash: :edit,
             restore: :edit,
             purge: :admin,
-            manage_retention: :admin
+            settings: :admin,
+            trash_bin: :edit
           }
 
           # Resolves the acting user recorded in trash, restore, and purge audit metadata.
-          config.current_actor_resolver = ->(controller) { controller.current_user }
+          config.current_actor_resolver = ->(controller:) { controller.current_user }
 
           # Resolves the impersonating user when an admin is acting on behalf of someone else.
-          config.current_impersonator_resolver = ->(controller) { controller.true_user }
+          config.current_impersonator_resolver = ->(controller:) { controller.true_user }
         end
       RUBY
     },
@@ -263,11 +285,13 @@ class ShowcaseController < ApplicationController
           title: "How the purge background task works",
           anchor_id: "how-the-purge-background-task-works",
           subtitle: "The rake task runs the retention job, which evaluates each scope and purges recordings that are due.",
-          body: "Running the purge task calls RecordingStudioTrashable::RetentionPurgeJob, which sweeps every root scope recording by default or the specific scope IDs you pass in. For each scope, the purger asks RetentionPolicy whether a trashed recording is due as of the current time, then purges the deepest descendants first so parent rows are not removed before their trashed children. SOURCE is copied into the audit metadata, and AS_OF lets you run a deterministic backfill or dry-run style check against a fixed timestamp.",
+          body: "Running the purge task calls RecordingStudioTrashable::RetentionPurgeJob, which sweeps every root scope recording by default or the specific scope IDs you pass in. For each scope, the purger asks RetentionPolicy whether a trashed recording is due as of the current time, then purges the deepest descendants first so parent rows are not removed before their trashed children. SOURCE is copied into the audit metadata, AS_OF lets you run a deterministic backfill against a fixed timestamp, and DRY_RUN previews the same sweep without deleting anything.",
           code_title: "Run the retention purge sweep",
           code_language: :bash,
           code: <<~BASH
             bundle exec rake recording_studio_trashable:purge_due
+
+            bundle exec rake recording_studio_trashable:purge_due DRY_RUN=true
 
             bundle exec rake recording_studio_trashable:purge_due \
               SCOPE_RECORDING_IDS=123,456 \
@@ -363,8 +387,8 @@ class ShowcaseController < ApplicationController
           code_title: "Usage",
           code: <<~RUBY
             # Return only active recordings for this recordable.
-            # Trashed rows stay out of the relation by default.
-            project.recordings.recording_studio_trashable_active
+            # Host apps often expose this as not_trashed and pair it with a default_scope.
+            project.recordings.not_trashed
           RUBY
         },
         {
@@ -384,9 +408,9 @@ class ShowcaseController < ApplicationController
           name: "recording_studio_trashable_including_trashed",
           code_title: "Usage",
           code: <<~RUBY
-            # Remove the default trash filter so both active and trashed rows are returned.
+            # Remove the host app's default trash filter so both active and trashed rows are returned.
             # Use this when you need a complete view of the recordable's recordings.
-            project.recordings.recording_studio_trashable_including_trashed
+            project.recordings.with_trashed
           RUBY
         },
         {

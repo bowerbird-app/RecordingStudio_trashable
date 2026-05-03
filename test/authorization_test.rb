@@ -31,7 +31,15 @@ class AuthorizationTest < Minitest::Test
     RecordingStudioTrashable.instance_variable_set(:@configuration, @original_configuration)
   end
 
-  def test_defaults_to_allow_when_accessible_is_unavailable
+  def test_defaults_to_deny_when_accessible_is_unavailable
+    refute RecordingStudioTrashable.authorized?(action: :trash, actor: nil, recording: Object.new)
+  end
+
+  def test_can_explicitly_allow_when_unconfigured
+    RecordingStudioTrashable.configure do |config|
+      config.allow_unconfigured_authorization = true
+    end
+
     assert RecordingStudioTrashable.authorized?(action: :trash, actor: nil, recording: Object.new)
   end
 
@@ -83,6 +91,27 @@ class AuthorizationTest < Minitest::Test
     end
   end
 
+  def test_authorized_falls_back_to_recording_studio_access_check_when_adapter_is_absent
+    RecordingStudioTrashable.configure do |config|
+      config.use_recording_studio_accessible = true
+      config.authorization_roles = { trash: :edit }
+    end
+
+    payload = nil
+
+    RecordingStudio::Services::AccessCheck.stub(:allowed?, lambda { |**kwargs|
+      payload = kwargs
+      true
+    }) do
+      assert RecordingStudioTrashable.authorized?(action: :trash, actor: :user, recording: :recording)
+    end
+
+    assert_equal(
+      { actor: :user, recording: :recording, role: :edit },
+      payload
+    )
+  end
+
   def test_current_actor_and_impersonator_fall_back_to_current_attributes
     FakeCurrent.actor = :current_actor
     FakeCurrent.impersonator = :current_impersonator
@@ -125,5 +154,16 @@ class AuthorizationTest < Minitest::Test
       "instance_exec(&success_message) : success_message"
     )
     assert_includes source, "respond_with_lifecycle_success(resolved_success_message)"
+  end
+
+  def test_recordings_controller_uses_server_owned_lifecycle_metadata
+    source = File.read(
+      File.expand_path("../app/controllers/recording_studio_trashable/recordings_controller.rb", __dir__)
+    )
+
+    assert_includes source, 'source: "recording_studio_trashable_ui"'
+    assert_includes source, "request_id: request.request_id"
+    refute_includes source, "params[:metadata]"
+    refute_includes source, "permit!"
   end
 end

@@ -6,11 +6,12 @@ module RecordingStudioTrashable
   class RetentionPurgeJob < ActiveJob::Base
     queue_as :default
 
-    def perform(scope_recording_ids: nil, as_of: nil, metadata: {})
+    def perform(scope_recording_ids: nil, as_of: nil, metadata: {}, dry_run: false)
       RecordingStudioTrashable.purge_due_recordings_for_all_scopes(
         scope_recordings: scope_recordings(scope_recording_ids),
         as_of: as_of || Time.current,
-        metadata: { source: "recording_studio_trashable_retention_job" }.merge(metadata.to_h)
+        metadata: { source: "recording_studio_trashable_retention_job" }.merge(metadata.to_h),
+        dry_run: dry_run
       )
     end
 

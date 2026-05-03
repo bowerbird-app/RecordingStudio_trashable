@@ -101,10 +101,8 @@ module RecordingStudio
           end
 
           def recording_studio_trashable_purge!(actor: nil, impersonator: nil, metadata: {})
-            recording_studio_trashable_assert_capability!
-            recording_studio_trashable_authorize!(:purge, actor: actor)
+            recording_studio_trashable_validate_purge!(actor: actor)
             recording_studio_trashable_with_locked_targets do |targets|
-              recording_studio_trashable_assert_purge_targets!(targets)
               targets.reverse_each do |recording|
                 recording.log_event!(
                   action: "purged",
@@ -117,6 +115,18 @@ module RecordingStudio
             end
             self
           end
+
+          # rubocop:disable Naming/PredicateMethod
+          def recording_studio_trashable_validate_purge!(actor: nil)
+            recording_studio_trashable_assert_capability!
+            recording_studio_trashable_authorize!(:purge, actor: actor)
+            recording_studio_trashable_with_locked_targets do |targets|
+              recording_studio_trashable_assert_purge_targets!(targets)
+            end
+
+            true
+          end
+          # rubocop:enable Naming/PredicateMethod
 
           private
 
@@ -147,7 +157,8 @@ module RecordingStudio
             invalid_targets = targets.reject { |recording| recording.trashed_at.present? }
             return if invalid_targets.empty?
 
-            raise ArgumentError, "Purging requires all targeted recordings to already be trashed"
+            raise RecordingStudioTrashable::PurgeTargetsNotTrashedError,
+                  "Purging requires all targeted recordings to already be trashed"
           end
 
           def recording_studio_trashable_with_locked_targets(mode: :all)
@@ -185,9 +196,7 @@ module RecordingStudio
               next_frontier = []
 
               children.each do |child|
-                if prune_trash_roots && recording_studio_trashable_trash_root?(child)
-                  next
-                end
+                next if prune_trash_roots && recording_studio_trashable_trash_root?(child)
 
                 descendants << child
 

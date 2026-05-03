@@ -14,12 +14,7 @@ module RecordingStudioTrashable
     end
 
     config.to_prepare do
-      next unless defined?(RecordingStudio::Recording)
-
-      RecordingStudio.apply_capabilities!
-      unless RecordingStudio::Recording.included_modules.include?(RecordingStudioTrashable::RecordingScopes)
-        RecordingStudio::Recording.include(RecordingStudioTrashable::RecordingScopes)
-      end
+      RecordingStudioTrashable.install_recording_capabilities!
     end
 
     initializer "recording_studio_trashable.before_initialize",
