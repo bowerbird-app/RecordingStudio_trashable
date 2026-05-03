@@ -1,14 +1,16 @@
 # Dummy App
 
-This Rails app exists to validate the Recording Studio addon template in a real host application.
+This Rails app exists to validate Recording Studio Trashable inside a realistic host application.
 
 ## What It Covers
 
 - Devise authentication with a seeded admin user
-- `Current.actor` wiring for Recording Studio events
-- Root workspace and root recording setup
-- FlatPack layout integration and Tailwind source scanning
-- Mounted `RecordingStudio::Engine` route behavior inside a host app
+- `Current.actor` wiring for Recording Studio and addon events
+- Workspace root recording plus project, folder, and page examples
+- Explicit trashable opt-in on `Page` only
+- Mounted workspace and project scoped trash bins
+- Restore, purge, and retention settings flows through the addon engine
+- Sidebar showcase pages for Setup, Configuration, Adding to a recordable, and Methods
 
 ## Quick Start
 
@@ -18,18 +20,15 @@ bin/rails db:setup
 bin/dev
 ```
 
-Then open the app and sign in with:
+Then sign in with:
 
 - Email: `admin@admin.com`
 - Password: `Password`
 
 ## Useful Routes
 
-- `/` - dummy app home page and template guidance
+- `/` - dummy app demo home page
 - `/recording_studio` - mounted Recording Studio engine
-- `/users/sign_in` - Devise sign-in page
-- `/up` - Rails health check
-
-## Why This App Exists
-
-Use this app to verify the generated addon experience before renaming the gem or copying patterns into another host app. If a layout, route, asset source, or Recording Studio initializer change breaks here, the template likely needs adjustment before reuse.
+- `/recording_studio_trashable` - addon overview page
+- `/recording_studio_trashable/recordings/:recording_id/trash_bin` - subtree trash bin UI
+- `/showcase/setup` - dummy app documentation pages

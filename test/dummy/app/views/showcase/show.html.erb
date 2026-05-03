@@ -1,0 +1,98 @@
+<div class="mx-auto flex w-full max-w-4xl flex-col gap-6">
+  <%= render FlatPack::PageTitle::Component.new(
+    title: @page.fetch(:title),
+    subtitle: @page[:subtitle] || "Allow a recordable type to be trashed",
+    variant: :h1
+  ) %>
+
+  <% if @page[:sections].present? %>
+    <div class="space-y-8">
+      <% @page.fetch(:sections).each do |section| %>
+        <section class="space-y-4">
+          <%= render FlatPack::SectionTitle::Component.new(
+            title: section.fetch(:title),
+            subtitle: section[:subtitle],
+            anchor_link: true,
+            anchor_id: section[:anchor_id]
+          ) %>
+
+          <% if section[:body].present? %>
+            <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+              <% card.body do %>
+                <%= simple_format(section.fetch(:body), class: "text-sm leading-7") %>
+              <% end %>
+            <% end %>
+          <% end %>
+
+          <% if section[:code].present? %>
+            <%= render FlatPack::CodeBlock::Component.new(
+              code: section.fetch(:code),
+              language: section[:code_language] || :ruby,
+              title: section[:code_title] || "Usage",
+              separated: false
+            ) %>
+          <% end %>
+        </section>
+      <% end %>
+    </div>
+
+  <% elsif @page[:methods].present? %>
+    <div class="space-y-8">
+      <% @page.fetch(:methods).each do |method| %>
+        <section>
+          <%= render FlatPack::SectionTitle::Component.new(
+            title: method.fetch(:title),
+            subtitle: method.fetch(:name),
+            anchor_link: true,
+            anchor_id: method[:anchor_id]
+          ) %>
+
+          <%= render FlatPack::CodeBlock::Component.new(
+            code: method.fetch(:code),
+            language: method[:code_language] || :ruby,
+            title: method[:code_title] || "Usage",
+            separated: false
+          ) %>
+        </section>
+      <% end %>
+    </div>
+
+  <% elsif @page[:table_rows].present? %>
+    <% columns = @page[:table_columns] || ["Method", "Description"] %>
+    <% rows = @page.fetch(:table_rows) %>
+
+    <% if @page.fetch(:wrap_table_in_card, true) %>
+      <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+        <% card.body do %>
+          <%= render FlatPack::Table::Component.new(data: rows, class: "text-sm") do |table| %>
+            <% table.column(title: columns.fetch(0), html: ->(row) { tag.span(row.fetch(:name), class: "font-mono text-xs text-slate-900") }) %>
+            <% table.column(title: columns.fetch(1), html: ->(row) { tag.div(row.fetch(:description), class: "leading-6") }) %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% else %>
+      <%= render FlatPack::Table::Component.new(data: rows, class: "text-sm") do |table| %>
+        <% table.column(title: columns.fetch(0), html: ->(row) { tag.span(row.fetch(:name), class: "font-mono text-xs text-slate-900") }) %>
+        <% table.column(title: columns.fetch(1), html: ->(row) { tag.div(row.fetch(:description), class: "leading-6") }) %>
+      <% end %>
+    <% end %>
+
+  <% end %>
+
+  <% if @page[:code].present? %>
+    <%= render FlatPack::CodeBlock::Component.new(
+      code: @page.fetch(:code),
+      language: @page[:code_language] || :ruby,
+      title: @page[:code_title] || "Code Example",
+      separated: false
+    ) %>
+  <% end %>
+
+  <% if @page[:body].present? %>
+    <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+      <% card.body do %>
+        <p class="text-sm leading-7"><%= @page.fetch(:body) %></p>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

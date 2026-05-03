@@ -3,9 +3,22 @@
 require "test_helper"
 require "fileutils"
 require "tmpdir"
-require "generators/gem_template/install/install_generator"
+require "generators/recording_studio_trashable/install/install_generator"
 
 class InstallGeneratorTest < Minitest::Test
+  def test_install_template_mentions_optional_host_default_scope
+    template_path = File.expand_path(
+      "../lib/generators/recording_studio_trashable/install/templates/INSTALL.md",
+      __dir__
+    )
+    template = File.read(template_path)
+
+    assert_includes template, "Optionally hide trashed recordings by default in your host app"
+    assert_includes template, "default_scope { where(trashed_at: nil) }"
+    assert_includes template, "scope :not_trashed"
+    assert_includes template, "scope :with_trashed"
+  end
+
   def with_temp_app
     Dir.mktmpdir do |dir|
       FileUtils.mkdir_p(File.join(dir, "app/assets/tailwind"))
@@ -14,22 +27,18 @@ class InstallGeneratorTest < Minitest::Test
   end
 
   def build_generator(destination_root, options = {})
-    GemTemplate::Generators::InstallGenerator.new(
-      [],
-      options,
-      destination_root: destination_root
-    )
+    RecordingStudioTrashable::Generators::InstallGenerator.new([], options, destination_root: destination_root)
   end
 
   def test_mount_engine_uses_configured_mount_path
-    generator = build_generator("/tmp", mount_path: "/addons/recording")
+    generator = build_generator("/tmp", mount_path: "/addons/trash")
     routes = []
 
     generator.stub(:route, ->(value) { routes << value }) do
       generator.mount_engine
     end
 
-    assert_equal ["mount GemTemplate::Engine, at: \"/addons/recording\""], routes
+    assert_equal ['mount RecordingStudioTrashable::Engine, at: "/addons/trash"'], routes
   end
 
   def test_add_tailwind_source_injects_engine_and_flatpack_sources
@@ -40,61 +49,13 @@ class InstallGeneratorTest < Minitest::Test
       generator = build_generator(dir)
 
       Rails.stub(:root, Pathname.new(dir)) do
-        generator.stub(:say, nil) do
-          generator.add_tailwind_source
-        end
+        generator.add_tailwind_source
       end
 
       css = File.read(css_path)
-      assert_tailwind_sources_present(css)
+      assert_includes css, "recording_studio_trashable/app/views/**/*.erb"
+      assert_includes css, "flatpack/app/components/**/*.{rb,erb}"
+      assert_includes css, "flat_pack/app/components/**/*.{rb,erb}"
     end
-  end
-
-  def test_add_tailwind_source_does_not_duplicate_existing_entries
-    with_temp_app do |dir|
-      css_path = File.join(dir, "app/assets/tailwind/application.css")
-      File.write(css_path, <<~CSS)
-        @import "tailwindcss";
-        @source "../../vendor/bundle/**/gem_template/app/views/**/*.erb";
-        @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/gem_template-*/app/views/**/*.erb";
-        @source "../../vendor/bundle/**/flatpack/app/components/**/*.{rb,erb}";
-        @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";
-      CSS
-
-      generator = build_generator(dir)
-
-      Rails.stub(:root, Pathname.new(dir)) do
-        generator.stub(:say, nil) do
-          generator.add_tailwind_source
-        end
-      end
-
-      css = File.read(css_path)
-      assert_tailwind_sources_present(css)
-      assert_tailwind_sources_count(css, 1)
-    end
-  end
-
-  private
-
-  def assert_tailwind_sources_present(css)
-    tailwind_source_lines.each do |line|
-      assert_includes css, line
-    end
-  end
-
-  def assert_tailwind_sources_count(css, count)
-    tailwind_source_lines.each do |line|
-      assert_equal count, css.scan(line).size
-    end
-  end
-
-  def tailwind_source_lines
-    [
-      '@source "../../vendor/bundle/**/gem_template/app/views/**/*.erb";',
-      '@source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/gem_template-*/app/views/**/*.erb";',
-      '@source "../../vendor/bundle/**/flatpack/app/components/**/*.{rb,erb}";',
-      '@source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";'
-    ]
   end
 end

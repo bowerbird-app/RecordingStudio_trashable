@@ -21,6 +21,12 @@ Metrics/ClassLength:
   Exclude:
     - 'test/**/*'
     - 'lib/gem_template/hooks.rb'
+    - 'lib/recording_studio_trashable.rb'
+    - 'app/controllers/recording_studio_trashable/application_controller.rb'
+
+Metrics/ModuleLength:
+  Exclude:
+    - 'lib/recording_studio_trashable.rb'
 
 Metrics/MethodLength:
   Exclude:

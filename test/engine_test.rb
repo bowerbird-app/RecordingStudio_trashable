@@ -3,154 +3,182 @@
 require "test_helper"
 
 class EngineTest < Minitest::Test
+  class FakeConfigWithImportmap
+    attr_reader :importmap, :assets
+
+    def initialize
+      @importmap = Struct.new(:paths).new([])
+      @assets = Struct.new(:paths).new([])
+    end
+  end
+
+  class FakeXConfig
+    def initialize(values)
+      @values = values
+    end
+
+    def each_pair(&)
+      @values.each_pair(&)
+    end
+  end
+
+  class FakeLogger
+    attr_reader :messages
+
+    def initialize
+      @messages = []
+    end
+
+    def debug
+      @messages << yield
+    end
+  end
+
   def setup
-    @original_configuration = GemTemplate.instance_variable_get(:@configuration)
-    GemTemplate.instance_variable_set(:@configuration, GemTemplate::Configuration.new)
+    @original_configuration = RecordingStudioTrashable.instance_variable_get(:@configuration)
+    RecordingStudioTrashable.instance_variable_set(:@configuration, RecordingStudioTrashable::Configuration.new)
   end
 
   def teardown
-    GemTemplate.configuration.hooks.clear!
-    GemTemplate.instance_variable_set(:@configuration, @original_configuration)
+    RecordingStudioTrashable.instance_variable_set(:@configuration, @original_configuration)
   end
 
   def test_before_and_after_initialize_initializers_run_hooks
     before_called = false
     after_called = false
 
-    GemTemplate.configuration.hooks.before_initialize { |_engine| before_called = true }
-    GemTemplate.configuration.hooks.after_initialize { |_engine| after_called = true }
+    RecordingStudioTrashable.configuration.hooks.before_initialize { before_called = true }
+    RecordingStudioTrashable.configuration.hooks.after_initialize { after_called = true }
 
-    find_initializer("gem_template.before_initialize").block.call(Object.new)
-    find_initializer("gem_template.after_initialize").block.call(Object.new)
+    find_initializer("recording_studio_trashable.before_initialize").block.call(Object.new)
+    find_initializer("recording_studio_trashable.after_initialize").block.call(Object.new)
 
     assert before_called
     assert after_called
   end
 
-  def test_load_config_merges_config_sources_and_runs_on_configuration_hook
-    hook_called = false
-    hook_payload = nil
-    GemTemplate.configuration.hooks.on_configuration do |cfg|
-      hook_called = true
-      hook_payload = cfg
-    end
-
-    xcfg = Struct.new(:gem_template).new({ enable_feature_x: true })
+  def test_load_config_merges_yaml_and_x_configuration
+    xcfg = Struct.new(:recording_studio_trashable).new(
+      { default_purge_after_days: 45, allow_user_retention_settings: true }
+    )
     app_config = Struct.new(:x).new(xcfg)
     app = Struct.new(:config) do
       def config_for(_name)
-        { api_key: "from_yaml", timeout: 12 }
+        { use_recording_studio_accessible: false }
       end
     end.new(app_config)
 
-    find_initializer("gem_template.load_config").block.call(app)
+    find_initializer("recording_studio_trashable.load_config").block.call(app)
 
-    assert hook_called
-    assert_equal GemTemplate.configuration, hook_payload
-    assert_equal "from_yaml", GemTemplate.configuration.api_key
-    assert_equal 12, GemTemplate.configuration.timeout
-    assert_equal true, GemTemplate.configuration.enable_feature_x
+    assert_equal false, RecordingStudioTrashable.configuration.use_recording_studio_accessible
+    assert_equal 45, RecordingStudioTrashable.configuration.default_purge_after_days
+    assert_equal true, RecordingStudioTrashable.configuration.allow_user_retention_settings
   end
 
-  def test_load_config_handles_errors_and_each_pair_fallback
-    pair_config = Class.new do
-      def each_pair
-        yield(:timeout, 15)
-      end
-    end.new
+  def test_importmap_initializer_registers_engine_assets_when_supported
+    app = Struct.new(:config).new(FakeConfigWithImportmap.new)
 
-    xcfg = Struct.new(:gem_template).new(pair_config)
-    app_config = Struct.new(:x).new(xcfg)
+    find_initializer("recording_studio_trashable.importmap").block.call(app)
 
-    app = Struct.new(:config) do
-      def config_for(_name)
-        raise "missing file"
-      end
-    end.new(app_config)
-
-    find_initializer("gem_template.load_config").block.call(app)
-
-    assert_equal 15, GemTemplate.configuration.timeout
+    assert_includes app.config.importmap.paths, RecordingStudioTrashable::Engine.root.join("config/importmap.rb")
+    assert_includes app.config.assets.paths, RecordingStudioTrashable::Engine.root.join("app/javascript")
   end
 
-  def test_load_config_swallow_each_pair_errors
-    bad_pair_config = Class.new do
-      def each_pair
-        raise "bad pair"
-      end
-    end.new
+  def test_importmap_initializer_skips_apps_without_importmap_support
+    assets = Struct.new(:paths).new([])
+    app = Struct.new(:config).new(Struct.new(:assets).new(assets))
 
-    xcfg = Struct.new(:gem_template).new(bad_pair_config)
-    app_config = Struct.new(:x).new(xcfg)
-    app = Struct.new(:config) do
-      def config_for(_name)
-        { api_key: "ok" }
-      end
-    end.new(app_config)
+    find_initializer("recording_studio_trashable.importmap").block.call(app)
 
-    # Should not raise even if xcfg.each_pair fails.
-    find_initializer("gem_template.load_config").block.call(app)
-
-    assert_equal "ok", GemTemplate.configuration.api_key
+    assert_empty assets.paths
   end
 
-  def test_apply_extension_initializers_register_active_support_on_load_callbacks
-    to_prepare_blocks = []
-    config_stub = Object.new
-    config_stub.define_singleton_method(:to_prepare) do |&block|
-      to_prepare_blocks << block
+  def test_install_recording_capabilities_applies_capabilities_and_scopes_once
+    recording_defined = RecordingStudio.const_defined?(:Recording, false)
+    original_recording = RecordingStudio.const_get(:Recording) if recording_defined
+    recording_class = Class.new do
+      class << self
+        def scope(name, body)
+          define_singleton_method(name) do |*args|
+            instance_exec(*args, &body)
+          end
+        end
+      end
+    end
+    applied_count = 0
+
+    RecordingStudio.const_set(:Recording, recording_class) unless recording_defined
+    RecordingStudio.const_set(:Recording, recording_class) if recording_defined
+
+    RecordingStudio.stub(:apply_capabilities!, -> { applied_count += 1 }) do
+      RecordingStudioTrashable.install_recording_capabilities!
+      RecordingStudioTrashable.install_recording_capabilities!
     end
 
-    GemTemplate::Engine.stub(:config, config_stub) do
-      find_initializer("gem_template.apply_model_extensions").block.call
-      find_initializer("gem_template.apply_controller_extensions").block.call
+    assert_equal 2, applied_count
+    assert_includes RecordingStudio::Recording.included_modules, RecordingStudioTrashable::RecordingScopes
+    assert_equal 1, RecordingStudio::Recording.included_modules.count(RecordingStudioTrashable::RecordingScopes)
+  ensure
+    if recording_defined
+      RecordingStudio.const_set(:Recording, original_recording)
+    elsif RecordingStudio.const_defined?(:Recording, false)
+      RecordingStudio.send(:remove_const, :Recording)
     end
-
-    assert_equal 2, to_prepare_blocks.size
   end
 
-  def test_apply_model_extensions_adds_registered_methods_once
-    model_class = Class.new do
-      def self.name
-        "ExampleRecord"
-      end
+  def test_load_yaml_config_logs_and_swallows_configuration_errors
+    logger = FakeLogger.new
+    app = Object.new
+    app.define_singleton_method(:config_for) do |_name|
+      raise "broken yaml"
     end
 
-    GemTemplate.configuration.hooks.extend_model(:ExampleRecord) do
-      def template_extension_method
-        :applied
-      end
+    Rails.stub(:logger, logger) do
+      RecordingStudioTrashable::Engine.send(:load_yaml_config, app)
     end
 
-    GemTemplate::Engine.apply_model_extensions(model_class)
-    GemTemplate::Engine.apply_model_extensions(model_class)
-
-    instance = model_class.new
-    assert_equal :applied, instance.template_extension_method
+    assert_includes logger.messages.last, "config_for(:recording_studio_trashable)"
+    assert_includes logger.messages.last, "broken yaml"
   end
 
-  def test_apply_controller_extensions_matches_demodulized_name
-    controller_class = Class.new do
-      def self.name
-        "Admin::DashboardController"
-      end
+  def test_load_x_config_supports_each_pair_objects
+    RecordingStudioTrashable::Engine.send(
+      :load_x_config,
+      FakeXConfig.new(default_purge_after_days: 14, allow_user_retention_settings: true)
+    )
+
+    assert_equal 14, RecordingStudioTrashable.configuration.default_purge_after_days
+    assert_equal true, RecordingStudioTrashable.configuration.allow_user_retention_settings
+  end
+
+  def test_load_x_config_logs_and_swallows_errors
+    logger = FakeLogger.new
+    config = Object.new
+    config.define_singleton_method(:to_h) do
+      raise "broken x config"
     end
 
-    GemTemplate.configuration.hooks.extend_controller(:DashboardController) do
-      def template_controller_extension
-        :applied
-      end
+    Rails.stub(:logger, logger) do
+      RecordingStudioTrashable::Engine.send(:load_x_config, config)
     end
 
-    GemTemplate::Engine.apply_controller_extensions(controller_class)
+    assert_includes logger.messages.last, "config.x.recording_studio_trashable"
+    assert_includes logger.messages.last, "broken x config"
+  end
 
-    instance = controller_class.new
-    assert_equal :applied, instance.template_controller_extension
+  def test_routes_are_drawn_under_engine_namespace
+    routes = File.read(File.expand_path("../config/routes.rb", __dir__))
+
+    refute_includes routes, "resource :events"
+    assert_includes routes, "resource :trash_bin"
+    assert_includes routes, "resource :trash_settings"
+    assert_includes routes, "patch :restore"
+    assert_includes routes, "delete :purge"
   end
 
   private
 
   def find_initializer(name)
-    GemTemplate::Engine.initializers.find { |initializer| initializer.name == name }
+    RecordingStudioTrashable::Engine.initializers.find { |initializer| initializer.name == name }
   end
 end

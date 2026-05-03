@@ -1,86 +1,98 @@
 <div class="mx-auto flex w-full max-w-6xl flex-col gap-6">
   <%= render FlatPack::PageTitle::Component.new(
-    title: @workspace&.name || "Recording Studio addon template",
-    subtitle: "Use this dummy app to validate authentication, root recording setup, and addon UI wiring before you rename the engine.",
+    title: "Trash demo",
+    subtitle: "Recording Studio Trash functionality",
     variant: :h1
   ) %>
 
-  <div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-    <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
-      <% card.header do %>
-        <%= render FlatPack::PageTitle::Component.new(
-          title: "Template workflow",
-          subtitle: "The first things to change when you turn this into a real addon.",
-          variant: :h3,
-          class: "mb-0 pb-0"
-        ) %>
-      <% end %>
-
-      <% card.body do %>
-        <ol class="space-y-4 text-sm leading-6 text-[var(--surface-content-color)]">
-          <li>
-            Rename the gem with <code>bin/rename_gem your_addon_name</code> once the engine structure looks right.
-          </li>
-          <li>
-            Replace the sample migration with your addon's real tables and then run <code>rails generate gem_template:migrations</code> in the host app.
-          </li>
-          <li>
-            Register your recordable types in <code>test/dummy/config/initializers/recording_studio.rb</code> and add capabilities only where they are needed.
-          </li>
-          <li>
-            Use this dummy app to check layout, authentication, Tailwind sources, and root recording behavior before shipping the engine.
-          </li>
-        </ol>
-      <% end %>
-    <% end %>
-
-    <div class="flex flex-col gap-6">
-      <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
-        <% card.header do %>
-          <%= render FlatPack::PageTitle::Component.new(
-            title: "Workspace state",
-            subtitle: "The seeded Recording Studio baseline for local development.",
-            variant: :h3,
-            class: "mb-0 pb-0"
-          ) %>
-        <% end %>
-
-        <% card.body do %>
-          <dl class="space-y-3 text-sm">
-            <div>
-              <dt class="text-[var(--surface-muted-content-color)]">Workspace</dt>
-              <dd class="font-medium"><%= @workspace&.name || "Not seeded" %></dd>
-            </div>
-            <div>
-              <dt class="text-[var(--surface-muted-content-color)]">Root recording</dt>
-              <dd class="font-mono text-xs"><%= @root_recording&.id || "Missing" %></dd>
-            </div>
-            <div>
-              <dt class="text-[var(--surface-muted-content-color)]">Signed in as</dt>
-              <dd class="font-medium"><%= current_user.email %></dd>
-            </div>
-          </dl>
-        <% end %>
-      <% end %>
-
-      <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
-        <% card.header do %>
-          <%= render FlatPack::PageTitle::Component.new(
-            title: "Useful routes",
-            subtitle: "Quick links for checking the mounted engine and local app shell.",
-            variant: :h3,
-            class: "mb-0 pb-0"
-          ) %>
-        <% end %>
-
-        <% card.body do %>
-          <div class="space-y-3 text-sm">
-            <p><strong>App home:</strong> <code>/</code></p>
-            <p><strong>Recording Studio mount:</strong> <code>/recording_studio</code></p>
-            <p><strong>Health check:</strong> <code>/up</code></p>
-          </div>
+  <% if @workspace_recording %>
+    <div class="flex flex-wrap gap-3">
+      <%= render FlatPack::Button::Component.new(
+        text: "Trash can",
+        style: :primary,
+        url: recording_studio_trashable.recording_trash_bin_path(
+          @workspace_recording,
+          back_path: main_app.root_path
+        )
+      ) %>
+      <%= render FlatPack::Button::Component.new(
+        text: "Trash settings",
+        style: :secondary,
+        url: recording_studio_trashable.edit_recording_trash_settings_path(
+          @workspace_recording,
+          back_path: main_app.root_path
+        )
+      ) %>
+      <% if @can_purge_due %>
+        <%= form_with url: main_app.purge_due_recordings_path, method: :post, data: { turbo: false } do %>
+          <%= render FlatPack::Button::Component.new(text: "Purge", style: :error, type: "submit") %>
         <% end %>
       <% end %>
     </div>
+  <% end %>
+
+  <div class="overflow-hidden rounded-xl border border-(--surface-border-color) bg-(--surface-color) shadow-sm">
+    <table class="min-w-full divide-y divide-(--surface-border-color) text-left text-sm">
+      <thead class="bg-(--surface-raised-color) text-(--surface-muted-content-color)">
+        <tr>
+          <th class="px-4 py-3 font-medium">name</th>
+          <th class="px-4 py-3 font-medium">type</th>
+          <th class="px-4 py-3 font-medium">trash root</th>
+          <th class="px-4 py-3 font-medium">status</th>
+          <th class="px-4 py-3 font-medium">action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-(--surface-border-color)">
+        <% @table_recordings.each do |recording| %>
+          <% status = recording.trashed_at.present? ? "trashed" : "active" %>
+          <% name = recording.recordable.respond_to?(:title) ? recording.recordable.title : recording.recordable.respond_to?(:name) ? recording.recordable.name : recording.recordable_type %>
+          <tr>
+            <td class="px-4 py-4 font-medium text-(--surface-content-color)"><%= name %></td>
+            <td class="px-4 py-4 text-(--surface-muted-content-color)"><%= recording.recordable_type %></td>
+            <td class="px-4 py-4 text-(--surface-muted-content-color)"><%= recording.trash_root? ? "yes" : "no" %></td>
+            <td class="px-4 py-4">
+              <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium <%= recording.trashed_at.present? ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700" %>">
+                <%= status %>
+              </span>
+            </td>
+            <td class="px-4 py-4">
+              <div class="flex flex-wrap gap-2">
+                <% if recording.recordable_type == "Page" && recording.trashed_at.blank? %>
+                  <%= form_with url: recording_studio_trashable.trash_recording_path(recording),
+                                method: :patch,
+                                data: { turbo: false } do %>
+                    <%= hidden_field_tag :back_path, request.fullpath %>
+                    <%= render FlatPack::Button::Component.new(text: "Trash", style: :primary, type: "submit") %>
+                  <% end %>
+                <% elsif recording.recordable_type == "Page" %>
+                  <%= form_with url: recording_studio_trashable.restore_recording_path(recording),
+                                method: :patch,
+                                data: { turbo: false } do %>
+                    <%= hidden_field_tag :back_path, request.fullpath %>
+                    <%= render FlatPack::Button::Component.new(text: "Restore", style: :secondary, type: "submit") %>
+                  <% end %>
+                  <%= form_with url: recording_studio_trashable.purge_recording_path(recording),
+                                method: :delete,
+                                data: { turbo: false } do %>
+                    <%= hidden_field_tag :back_path, request.fullpath %>
+                    <%= render FlatPack::Button::Component.new(text: "Purge", style: :error, type: "submit") %>
+                  <% end %>
+                <% else %>
+                  <% trigger_id = "trash-not-enabled-#{recording.id}" %>
+                  <button id="<%= trigger_id %>" type="button" class="text-(--surface-muted-content-color) underline decoration-dotted underline-offset-2">
+                    Trash not enabled
+                  </button>
+                  <%= render FlatPack::Popover::Component.new(trigger_id: trigger_id, placement: :top) do |popover| %>
+                    <% popover.content do %>
+                      This recordable type has not had trash enabled.
+                    <% end %>
+                  <% end %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
   </div>
 </div>

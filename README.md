@@ -1,131 +1,305 @@
-# GemTemplate
+# Recording Studio Trashable
 
-Internal template for building Rails engine addons on top of RecordingStudio.
+Recording Studio Trashable is the opt-in trash, restore, purge, retention, and mounted trash-bin addon for `RecordingStudio`.
 
-## What's Included
+It extracts trash behavior from RecordingStudio core into addon-owned APIs without forcing a global default scope on host apps.
 
-- **RecordingStudio** gem installed and configured
-- **Devise** authentication with a pre-seeded admin user
-- **Workspace** root recording set up following RecordingStudio's Quick Start pattern
-- **FlatPack** UI component library for all views
-- **Dummy app** (`test/dummy/`) with a working login screen and FlatPack default sidebar layout for authenticated pages
+## What the gem provides
 
-## Quick Start
+- gem name: `recording_studio_trashable`
+- Ruby namespace: `RecordingStudioTrashable`
+- capability opt-in through `RecordingStudio::Capabilities::Trashable.to`
+- namespaced lifecycle methods on `RecordingStudio::Recording`
+  - `recording_studio_trashable_trash!`
+  - `recording_studio_trashable_restore!`
+  - `recording_studio_trashable_purge!`
+- subtree trash bins with restore, purge, and retention settings UI
+- optional Recording Studio access-check integration
+- addon-owned migrations for `trashed_at`, `trash_root`, and retention settings
 
-### GitHub Codespaces (Recommended)
+## Installation
 
-1. Click **Code** → **Codespaces** → **Create codespace**
-2. Wait for setup to complete
-3. Run:
-   ```bash
-   cd test/dummy
-   bin/rails db:setup
-   bin/dev
-   ```
-4. Open port 3000 — you'll see the login screen
-
-The dummy app already includes FlatPack generator output (`flat_pack:install` and default sidebar layout scaffold) so authenticated pages render with the FlatPack sidebar shell by default.
-
-### Login Credentials
-
-| Field    | Value             |
-|----------|-------------------|
-| Email    | admin@admin.com   |
-| Password | Password          |
-
-The login form is prefilled with these credentials for fast access.
-
-## Architecture
-
-### Root Recording Pattern
-
-This template follows RecordingStudio's root recording pattern:
-
-- **Workspace** is the top-level recordable
-- A root `RecordingStudio::Recording` wraps the Workspace
-- The admin user has root-level admin access via `RecordingStudio::Access`
-- `Current.actor` is set from `current_user` (Devise) in `ApplicationController`
-
-### Extending RecordingStudio
-
-To add new recordable types:
-
-1. Create your model (e.g., `Page`, `Comment`)
-2. Register it in `config/initializers/recording_studio.rb`:
-   ```ruby
-   RecordingStudio.configure do |config|
-     config.recordable_types = ["Workspace", "YourNewType"]
-   end
-   ```
-3. Leave optional behavior off by default, then opt into capabilities on the specific recordable models that need them:
-   ```ruby
-   class YourNewType < ApplicationRecord
-     include RecordingStudio::Capabilities::Movable.to("Workspace")
-     include RecordingStudio::Capabilities::Copyable.to("Workspace")
-   end
-   ```
-4. If you want per-device root persistence, wire it explicitly in your controller layer:
-   ```ruby
-   class ApplicationController < ActionController::Base
-     include RecordingStudio::Concerns::DeviceSessionConcern
-   end
-   ```
-5. Create recordings under the root:
-   ```ruby
-   root_recording.record(YourNewType) do |record|
-     record.title = "Example"
-   end
-   ```
-
-### Capabilities
-
-This template uses the current RecordingStudio approach: built-in capabilities are off by default and are enabled per recordable type by including the relevant module on the model.
-
-- `movable`
-- `copyable`
-
-Device session persistence is separate from capabilities. It is enabled only when you include `RecordingStudio::Concerns::DeviceSessionConcern` in your controller layer.
-
-Enable behavior intentionally where it belongs:
+Add the gems to your host app:
 
 ```ruby
-class RecordingStudioPage < ApplicationRecord
-  include RecordingStudio::Capabilities::Movable.to("Workspace")
-  include RecordingStudio::Capabilities::Copyable.to("Workspace")
-end
+gem "recording_studio"
+gem "recording_studio_trashable"
+```
 
-class ApplicationController < ActionController::Base
-  include RecordingStudio::Concerns::DeviceSessionConcern
+Then run:
+
+```bash
+bundle install
+bin/rails generate recording_studio_trashable:install
+bin/rails generate recording_studio_trashable:migrations
+bin/rails db:migrate
+```
+
+If your host app wants ordinary recording queries to skip trashed rows by default, add a host-side extension like this:
+
+```ruby
+Rails.application.config.to_prepare do
+  RecordingStudio::Recording.class_eval do
+    default_scope { where(trashed_at: nil) }
+
+    scope :not_trashed, -> { recording_studio_trashable_active }
+    scope :with_trashed, -> { recording_studio_trashable_including_trashed }
+  end
 end
 ```
 
-### FlatPack UI Components
+That keeps `RecordingStudio::Recording.all` on active rows while preserving `with_trashed` as an explicit escape hatch for trash bins, restore flows, seeds, and admin lookups.
 
-All views use FlatPack ViewComponents. Available components include:
+## Setup
 
-- `FlatPack::Button::Component` — Buttons (`:primary`, `:secondary`, `:ghost`)
-- `FlatPack::Card::Component` — Cards (`:default`, `:elevated`, `:outlined`)
-- `FlatPack::Alert::Component` — Alerts (`:success`, `:error`, `:warning`, `:info`)
-- `FlatPack::Badge::Component` — Status badges
-- `FlatPack::Table::Component` — Data tables
-- `FlatPack::TextInput::Component`, `EmailInput`, `PasswordInput` — Form inputs
-- `FlatPack::Breadcrumb::Component` — Navigation breadcrumbs
-- `FlatPack::Navbar::Component` — Navigation sidebar
+Mount the engine if you did not use the install generator:
 
-See the [FlatPack README](https://github.com/bowerbird-app/flatpack) for full documentation.
+```ruby
+mount RecordingStudioTrashable::Engine, at: "/recording_studio_trashable"
+```
 
-## Tech Stack
+Configure RecordingStudio normally and then configure Trashable defaults:
 
-| Component       | Version |
-|-----------------|---------|
-| Ruby            | 3.3+    |
-| Rails           | 8.1+    |
-| PostgreSQL      | 16      |
-| TailwindCSS     | 4       |
-| RecordingStudio | v0.1.0-alpha (pinned in `test/dummy/Gemfile`) |
-| FlatPack        | v0.1.33 (pinned in `test/dummy/Gemfile`) |
-| Devise          | latest  |
+```ruby
+RecordingStudio.configure do |config|
+  config.recordable_types = %w[Workspace Project Folder Page]
+  config.actor = -> { Current.actor }
+end
 
-## Documentation
+RecordingStudioTrashable.configure do |config|
+  config.authorization_roles = {
+    trash: :edit,
+    restore: :edit,
+    purge: :admin,
+    settings: :admin,
+    trash_bin: :edit
+  }
+  config.default_purge_after_days = nil
+  config.allow_user_retention_settings = false
+  config.retention_purge_actor_resolver = -> { User.find_by!(email: "system@example.com") }
+end
+```
 
-The original gem template documentation is preserved in `docs/gem_template/` as architectural reference material. Use it as background on the engine conventions; the README and dummy app are the source of truth for the Recording Studio addon workflow.
+## Adding to a recordable
+
+Recordables stay opt-in. Include the capability only on the recordable models that should be trashable:
+
+```ruby
+class Page < ApplicationRecord
+  include RecordingStudio::Capabilities::Trashable.to(purge_after_days: 14)
+end
+```
+
+That registers the addon capability on `Page` while leaving other recordables, such as `Folder`, unchanged.
+
+## Lifecycle methods
+
+The addon intentionally uses addon-owned method names on `RecordingStudio::Recording`:
+
+```ruby
+recording.recording_studio_trashable_trash!(
+  actor: Current.actor,
+  impersonator: Current.impersonator,
+  metadata: { reason: "cleanup" }
+)
+
+recording.recording_studio_trashable_restore!(actor: Current.actor)
+recording.recording_studio_trashable_purge!(actor: Current.actor)
+```
+
+- trash, restore, and purge operate on the targeted recording subtree.
+- direct trash marks the targeted recording as a `trash_root` and hides cascade-trashed descendants from the trash bin.
+- restore clears cascade-trashed descendants but leaves nested `trash_root` branches trashed until they are restored directly.
+- purge only deletes recordings that are already trashed; active recordings must be trashed first.
+
+## Query helpers
+
+The addon does not introduce a new default scope. Use explicit helpers instead:
+
+```ruby
+RecordingStudio::Recording.recording_studio_trashable_active
+RecordingStudio::Recording.recording_studio_trashable_trashed
+RecordingStudio::Recording.recording_studio_trashable_including_trashed
+RecordingStudio::Recording.recording_studio_trashable_trash_roots
+RecordingStudio::Recording.recording_studio_trashable_trash_bin
+```
+
+If your host app prefers a safer default, add a host-owned `default_scope { where(trashed_at: nil) }` and alias `recording_studio_trashable_active` to an app-facing scope such as `not_trashed`. The addon scopes that need trashed rows already call `unscope(where: :trashed_at)` so they can opt out deliberately.
+
+`recording_studio_trashable_trash_roots` returns only explicitly trashed subtree roots.
+
+`recording_studio_trashable_trash_bin` orders those trash roots by `trashed_at DESC` so cascade-trashed descendants do not flood the trash UI.
+
+## Events and action names
+
+Trashable logs through `RecordingStudio.record!` via `RecordingStudio::Recording#log_event!`.
+
+The addon uses:
+
+- `trashed`
+- `restored`
+- `purged`
+
+`purged` is used instead of core's older `deleted` wording so permanent delete events remain distinguishable from the addon-owned soft-delete lifecycle during the extraction period.
+
+## Authorization
+
+By default the addon behaves like this:
+
+- if `RecordingStudioAccessible.authorized?` is loaded, authorization delegates to that adapter
+- otherwise, if `RecordingStudio::Services::AccessCheck.allowed?` is available, authorization delegates to Recording Studio directly
+- if no resolver or Accessible authorizer is available, Trashable denies by default
+- built-in Accessible integration can be disabled entirely
+- a custom resolver can replace the built-in behavior
+- host apps can explicitly allow permissive fallback with `config.allow_unconfigured_authorization = true`
+
+```ruby
+RecordingStudioTrashable.configure do |config|
+  config.use_recording_studio_accessible = false
+  config.authorization_resolver = lambda do |action:, actor:, recording:, **|
+    actor.present? && action != :purge
+  end
+end
+```
+
+Default roles:
+
+- trash: `:edit`
+- restore: `:edit`
+- purge: `:admin`
+- settings: `:admin`
+- trash bin: `:edit`
+
+## Mounted UI
+
+Mounted routes:
+
+- `/recording_studio_trashable`
+- `/recording_studio_trashable/recordings/:recording_id/trash_bin`
+- `/recording_studio_trashable/recordings/:recording_id/retention_setting/edit`
+- restore/purge/trash member routes for individual recordings
+
+The mounted views are FlatPack-first and intentionally light on custom markup.
+
+The trash bin lists only `trash_root` recordings in the selected subtree. Descendants trashed by cascade stay hidden until their nearest explicit trash root is restored or purged.
+
+### Lifecycle responses
+
+- standard lifecycle form posts redirect back to `back_path` when supplied
+- when `back_path` is omitted, the controller falls back to the referrer and then a safe engine path
+- async callers can request JSON with `async: true` or a JSON format request
+
+For example, a synchronous form can just post the action and rely on the browser referrer for the default redirect-back behavior:
+
+```erb
+<%= form_with url: recording_studio_trashable.trash_recording_path(recording),
+              method: :patch,
+              data: { turbo: false } do %>
+  <%= render FlatPack::Button::Component.new(text: "Trash", style: :primary, type: "submit") %>
+<% end %>
+```
+
+## Retention
+
+Retention settings are stored in the addon-owned `recording_studio_trashable_retention_settings` table and scoped to a subtree root recording.
+
+Retention resolves in this order:
+
+1. subtree retention setting saved through the mounted UI when `config.allow_user_retention_settings = true`
+2. per-recordable capability option such as `purge_after_days: 14`
+3. addon-wide `config.default_purge_after_days`
+
+By default, subtree users cannot override retention through the mounted UI. When
+`config.allow_user_retention_settings` is left `false`, saved subtree settings are ignored and
+the mounted retention settings page is hidden and redirected away from if visited directly.
+
+Run retention-driven purging explicitly:
+
+```ruby
+RecordingStudioTrashable.purge_due_recordings(
+  scope_recording: workspace_recording,
+  actor: Current.actor,
+  metadata: { source: "nightly_retention_job" }
+)
+```
+
+Or let the addon sweep every root recording for you:
+
+```ruby
+RecordingStudioTrashable.purge_due_recordings_for_all_scopes
+```
+
+For background or cron-driven purging, the gem now ships with both of these entry points:
+
+- `RecordingStudioTrashable::RetentionPurgeJob.perform_later`
+- `bin/rails recording_studio_trashable:purge_due`
+
+Both entry points also support a dry-run mode so operators can preview what would be purged without deleting recordings.
+
+The job and rake task default to sweeping every root recording (`parent_recording_id: nil`).
+If your app uses `RecordingStudioAccessible`, set `config.retention_purge_actor_resolver`
+so scheduled purges run as a real system actor that is allowed to purge.
+
+Example Sidekiq scheduler entry:
+
+```ruby
+RecordingStudioTrashable::RetentionPurgeJob.perform_later
+RecordingStudioTrashable::RetentionPurgeJob.perform_later(dry_run: true)
+```
+
+The retention purger walks due recordings leaf-first so parent recordings are only removed after due descendants are gone. Parents that still have active descendants stay skipped for later review.
+
+Preview the rake task without deleting anything:
+
+```bash
+bundle exec rake recording_studio_trashable:purge_due DRY_RUN=true
+```
+
+## Dummy app showcase
+
+The dummy app demonstrates:
+
+- `Workspace` as the root recordable
+- `Project`, `Page`, and `Folder` recordables
+- `Page` as trashable and `Folder` as non-trashable
+- workspace and project scoped trash bins
+- trash, restore, purge, and retention settings flows
+- sidebar docs pages for Setup, Configuration, Adding to a recordable, and Methods
+
+## Core follow-up assumptions
+
+Current RecordingStudio releases may still ship built-in trash behavior and `trashed_at`.
+
+This addon assumes the extraction is in progress, so it:
+
+- keeps public trash APIs addon-owned and namespaced
+- treats `trashed_at` migration as compatibility-safe
+- avoids relying on RecordingStudio core's default trash behavior or exposing new default scopes
+
+## Validation
+
+From the repository root:
+
+```bash
+bundle exec rake test
+```
+
+If dummy app boot, routes, assets, or migrations change, also validate the dummy app:
+
+```bash
+cd test/dummy
+bundle install
+bin/rails db:setup
+BUNDLE_GEMFILE=$PWD/Gemfile RAILS_ENV=test bundle exec ruby -e 'require_relative "config/environment"; puts Rails.application.class.name'
+bin/dev
+```
+
+The `ruby -e` check confirms the dummy app boots in the test environment without needing to keep a server running.
+
+Then open the dummy app locally and verify the mounted surfaces still load:
+
+- `/`
+- `/recording_studio`
+- `/recording_studio_trashable`
+- `/recording_studio_trashable/recordings/:recording_id/trash_bin`
+- `/showcase/setup`
