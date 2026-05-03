@@ -1,7 +1,7 @@
 <div class="mx-auto flex w-full max-w-6xl flex-col gap-6">
   <%= render FlatPack::PageTitle::Component.new(
     title: "Trash demo",
-    subtitle: "Recoding Studio Trash functionality",
+    subtitle: "Recording Studio Trash functionality",
     variant: :h1
   ) %>
 
@@ -23,6 +23,11 @@
           back_path: main_app.root_path
         )
       ) %>
+      <% if @can_purge_due %>
+        <%= form_with url: main_app.purge_due_recordings_path, method: :post, data: { turbo: false } do %>
+          <%= render FlatPack::Button::Component.new(text: "Purge", style: :error, type: "submit") %>
+        <% end %>
+      <% end %>
     </div>
   <% end %>
 
@@ -32,6 +37,7 @@
         <tr>
           <th class="px-4 py-3 font-medium">name</th>
           <th class="px-4 py-3 font-medium">type</th>
+          <th class="px-4 py-3 font-medium">trash root</th>
           <th class="px-4 py-3 font-medium">status</th>
           <th class="px-4 py-3 font-medium">action</th>
         </tr>
@@ -43,6 +49,7 @@
           <tr>
             <td class="px-4 py-4 font-medium text-(--surface-content-color)"><%= name %></td>
             <td class="px-4 py-4 text-(--surface-muted-content-color)"><%= recording.recordable_type %></td>
+            <td class="px-4 py-4 text-(--surface-muted-content-color)"><%= recording.trash_root? ? "yes" : "no" %></td>
             <td class="px-4 py-4">
               <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium <%= recording.trashed_at.present? ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700" %>">
                 <%= status %>

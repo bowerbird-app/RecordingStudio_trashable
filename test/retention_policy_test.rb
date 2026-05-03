@@ -84,4 +84,31 @@ class RetentionPolicyTest < Minitest::Test
                                                             as_of: Time.now)
     end
   end
+
+  def test_due_is_false_before_deadline_and_true_at_deadline
+    trashed_at = Time.utc(2026, 1, 1, 12, 0, 0)
+    recording = DummyRecording.new(trashed_at, "Page")
+
+    RecordingStudioTrashable::RetentionPolicy.stub(:purge_after_days_for, 7) do
+      refute RecordingStudioTrashable::RetentionPolicy.due?(
+        recording: recording,
+        scope_recording: :scope,
+        as_of: Time.utc(2026, 1, 8, 11, 59, 59)
+      )
+
+      assert RecordingStudioTrashable::RetentionPolicy.due?(
+        recording: recording,
+        scope_recording: :scope,
+        as_of: Time.utc(2026, 1, 8, 12, 0, 0)
+      )
+    end
+  end
+
+  def test_purge_at_returns_nil_for_manual_only_retention
+    recording = DummyRecording.new(Time.utc(2026, 1, 1, 12, 0, 0), "Page")
+
+    RecordingStudioTrashable::RetentionPolicy.stub(:purge_after_days_for, nil) do
+      assert_nil RecordingStudioTrashable::RetentionPolicy.purge_at(recording: recording, scope_recording: :scope)
+    end
+  end
 end

@@ -68,19 +68,6 @@ module RecordingStudioTrashable
       {}
     end
 
-    def include_children?(recording:, include_children: nil)
-      return include_children == true unless include_children.nil?
-
-      capability_options = capability_options_for(recording)
-      return capability_options[:include_children] == true if capability_options.key?(:include_children)
-
-      return configuration.default_include_children == true unless configuration.default_include_children.nil?
-
-      return RecordingStudio.configuration.include_children == true if RecordingStudio.respond_to?(:configuration)
-
-      false
-    end
-
     def purge_due_recordings(scope_recording:, actor: nil, impersonator: nil, as_of: Time.current, metadata: {})
       RetentionPurger.new(
         scope_recording: scope_recording,

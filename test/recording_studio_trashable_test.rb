@@ -43,7 +43,6 @@ class RecordingStudioTrashableTest < Minitest::Test
     refute_includes source, "Project trash bin"
     assert_includes source, "Adding to a recordable"
     assert_includes source, "Trash cans"
-    assert_includes source, "Cascading"
     assert_includes source, "Methods"
   end
 
@@ -97,15 +96,15 @@ class RecordingStudioTrashableTest < Minitest::Test
     requested_types = []
     capability_lookup = lambda do |_capability, for_type:|
       requested_types << for_type
-      { "include_children" => true }
+      { "purge_after_days" => 14 }
     end
 
     RecordingStudio.stub(:capability_options, capability_lookup) do
-      assert_equal({ include_children: true }, RecordingStudioTrashable.capability_options_for("StringType"))
-      assert_equal({ include_children: true }, RecordingStudioTrashable.capability_options_for(:symbol_type))
-      assert_equal({ include_children: true }, RecordingStudioTrashable.capability_options_for(type_class))
-      assert_equal({ include_children: true }, RecordingStudioTrashable.capability_options_for(type_record))
-      assert_equal({ include_children: true }, RecordingStudioTrashable.capability_options_for(Object.new))
+      assert_equal({ purge_after_days: 14 }, RecordingStudioTrashable.capability_options_for("StringType"))
+      assert_equal({ purge_after_days: 14 }, RecordingStudioTrashable.capability_options_for(:symbol_type))
+      assert_equal({ purge_after_days: 14 }, RecordingStudioTrashable.capability_options_for(type_class))
+      assert_equal({ purge_after_days: 14 }, RecordingStudioTrashable.capability_options_for(type_record))
+      assert_equal({ purge_after_days: 14 }, RecordingStudioTrashable.capability_options_for(Object.new))
     end
 
     assert_equal %w[StringType symbol_type ClassType RecordableType Object], requested_types
@@ -113,34 +112,6 @@ class RecordingStudioTrashableTest < Minitest::Test
 
     RecordingStudio.stub(:capability_options, ->(*) { raise NoMethodError, "missing capability" }) do
       assert_equal({}, RecordingStudioTrashable.capability_options_for("BrokenType"))
-    end
-  end
-
-  def test_include_children_prefers_explicit_flag_then_capability_config_and_global_defaults
-    assert RecordingStudioTrashable.include_children?(recording: :recording, include_children: true)
-    refute RecordingStudioTrashable.include_children?(recording: :recording, include_children: false)
-
-    RecordingStudioTrashable.stub(:capability_options_for, { include_children: true }) do
-      assert RecordingStudioTrashable.include_children?(recording: :recording)
-    end
-
-    RecordingStudioTrashable.configuration.default_include_children = true
-    RecordingStudioTrashable.stub(:capability_options_for, {}) do
-      assert RecordingStudioTrashable.include_children?(recording: :recording)
-    end
-
-    RecordingStudioTrashable.configuration.default_include_children = nil
-    studio_configuration = Struct.new(:include_children).new(true)
-    RecordingStudioTrashable.stub(:capability_options_for, {}) do
-      RecordingStudio.stub(:configuration, studio_configuration) do
-        assert RecordingStudioTrashable.include_children?(recording: :recording)
-      end
-    end
-
-    RecordingStudioTrashable.stub(:capability_options_for, {}) do
-      RecordingStudio.stub(:configuration, Struct.new(:include_children).new(false)) do
-        refute RecordingStudioTrashable.include_children?(recording: :recording)
-      end
     end
   end
 

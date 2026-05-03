@@ -43,7 +43,6 @@ module RecordingStudioTrashable
       recording.recording_studio_trashable_purge!(
         actor: @actor,
         impersonator: @impersonator,
-        include_children: false,
         metadata: @metadata.merge(source: "recording_studio_trashable_retention")
       )
       result.purged_recordings << recording
@@ -66,8 +65,7 @@ module RecordingStudioTrashable
     end
 
     def skippable_purge_error?(error)
-      error.message.include?("include_children: true") ||
-        error.message.include?("already be trashed")
+      error.message.include?("already be trashed")
     end
   end
 end

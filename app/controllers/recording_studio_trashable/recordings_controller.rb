@@ -42,12 +42,6 @@ module RecordingStudioTrashable
       respond_with_lifecycle_success(resolved_success_message)
     end
 
-    def include_children_param
-      return unless params.key?(:include_children)
-
-      boolean_param(params[:include_children])
-    end
-
     def lifecycle_metadata
       raw_metadata = params[:metadata]
       metadata = raw_metadata.respond_to?(:permit!) ? raw_metadata.permit!.to_h : {}
@@ -60,8 +54,7 @@ module RecordingStudioTrashable
         method_name,
         actor: current_trashable_actor,
         impersonator: current_trashable_impersonator,
-        metadata: lifecycle_metadata,
-        include_children: include_children_param
+        metadata: lifecycle_metadata
       )
     end
 

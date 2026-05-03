@@ -14,6 +14,7 @@ module RecordingStudioTrashable
       scope :recording_studio_trashable_active, -> { unscope(where: :trashed_at).where(trashed_at: nil) }
       scope :recording_studio_trashable_trashed, -> { unscope(where: :trashed_at).where.not(trashed_at: nil) }
       scope :recording_studio_trashable_including_trashed, -> { unscope(where: :trashed_at) }
+      scope :recording_studio_trashable_trash_roots, -> { recording_studio_trashable_trashed.where(trash_root: true) }
       scope :recording_studio_trashable_filter, lambda { |filter|
         filter_key = filter.to_sym
         scope_name = FILTER_SCOPES.fetch(filter_key) do
@@ -24,7 +25,7 @@ module RecordingStudioTrashable
         public_send(scope_name)
       }
       scope :recording_studio_trashable_trash_bin, lambda {
-        recording_studio_trashable_trashed.reorder(trashed_at: :desc, updated_at: :desc)
+        recording_studio_trashable_trash_roots.reorder(trashed_at: :desc, updated_at: :desc)
       }
     end
   end
@@ -61,11 +62,10 @@ module RecordingStudio
         module RecordingMethods
           include RecordingStudio::Capability
 
-          def recording_studio_trashable_trash!(actor: nil, impersonator: nil, metadata: {}, include_children: nil)
+          def recording_studio_trashable_trash!(actor: nil, impersonator: nil, metadata: {})
             recording_studio_trashable_assert_capability!
-            include_children = recording_studio_trashable_include_children?(include_children)
             recording_studio_trashable_authorize!(:trash, actor: actor)
-            recording_studio_trashable_with_locked_targets(include_children: include_children) do |targets|
+            recording_studio_trashable_with_locked_targets do |targets|
               targets.reverse_each do |recording|
                 next if recording.trashed_at.present?
 
@@ -73,19 +73,18 @@ module RecordingStudio
                   action: "trashed",
                   actor: recording_studio_trashable_actor(actor),
                   impersonator: recording_studio_trashable_impersonator(impersonator),
-                  metadata: recording_studio_trashable_metadata(metadata, include_children: include_children)
+                  metadata: recording_studio_trashable_metadata(metadata)
                 )
-                recording.update!(trashed_at: Time.current)
+                recording.update!(trashed_at: Time.current, trash_root: recording.id == id)
               end
             end
             reload
           end
 
-          def recording_studio_trashable_restore!(actor: nil, impersonator: nil, metadata: {}, include_children: nil)
+          def recording_studio_trashable_restore!(actor: nil, impersonator: nil, metadata: {})
             recording_studio_trashable_assert_capability!
-            include_children = recording_studio_trashable_include_children?(include_children)
             recording_studio_trashable_authorize!(:restore, actor: actor)
-            recording_studio_trashable_with_locked_targets(include_children: include_children) do |targets|
+            recording_studio_trashable_with_locked_targets(mode: :restore) do |targets|
               targets.each do |recording|
                 next if recording.trashed_at.blank?
 
@@ -93,27 +92,25 @@ module RecordingStudio
                   action: "restored",
                   actor: recording_studio_trashable_actor(actor),
                   impersonator: recording_studio_trashable_impersonator(impersonator),
-                  metadata: recording_studio_trashable_metadata(metadata, include_children: include_children)
+                  metadata: recording_studio_trashable_metadata(metadata)
                 )
-                recording.update!(trashed_at: nil)
+                recording.update!(trashed_at: nil, trash_root: false)
               end
             end
             reload
           end
 
-          def recording_studio_trashable_purge!(actor: nil, impersonator: nil, metadata: {}, include_children: nil)
+          def recording_studio_trashable_purge!(actor: nil, impersonator: nil, metadata: {})
             recording_studio_trashable_assert_capability!
-            include_children = recording_studio_trashable_include_children?(include_children)
             recording_studio_trashable_authorize!(:purge, actor: actor)
-            recording_studio_trashable_assert_purgeable!(include_children: include_children)
-            recording_studio_trashable_with_locked_targets(include_children: include_children) do |targets|
+            recording_studio_trashable_with_locked_targets do |targets|
               recording_studio_trashable_assert_purge_targets!(targets)
               targets.reverse_each do |recording|
                 recording.log_event!(
                   action: "purged",
                   actor: recording_studio_trashable_actor(actor),
                   impersonator: recording_studio_trashable_impersonator(impersonator),
-                  metadata: recording_studio_trashable_metadata(metadata, include_children: include_children)
+                  metadata: recording_studio_trashable_metadata(metadata)
                 )
                 recording.destroy!
               end
@@ -142,19 +139,8 @@ module RecordingStudio
             explicit_impersonator || RecordingStudioTrashable::Authorization.current_impersonator
           end
 
-          def recording_studio_trashable_metadata(metadata, include_children:)
-            metadata.to_h.merge(include_children: include_children == true)
-          end
-
-          def recording_studio_trashable_include_children?(include_children)
-            RecordingStudioTrashable.include_children?(recording: self, include_children: include_children)
-          end
-
-          def recording_studio_trashable_assert_purgeable!(include_children:)
-            return if include_children
-            return if recording_studio_trashable_descendants.empty?
-
-            raise ArgumentError, "Purging a recording with descendants requires include_children: true"
+          def recording_studio_trashable_metadata(metadata)
+            metadata.to_h
           end
 
           def recording_studio_trashable_assert_purge_targets!(targets)
@@ -164,9 +150,9 @@ module RecordingStudio
             raise ArgumentError, "Purging requires all targeted recordings to already be trashed"
           end
 
-          def recording_studio_trashable_with_locked_targets(include_children: false)
+          def recording_studio_trashable_with_locked_targets(mode: :all)
             self.class.transaction do
-              targets = recording_studio_trashable_targets(include_children: include_children)
+              targets = recording_studio_trashable_targets(mode: mode)
               ids = targets.map(&:id).compact.uniq.sort
               if self.class.respond_to?(:lock)
                 relation = self.class.recording_studio_trashable_including_trashed
@@ -176,11 +162,18 @@ module RecordingStudio
             end
           end
 
-          def recording_studio_trashable_targets(include_children:)
-            include_children ? [self, *recording_studio_trashable_descendants] : [self]
+          def recording_studio_trashable_targets(mode: :all)
+            descendants = case mode
+                          when :restore
+                            recording_studio_trashable_descendants(prune_trash_roots: true)
+                          else
+                            recording_studio_trashable_descendants
+                          end
+
+            [self, *descendants]
           end
 
-          def recording_studio_trashable_descendants
+          def recording_studio_trashable_descendants(prune_trash_roots: false)
             descendants = []
             frontier = [id]
 
@@ -189,11 +182,30 @@ module RecordingStudio
                              .where(parent_recording_id: frontier)
                              .reorder(created_at: :asc)
                              .to_a
-              descendants.concat(children)
-              frontier = children.map(&:id)
+              next_frontier = []
+
+              children.each do |child|
+                if prune_trash_roots && recording_studio_trashable_trash_root?(child)
+                  next
+                end
+
+                descendants << child
+
+                next_frontier << child.id
+              end
+
+              frontier = next_frontier
             end
 
             descendants
+          end
+
+          def recording_studio_trashable_trash_root?(recording)
+            if recording.respond_to?(:trash_root?)
+              recording.trash_root?
+            else
+              !!recording.trash_root
+            end
           end
         end
         # rubocop:enable Metrics/ModuleLength, Metrics/MethodLength

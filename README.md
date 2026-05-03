@@ -15,7 +15,7 @@ It extracts trash behavior from RecordingStudio core into addon-owned APIs witho
   - `recording_studio_trashable_purge!`
 - subtree trash bins with restore, purge, and retention settings UI
 - optional `RecordingStudioAccessible.authorized?` integration
-- addon-owned migrations for `trashed_at` compatibility and retention settings
+- addon-owned migrations for `trashed_at`, `trash_root`, and retention settings
 
 ## Installation
 
@@ -59,7 +59,6 @@ RecordingStudioTrashable.configure do |config|
     settings: :admin,
     trash_bin: :edit
   }
-  config.default_include_children = false
   config.default_purge_after_days = nil
   config.allow_user_retention_settings = false
   config.retention_purge_actor_resolver = -> { User.find_by!(email: "system@example.com") }
@@ -72,10 +71,7 @@ Recordables stay opt-in. Include the capability only on the recordable models th
 
 ```ruby
 class Page < ApplicationRecord
-  include RecordingStudio::Capabilities::Trashable.to(
-    include_children: true,
-    purge_after_days: 14
-  )
+  include RecordingStudio::Capabilities::Trashable.to(purge_after_days: 14)
 end
 ```
 
@@ -89,20 +85,16 @@ The addon intentionally uses addon-owned method names on `RecordingStudio::Recor
 recording.recording_studio_trashable_trash!(
   actor: Current.actor,
   impersonator: Current.impersonator,
-  metadata: { reason: "cleanup" },
-  include_children: true
+  metadata: { reason: "cleanup" }
 )
 
 recording.recording_studio_trashable_restore!(actor: Current.actor)
-recording.recording_studio_trashable_purge!(actor: Current.actor, include_children: true)
+recording.recording_studio_trashable_purge!(actor: Current.actor)
 ```
 
-### Cascading
-
-- `include_children: false` only changes the target recording.
-- `include_children: true` traverses descendants for trash, restore, and purge.
-- omitting `include_children:` falls back to per-recordable capability options, then addon config.
-- purge refuses descendant trees unless `include_children: true` is supplied, so the addon does not orphan child recordings.
+- trash, restore, and purge operate on the targeted recording subtree.
+- direct trash marks the targeted recording as a `trash_root` and hides cascade-trashed descendants from the trash bin.
+- restore clears cascade-trashed descendants but leaves nested `trash_root` branches trashed until they are restored directly.
 - purge only deletes recordings that are already trashed; active recordings must be trashed first.
 
 ## Query helpers
@@ -113,10 +105,13 @@ The addon does not introduce a new default scope. Use explicit helpers instead:
 RecordingStudio::Recording.recording_studio_trashable_active
 RecordingStudio::Recording.recording_studio_trashable_trashed
 RecordingStudio::Recording.recording_studio_trashable_including_trashed
+RecordingStudio::Recording.recording_studio_trashable_trash_roots
 RecordingStudio::Recording.recording_studio_trashable_trash_bin
 ```
 
-`recording_studio_trashable_trash_bin` orders trashed recordings by `trashed_at DESC`.
+`recording_studio_trashable_trash_roots` returns only explicitly trashed subtree roots.
+
+`recording_studio_trashable_trash_bin` orders those trash roots by `trashed_at DESC` so cascade-trashed descendants do not flood the trash UI.
 
 ## Events and action names
 
@@ -166,6 +161,8 @@ Mounted routes:
 - restore/purge/trash member routes for individual recordings
 
 The mounted views are FlatPack-first and intentionally light on custom markup.
+
+The trash bin lists only `trash_root` recordings in the selected subtree. Descendants trashed by cascade stay hidden until their nearest explicit trash root is restored or purged.
 
 ### Lifecycle responses
 
@@ -228,7 +225,7 @@ Example Sidekiq scheduler entry:
 RecordingStudioTrashable::RetentionPurgeJob.perform_later
 ```
 
-The retention purger walks due recordings leaf-first so parent recordings are only removed after due descendants are gone. Items that still require `include_children: true` stay skipped for later review.
+The retention purger walks due recordings leaf-first so parent recordings are only removed after due descendants are gone. Parents that still have active descendants stay skipped for later review.
 
 ## Dummy app showcase
 
@@ -239,7 +236,7 @@ The dummy app demonstrates:
 - `Page` as trashable and `Folder` as non-trashable
 - workspace and project scoped trash bins
 - trash, restore, purge, and retention settings flows
-- sidebar docs pages for Setup, Configuration, Adding to a recordable, Cascading, and Methods
+- sidebar docs pages for Setup, Configuration, Adding to a recordable, and Methods
 
 ## Core follow-up assumptions
 

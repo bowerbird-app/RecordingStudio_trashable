@@ -59,7 +59,7 @@ class EngineTest < Minitest::Test
 
   def test_load_config_merges_yaml_and_x_configuration
     xcfg = Struct.new(:recording_studio_trashable).new(
-      { default_include_children: true, default_purge_after_days: 45, allow_user_retention_settings: true }
+      { default_purge_after_days: 45, allow_user_retention_settings: true }
     )
     app_config = Struct.new(:x).new(xcfg)
     app = Struct.new(:config) do
@@ -71,7 +71,6 @@ class EngineTest < Minitest::Test
     find_initializer("recording_studio_trashable.load_config").block.call(app)
 
     assert_equal false, RecordingStudioTrashable.configuration.use_recording_studio_accessible
-    assert_equal true, RecordingStudioTrashable.configuration.default_include_children
     assert_equal 45, RecordingStudioTrashable.configuration.default_purge_after_days
     assert_equal true, RecordingStudioTrashable.configuration.allow_user_retention_settings
   end
@@ -112,10 +111,10 @@ class EngineTest < Minitest::Test
   def test_load_x_config_supports_each_pair_objects
     RecordingStudioTrashable::Engine.send(
       :load_x_config,
-      FakeXConfig.new(default_include_children: true, allow_user_retention_settings: true)
+      FakeXConfig.new(default_purge_after_days: 14, allow_user_retention_settings: true)
     )
 
-    assert_equal true, RecordingStudioTrashable.configuration.default_include_children
+    assert_equal 14, RecordingStudioTrashable.configuration.default_purge_after_days
     assert_equal true, RecordingStudioTrashable.configuration.allow_user_retention_settings
   end
 

@@ -43,9 +43,9 @@ class DemoRecordingLookup
         .to_a
     end
 
-    def recent_trashed_pages(root_recording, limit: DEFAULT_HOME_TABLE_LIMIT)
+    def recent_trash_roots(root_recording, limit: DEFAULT_HOME_TABLE_LIMIT)
       subtree_relation_for(root_recording)
-        .recording_studio_trashable_trashed
+        .recording_studio_trashable_trash_roots
         .where(recordable_type: "Page")
         .reorder(trashed_at: :desc, id: :desc)
         .limit(limit)

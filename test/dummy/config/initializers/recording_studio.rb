@@ -5,6 +5,5 @@ RecordingStudio.configure do |config|
   config.actor = -> { Current.actor }
   config.event_notifications_enabled = true
   config.idempotency_mode = :return_existing
-  config.include_children = false
   config.recordable_dup_strategy = :dup
 end

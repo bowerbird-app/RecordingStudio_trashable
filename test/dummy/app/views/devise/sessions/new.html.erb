@@ -1,6 +1,6 @@
-<div class="fixed inset-0 p-4">
-  <%= render FlatPack::Grid::Component.new(cols: 1, align: :center, class: "h-full w-full place-content-center justify-items-center") do %>
-    <%= render FlatPack::Card::Component.new(style: :default, class: "w-full max-w-md h-auto") do |card| %>
+<div class="mx-auto flex w-full max-w-md flex-col justify-center px-4 py-8">
+  <%= render FlatPack::Grid::Component.new(cols: 1, align: :center, class: "w-full justify-items-center") do %>
+    <%= render FlatPack::Card::Component.new(style: :default, class: "h-auto w-full") do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(
           title: "Sign In",

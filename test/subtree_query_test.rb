@@ -68,6 +68,10 @@ class SubtreeQueryTest < Minitest::Test
       )
     end
 
+    def reorder(*)
+      self
+    end
+
     def unscope(*)
       self
     end
@@ -97,7 +101,7 @@ class SubtreeQueryTest < Minitest::Test
       FakeRelation.new(types: [], rows: [])
     end
 
-    def self.recording_studio_trashable_trash_bin
+    def self.recording_studio_trashable_trash_roots
       base_relation
     end
 

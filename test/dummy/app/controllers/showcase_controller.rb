@@ -12,17 +12,17 @@ class ShowcaseController < ApplicationController
         {
           title: "Timestamp based trash state",
           anchor_id: "timestamp-based-trash-state",
-          body: "The addon adds a nullable trashed_at timestamp to recording_studio_recordings. A recording is active when trashed_at is nil and considered trashed when that timestamp is present."
+          body: "The addon adds a nullable trashed_at timestamp and a trash_root boolean to recording_studio_recordings. A recording is active when trashed_at is nil and considered trashed when that timestamp is present. trash_root marks which trashed recordings appear in the trash bin as explicit restore points."
         },
         {
           title: "Trash and restore behavior",
           anchor_id: "trash-and-restore-behavior",
-          body: "Trashing a recording logs a Recording Studio event and sets trashed_at to the current time. Restoring logs a restore event and clears trashed_at back to nil, so the same recording becomes active again."
+          body: "Trashing a recording logs a Recording Studio event, sets trashed_at to the current time, and marks the directly trashed node as the trash_root. Restoring logs a restore event and clears trashed_at back to nil for the selected root plus cascade-trashed descendants, while nested explicit trash roots stay trashed."
         },
         {
-          title: "Children and cascading",
-          anchor_id: "children-and-cascading",
-          body: "Child recordings are included when include_children resolves to true. That can come from the recordable's trashable capability options, an app-level default, or an explicit include_children override on a trash, restore, or purge call."
+          title: "Subtree lifecycle",
+          anchor_id: "subtree-lifecycle",
+          body: "Trash, restore, and purge operate on the targeted recording subtree so parents and descendants stay in sync through the full lifecycle. Restore walks the subtree until it reaches another trash_root branch, which remains trashed until restored directly."
         },
         {
           title: "What is not trashed",
@@ -54,7 +54,7 @@ class ShowcaseController < ApplicationController
           title: "Run the generators",
           anchor_id: "run-the-generators",
           subtitle: "Use the install generator first, then copy the addon migrations into the host app.",
-          body: "The install generator mounts the engine, writes the Trashable initializer, and adds Tailwind source paths when the host app already has Tailwind configured. After that, run the migrations generator so the host app gets the compatibility migration for trashed_at and the retention settings table.",
+          body: "The install generator mounts the engine, writes the Trashable initializer, and adds Tailwind source paths when the host app already has Tailwind configured. After that, run the migrations generator so the host app gets the compatibility migrations for trashed_at, trash_root, and the retention settings table.",
           code_title: "Install and migration generators",
           code_language: :bash,
           code: <<~BASH
@@ -68,12 +68,14 @@ class ShowcaseController < ApplicationController
           title: "Apply the database changes",
           anchor_id: "apply-the-database-changes",
           subtitle: "Trashable updates Recording Studio's recordings table and creates its own retention settings table.",
-          body: "The generated migrations touch two tables. recording_studio_recordings gets a nullable trashed_at datetime plus an index so active and trashed queries stay fast. recording_studio_trashable_retention_settings is a new addon-owned table keyed by recording_id with one retention override per scope root.",
+          body: "The generated migrations touch two tables. recording_studio_recordings gets a nullable trashed_at datetime, a non-null trash_root boolean, and supporting indexes so active, root-only trash, and restore queries stay fast. recording_studio_trashable_retention_settings is a new addon-owned table keyed by recording_id with one retention override per scope root.",
           code_title: "Schema changes created by the addon",
           code_language: :ruby,
           code: <<~RUBY
             add_column :recording_studio_recordings, :trashed_at, :datetime
             add_index :recording_studio_recordings, :trashed_at
+            add_column :recording_studio_recordings, :trash_root, :boolean, default: false, null: false
+            add_index :recording_studio_recordings, [:trashed_at, :trash_root], name: "idx_rs_recordings_trashed_at_trash_root"
 
             create_table :recording_studio_trashable_retention_settings, id: :uuid do |t|
               t.references :recording,
@@ -112,9 +114,6 @@ class ShowcaseController < ApplicationController
           # Enables Accessible permission checks so trash actions respect the host app's role rules.
           config.use_recording_studio_accessible = true
 
-          # Keeps trash, restore, and purge scoped to a single record unless callers opt into descendants.
-          config.default_include_children = false
-
           # Purges trashed recordings after 30 days when no record-specific retention setting overrides it.
           config.default_purge_after_days = 30
 
@@ -143,33 +142,30 @@ class ShowcaseController < ApplicationController
       code_language: :ruby,
       code: <<~RUBY
         class Page < ApplicationRecord
-          include RecordingStudio::Capabilities::Trashable.to(include_children: true)
+          include RecordingStudio::Capabilities::Trashable.to
         end
 
         page_recording.recording_studio_trashable_trash!(
           actor: current_user,
           impersonator: Current.impersonator,
-          metadata: { source: "bulk-cleanup" },
-          include_children: true
+          metadata: { source: "bulk-cleanup" }
         )
 
         page_recording.recording_studio_trashable_restore!(
           actor: current_user,
-          metadata: { source: "undo" },
-          include_children: true
+          metadata: { source: "undo" }
         )
 
         page_recording.recording_studio_trashable_purge!(
           actor: current_user,
-          metadata: { source: "retention" },
-          include_children: true
+          metadata: { source: "retention" }
         )
       RUBY
     },
     "trash-cans" => {
       title: "Trash cans",
       subtitle: "Trash-bin pages are scoped by the parent recording you pass in.",
-      body: "A trash can shows the trashed items beneath a specific recording. In most apps that parent will be the root workspace recording so the trash can covers everything below it, but it can just as easily be a project recording when you want a smaller subtree. This gem already provides the trash-can view and controller flow, so integrating it is usually just a matter of linking to the mounted trash-bin route with the parent recording that defines the scope.",
+      body: "A trash can shows the trash roots beneath a specific recording. In most apps that parent will be the root workspace recording so the trash can covers everything below it, but it can just as easily be a project recording when you want a smaller subtree. Cascade-trashed descendants stay hidden until their nearest explicit trash root is restored or purged. This gem already provides the trash-can view and controller flow, so integrating it is usually just a matter of linking to the mounted trash-bin route with the parent recording that defines the scope.",
       code_title: "Link to a scoped trash can",
       code_language: :erb,
       code: <<~ERB
@@ -181,6 +177,40 @@ class ShowcaseController < ApplicationController
                     recording_studio_trashable.recording_trash_bin_path(@root_recording),
                     class: "text-sm font-medium underline" %>
       ERB
+    },
+    "trash-roots" => {
+      title: "Trash roots",
+      subtitle: "Explicit restore points keep nested trash operations from undoing each other.",
+      sections: [
+        {
+          title: "How trash roots work",
+          anchor_id: "how-trash-roots-work",
+          body: "When a user explicitly trashes a recording, that recording becomes the trash_root for its subtree. Descendants that were only dragged into the trash by cascade get trashed_at timestamps too, but they stay hidden behind that nearest root instead of appearing as separate restore targets.\n\nWe use trash roots so restore stays predictable. When you restore a parent subtree, the walk stops before a nested recording that was explicitly trashed later. That prevents a broad restore from accidentally reviving children that a user intentionally trashed on their own timeline."
+        },
+        {
+          title: "Example recording tree",
+          anchor_id: "example-recording-tree",
+          subtitle: "Only explicitly trashed nodes are marked as roots in the trash bin.",
+          code_title: "Dot list with trash roots marked",
+          code_language: :text,
+          code: <<~TEXT
+            . Workspace
+              . Project Alpha
+                . Page Briefing
+                . Folder Archive (trash root)
+                  . Page Session Notes
+                  . Page Raw Takes
+                . Folder Deliverables
+                  . Page Release Checklist (trash root)
+                    . Page QA Notes
+          TEXT
+        },
+        {
+          title: "Why the boundary matters",
+          anchor_id: "why-the-boundary-matters",
+          body: "In that tree, restoring Workspace or Project Alpha should not automatically restore Folder Archive or Page Release Checklist if those branches were explicitly trashed as their own actions. The restore logic therefore clears cascade-trashed descendants until it reaches another trash_root branch, which remains in the trash until restored directly."
+        }
+      ]
     },
     "retention" => {
       title: "Retention",
@@ -247,45 +277,6 @@ class ShowcaseController < ApplicationController
         }
       ]
     },
-    "cascading" => {
-      title: "Cascading",
-      subtitle: "Set the default child behavior on the recordable type",
-      sections: [
-        {
-          title: "Recordable default",
-          anchor_id: "recordable-default",
-          subtitle: "Declare the normal cascading behavior where the capability is added.",
-          body: "Cascading is usually configured where you add the trashable capability to a recordable type so trash, restore, and purge all share the same default behavior.",
-          code_title: "Configure cascading on the recordable",
-          code_language: :ruby,
-          code: <<~RUBY
-            class Project < ApplicationRecord
-              include RecordingStudio::Capabilities::Trashable.to(include_children: true)
-            end
-
-            project.recording_studio_trashable_trash!(
-              actor: current_user,
-              metadata: { reason: "archive project" }
-            )
-          RUBY
-        },
-        {
-          title: "Per-call override",
-          anchor_id: "per-call-override",
-          subtitle: "Pass include_children when one trash action needs different behavior.",
-          body: "Use an explicit include_children value on the lifecycle call when a specific action should behave differently from the recordable default.",
-          code_title: "Override cascading while trashing",
-          code_language: :ruby,
-          code: <<~RUBY
-            project.recording_studio_trashable_trash!(
-              actor: current_user,
-              include_children: false,
-              metadata: { reason: "archive project only" }
-            )
-          RUBY
-        }
-      ]
-    },
     "responses" => {
       title: "Responses",
       subtitle: "Lifecycle actions redirect back by default and only switch to JSON when async is requested.",
@@ -318,45 +309,39 @@ class ShowcaseController < ApplicationController
         {
           title: "Trash a recording",
           anchor_id: "trash-a-recording",
-          name: "recording_studio_trashable_trash!(actor: nil, impersonator: nil, metadata: {}, include_children: nil)",
+          name: "recording_studio_trashable_trash!(actor: nil, impersonator: nil, metadata: {})",
           code_title: "Usage",
           code: <<~RUBY
-            # Soft delete the recording and record who performed the action.
-            # Pass include_children: true to trash descendants in the same operation.
+            # Soft delete the recording, cascade to descendants, and record who performed the action.
             recording.recording_studio_trashable_trash!(
               actor: current_user,
-              metadata: { source: "workspace-cleanup" },
-              include_children: true
+              metadata: { source: "workspace-cleanup" }
             )
           RUBY
         },
         {
           title: "Restore a recording",
           anchor_id: "restore-a-recording",
-          name: "recording_studio_trashable_restore!(actor: nil, impersonator: nil, metadata: {}, include_children: nil)",
+          name: "recording_studio_trashable_restore!(actor: nil, impersonator: nil, metadata: {})",
           code_title: "Usage",
           code: <<~RUBY
-            # Bring a trashed recording back and log who restored it.
-            # Include children when the whole subtree should be restored together.
+            # Bring a trashed recording subtree back and log who restored it.
             recording.recording_studio_trashable_restore!(
               actor: current_user,
-              metadata: { source: "support-request" },
-              include_children: true
+              metadata: { source: "support-request" }
             )
           RUBY
         },
         {
           title: "Purge a recording",
           anchor_id: "purge-a-recording",
-          name: "recording_studio_trashable_purge!(actor: nil, impersonator: nil, metadata: {}, include_children: nil)",
+          name: "recording_studio_trashable_purge!(actor: nil, impersonator: nil, metadata: {})",
           code_title: "Usage",
           code: <<~RUBY
-            # Permanently remove a trashed recording after retention and authorization checks pass.
-            # Include children when the entire trashed subtree should be deleted.
+            # Permanently remove a trashed recording subtree after retention and authorization checks pass.
             recording.recording_studio_trashable_purge!(
               actor: current_user,
-              metadata: { source: "retention-purge" },
-              include_children: true
+              metadata: { source: "retention-purge" }
             )
           RUBY
         },
@@ -389,7 +374,7 @@ class ShowcaseController < ApplicationController
           code_title: "Usage",
           code: <<~RUBY
             # Return only recordings that are currently in the trash.
-            # Use this when building a trash-bin or restore workflow.
+            # Use this when auditing every trashed descendant in a subtree.
             project.recordings.recording_studio_trashable_trashed
           RUBY
         },
@@ -410,9 +395,20 @@ class ShowcaseController < ApplicationController
           name: "recording_studio_trashable_trash_bin",
           code_title: "Usage",
           code: <<~RUBY
-            # Fetch trashed recordings in the order expected by trash-bin screens.
-            # Newer trashed items appear first so recent cleanup work is easy to review.
+            # Fetch explicit trash roots in the order expected by trash-bin screens.
+            # Cascade-trashed descendants stay hidden behind their nearest trash root.
             project.recordings.recording_studio_trashable_trash_bin
+          RUBY
+        },
+        {
+          title: "Query trash roots",
+          anchor_id: "query-trash-roots",
+          name: "recording_studio_trashable_trash_roots",
+          code_title: "Usage",
+          code: <<~RUBY
+            # Return only explicitly trashed recordings that anchor a trashed subtree.
+            # Use this to build quieter trash-bin listings or restore summaries.
+            project.recordings.recording_studio_trashable_trash_roots
           RUBY
         }
       ]

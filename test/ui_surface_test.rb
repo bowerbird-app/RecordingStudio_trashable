@@ -19,7 +19,7 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, "recording_studio_trashable_back_link_params"
     assert_includes trash_bin_view, "hidden_field_tag :back_path"
     assert_includes trash_bin_view, 'title: "Trash"'
-    assert_includes trash_bin_view, 'subtitle: "Recently trashed items"'
+    assert_includes trash_bin_view, 'subtitle: "Recently trashed roots"'
     assert_includes trash_bin_view, "recording_studio_trashable_retention_settings_enabled?"
     assert_includes trash_bin_view, "recording_studio_trashable_page_authorized?(:settings"
     assert_includes trash_bin_view, 'text: "Trash settings"'
@@ -50,7 +50,7 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, "hidden_field_tag :back_path, recording_studio_trashable_back_path"
     refute_includes trash_bin_view, 'FlatPack::Button::Component.new(text: "Search"'
     refute_includes trash_bin_view, 'text: "Clear"'
-    assert_includes trash_bin_view, "No trashed items match your search."
+    assert_includes trash_bin_view, "No trash roots match your search."
     assert_includes trash_bin_view, ">Name<"
     assert_includes trash_bin_view, ">Type<"
     assert_includes trash_bin_view, ">Trashed<"
@@ -124,7 +124,6 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_controller, "query: @search_query"
     assert_includes trash_bin_controller, ".reorder(trashed_at: :desc, id: :desc)"
     assert_includes trash_bin_controller, "@pagy, @trashed_recordings = pagy(trashed_recordings, limit: PAGE_SIZE)"
-    refute_includes trash_bin_controller, ").to_a"
   end
 
   def test_dummy_tailwind_sources_include_flat_pack_gem_paths
@@ -161,20 +160,26 @@ class UiSurfaceTest < Minitest::Test
     controller_path = File.expand_path("dummy/app/controllers/home_controller.rb", __dir__)
     lookup_path = File.expand_path("dummy/app/models/demo_recording_lookup.rb", __dir__)
     seeds_path = File.expand_path("dummy/db/seeds.rb", __dir__)
+    routes_path = File.expand_path("dummy/config/routes.rb", __dir__)
     source = File.read(view_path)
     controller_source = File.read(controller_path)
     lookup_source = File.read(lookup_path)
     seeds_source = File.read(seeds_path)
+    routes_source = File.read(routes_path)
 
     assert_includes source, 'title: "Trash demo"'
-    assert_includes source, 'subtitle: "Recoding Studio Trash functionality"'
+  assert_includes source, 'subtitle: "Recording Studio Trash functionality"'
     assert_includes source, 'text: "Trash can"'
     assert_includes source, 'text: "Trash settings"'
+    assert_includes source, 'text: "Purge"'
+    assert_includes source, 'main_app.purge_due_recordings_path'
     assert_includes source, "back_path: main_app.root_path"
     assert_includes source, ">name<"
     assert_includes source, ">type<"
+    assert_includes source, ">trash root<"
     assert_includes source, ">status<"
     assert_includes source, ">action<"
+    assert_includes source, 'recording.trash_root? ? "yes" : "no"'
     assert_includes source, "recording_studio_trashable.trash_recording_path("
     assert_includes source, "recording_studio_trashable.restore_recording_path("
     assert_includes source, "recording_studio_trashable.purge_recording_path("
@@ -186,19 +191,31 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, "recording_studio_trashable.edit_recording_trash_settings_path("
     assert_includes source, "@workspace_recording,"
     assert_includes source, "back_path: main_app.root_path"
+    assert_includes controller_source, "def purge_due"
+    assert_includes controller_source, "RecordingStudioTrashable.purge_due_recordings_for_all_scopes("
+    assert_includes controller_source, 'metadata: { source: "dummy_home_manual_purge" }'
+    assert_includes controller_source, 'action: :purge'
+    assert_includes controller_source, '@can_purge_due = @workspace_recording.present? && RecordingStudioTrashable.authorized?('
     assert_includes source, "Trash not enabled"
     assert_includes source, "FlatPack::Popover::Component"
     assert_includes source, "This recordable type has not had trash enabled."
     assert_includes controller_source, "DemoRecordingLookup.recent_projects(@workspace_recording, limit: 2)"
     assert_includes controller_source, "DemoRecordingLookup.recent_active_pages(@workspace_recording, limit: 2)"
-    assert_includes controller_source, "DemoRecordingLookup.recent_trashed_pages(@workspace_recording, limit: 2)"
+    assert_includes controller_source, "DemoRecordingLookup.recent_trash_roots(@workspace_recording, limit: 2)"
     assert_includes lookup_source, "DEFAULT_HOME_TABLE_LIMIT = 2"
     assert_includes lookup_source, '.where(recordable_type: "Project")'
     assert_includes lookup_source, '.where(recordable_type: "Page")'
     assert_includes lookup_source, ".recording_studio_trashable_active"
-    assert_includes lookup_source, ".recording_studio_trashable_trashed"
+    assert_includes lookup_source, ".recording_studio_trashable_trash_roots"
+    assert_includes routes_source, 'post "purge_due", to: "home#purge_due", as: :purge_due_recordings'
     assert_includes seeds_source, 'slug: "session-archive"'
     assert_includes seeds_source, 'slug: "release-checklist"'
+    assert_includes seeds_source, 'slug: "expired-default-retention"'
+    assert_includes seeds_source, 'slug: "expired-scope-retention"'
+    assert_includes seeds_source, 'slug: "fresh-retention"'
+    assert_includes seeds_source, 'expired_default_retention_recording.update!(trashed_at: 45.days.ago)'
+    assert_includes seeds_source, 'expired_scope_retention_recording.update!(trashed_at: 21.days.ago)'
+    assert_includes seeds_source, 'fresh_retention_recording.update!(trashed_at: 5.days.ago)'
   end
 
   def test_dummy_layout_renders_flash_messages_with_flat_pack_alerts
@@ -213,6 +230,13 @@ class UiSurfaceTest < Minitest::Test
     assert_includes sidebar_source, "flash.each do |type, message|"
     assert_includes sidebar_source, "type.to_sym == :notice ? :success : :danger"
     assert_includes sidebar_source, "FlatPack::Alert::Component"
+  end
+
+  def test_devise_sign_in_view_keeps_form_in_normal_layout_flow
+    source = File.read(File.expand_path("dummy/app/views/devise/sessions/new.html.erb", __dir__))
+
+    assert_includes source, 'class="mx-auto flex w-full max-w-md flex-col justify-center px-4 py-8"'
+    refute_includes source, 'class="fixed inset-0 p-4"'
   end
 
   def test_dummy_events_page_is_owned_by_dummy_app
@@ -245,7 +269,9 @@ class UiSurfaceTest < Minitest::Test
 
   def test_recordings_controller_redirects_back_by_default_and_supports_async_responses
     source = read_repo_file("../app/controllers/recording_studio_trashable/recordings_controller.rb")
-    application_controller_source = read_repo_file("../app/controllers/recording_studio_trashable/application_controller.rb")
+    application_controller_source = read_repo_file(
+      "../app/controllers/recording_studio_trashable/application_controller.rb"
+    )
 
     assert_includes source, "respond_with_lifecycle_success(resolved_success_message)"
     assert_includes source, "respond_with_lifecycle_error(error.message)"
@@ -254,10 +280,16 @@ class UiSurfaceTest < Minitest::Test
       source,
       "return render json: { ok: false, alert: message }, status: :unprocessable_entity if async_response?"
     )
-    assert_includes source, 'request.format.json? || boolean_param(params[:async]) || params[:redirect_target].to_s == "async"'
+    assert_includes(
+      source,
+      'request.format.json? || boolean_param(params[:async]) || params[:redirect_target].to_s == "async"'
+    )
     assert_includes source, "redirect_to sync_redirect_path"
     assert_includes source, "recording_studio_trashable_back_path(fallback: fallback_redirect_path)"
-    assert_includes source, "params[:return_to_recording_id].presence || params[:recording_id].presence || fallback_scope_id"
+    assert_includes(
+      source,
+      "params[:return_to_recording_id].presence || params[:recording_id].presence || fallback_scope_id"
+    )
     assert_includes source, "@recording.root_recording_id.presence || @recording.id"
     assert_includes application_controller_source, "url_from(params[:back_path].presence)"
     assert_includes application_controller_source, "url_from(request.referer)"
@@ -289,6 +321,7 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, 'title: "Apply the database changes"'
     assert_includes source, 'anchor_id: "apply-the-database-changes"'
     assert_includes source, "add_column :recording_studio_recordings, :trashed_at, :datetime"
+    assert_includes source, "add_column :recording_studio_recordings, :trash_root, :boolean, default: false, null: false"
     assert_includes source, "create_table :recording_studio_trashable_retention_settings, id: :uuid do |t|"
     assert_includes source, 'title: "Schedule background purges"'
     assert_includes source, 'anchor_id: "schedule-background-purges"'
@@ -297,15 +330,27 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, '"configuration"'
     assert_includes source, '"adding-to-a-recordable"'
     assert_includes source, '"trash-cans"'
+    assert_includes source, '"trash-roots"'
     assert_includes source, '"retention"'
-    assert_includes source, '"cascading"'
     assert_includes source, '"responses"'
     assert_includes source, '"methods"'
     assert_includes source, 'title: "Trash cans"'
     assert_includes source, 'subtitle: "Trash-bin pages are scoped by the parent recording you pass in."'
-    assert_includes source, 'body: "A trash can shows the trashed items beneath a specific recording.'
+    assert_includes source, 'body: "A trash can shows the trash roots beneath a specific recording.'
     assert_includes source, "recording_studio_trashable.recording_trash_bin_path(@project_recording)"
     assert_includes source, "recording_studio_trashable.recording_trash_bin_path(@root_recording)"
+    assert_includes source, 'title: "Trash roots"'
+    assert_includes source, 'subtitle: "Explicit restore points keep nested trash operations from undoing each other."'
+    assert_includes source, 'title: "How trash roots work"'
+    assert_includes source, 'anchor_id: "how-trash-roots-work"'
+    assert_includes source, "that recording becomes the trash_root for its subtree"
+    assert_includes source, "restore a parent subtree, the walk stops before a nested recording"
+    assert_includes source, 'title: "Example recording tree"'
+    assert_includes source, 'code_title: "Dot list with trash roots marked"'
+    assert_includes source, ". Folder Archive (trash root)"
+    assert_includes source, ". Page Release Checklist (trash root)"
+    assert_includes source, 'title: "Why the boundary matters"'
+    assert_includes source, "remains in the trash until restored directly"
     assert_includes source, 'title: "Retention"'
     assert_includes(
       source,
@@ -326,11 +371,6 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, "RecordingStudioTrashable::RetentionPurgeJob"
     assert_includes source, "bundle exec rake recording_studio_trashable:purge_due"
     assert_includes source, "SCOPE_RECORDING_IDS=123,456"
-    assert_includes source, 'subtitle: "Set the default child behavior on the recordable type"'
-    assert_includes source, 'title: "Recordable default"'
-    assert_includes source, 'title: "Per-call override"'
-    assert_includes source, 'code_title: "Configure cascading on the recordable"'
-    assert_includes source, 'code_title: "Override cascading while trashing"'
     assert_includes source, 'title: "Responses"'
     assert_includes(
       source,
@@ -340,19 +380,21 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, 'subtitle: "Default behaviour"'
     assert_includes(
       source,
-      'body: "After a recording is trashed, restored or purged the current page is refreshed and a flash message is returned."'
+      'body: "After a recording is trashed, restored or purged the current page is refreshed ' \
+      'and a flash message is returned."'
     )
     assert_includes source, 'title: "Async"'
     assert_includes source, 'subtitle: "Opt-in JSON responses"'
     assert_includes(
       source,
-      'body: "Use async when the page should stay in place and handle the lifecycle result in JavaScript. Async requests skip the redirect and return a JSON payload with either a notice or an alert."'
+      'body: "Use async when the page should stay in place and handle the lifecycle result in ' \
+      "JavaScript. Async requests skip the redirect and return a JSON payload with either a " \
+      'notice or an alert."'
     )
     refute_includes source, "hidden_field_tag :back_path, request.fullpath"
     refute_includes source, "return_to_recording_id: @workspace_recording.id"
     assert_includes source, 'code_title: "Return to the current page after trashing"'
-    assert_includes source, "include_children: true"
-    assert_includes source, "include RecordingStudio::Capabilities::Trashable.to(include_children: true)"
+    assert_includes source, "include RecordingStudio::Capabilities::Trashable.to"
     assert_includes source, "recording_studio_trashable_purge!("
     assert_includes source, "recording_studio_trashable_filter(:active | :trashed | :all)"
     assert_includes source, "methods: ["
@@ -365,9 +407,10 @@ class UiSurfaceTest < Minitest::Test
     )
     assert_includes source, "project.recordings.recording_studio_trashable_filter(:trashed)"
     assert_includes source, 'anchor_id: "trash-a-recording"'
-    assert_includes source, "# Soft delete the recording and record who performed the action."
+    assert_includes source, "# Soft delete the recording, cascade to descendants, and record who performed the action."
     assert_includes source, "# Remove the default trash filter so both active and trashed rows are returned."
     assert_includes source, "recording_studio_trashable_active"
+    assert_includes source, "recording_studio_trashable_trash_roots"
     assert_includes source, "recording_studio_trashable_trash_bin"
     assert_includes source, 'metadata: { source: "bulk-cleanup" }'
     assert_includes source, "RecordingStudioTrashable.configure do |config|"
@@ -410,40 +453,14 @@ class UiSurfaceTest < Minitest::Test
     refute_nil setup_section
     refute_nil adding_section
     refute_includes setup_section, 'code_title: "Adding trashable to a recordable type"'
-    refute_includes setup_section, "include RecordingStudio::Capabilities::Trashable.to(include_children: true)"
+    refute_includes setup_section, "include RecordingStudio::Capabilities::Trashable.to"
     assert_includes adding_section, 'code_title: "Adding trashable to a recordable type"'
-    assert_includes adding_section, "include RecordingStudio::Capabilities::Trashable.to(include_children: true)"
+    assert_includes adding_section, "include RecordingStudio::Capabilities::Trashable.to"
     refute_includes(
       adding_section,
       'body: "Only models that include RecordingStudio::Capabilities::Trashable.to ' \
       'receive the namespaced trash lifecycle on RecordingStudio::Recording."'
     )
-  end
-
-  def test_cascading_page_documents_type_level_default_with_optional_call_override
-    controller_path = File.expand_path("dummy/app/controllers/showcase_controller.rb", __dir__)
-    source = File.read(controller_path)
-
-    cascading_section = source[/"cascading"\s*=>\s*\{.*?\n\s*\]\n\s*\},\n/m]
-
-    refute_nil cascading_section
-    assert_includes cascading_section, 'title: "Recordable default"'
-    assert_includes cascading_section, 'anchor_id: "recordable-default"'
-    assert_includes cascading_section, "include RecordingStudio::Capabilities::Trashable.to(include_children: true)"
-    assert_includes cascading_section, 'title: "Per-call override"'
-    assert_includes cascading_section, 'anchor_id: "per-call-override"'
-    assert_includes(
-      cascading_section,
-      'subtitle: "Pass include_children when one trash action needs different behavior."'
-    )
-    assert_includes cascading_section, "include_children: false,"
-    assert_includes cascading_section, 'metadata: { reason: "archive project only" }'
-    refute_includes(
-      cascading_section,
-      "The trash, restore, and purge methods can still override include_children per call"
-    )
-    assert_includes cascading_section, 'metadata: { reason: "archive project" }'
-    refute_includes cascading_section, "include_children: true,"
   end
 
   def test_dummy_sidebar_icons_exist_in_the_sprite
@@ -462,6 +479,8 @@ class UiSurfaceTest < Minitest::Test
     assert_includes sidebar_source, 'href: main_app.showcase_path("responses")'
     assert_includes sidebar_source, 'label: "Trash cans"'
     assert_includes sidebar_source, 'href: main_app.showcase_path("trash-cans")'
+    assert_includes sidebar_source, 'label: "Trash roots"'
+    assert_includes sidebar_source, 'href: main_app.showcase_path("trash-roots")'
 
     sidebar_icons = sidebar_source.scan(/icon:\s*:(\w+(?:-\w+)*)/).flatten
 
@@ -483,12 +502,13 @@ class UiSurfaceTest < Minitest::Test
     assert_includes overview_section, 'title: "Recording Studio specific trash"'
     assert_includes overview_section, 'title: "Timestamp based trash state"'
     assert_includes overview_section, 'title: "Trash and restore behavior"'
-    assert_includes overview_section, 'title: "Children and cascading"'
+    assert_includes overview_section, 'title: "Subtree lifecycle"'
     assert_includes overview_section, 'title: "What is not trashed"'
     assert_includes overview_section, "recording_studio_recordings"
     assert_includes overview_section, "sets trashed_at to the current time"
     assert_includes overview_section, "clears trashed_at back to nil"
-    assert_includes overview_section, "include_children resolves to true"
+    assert_includes overview_section, "trash_root marks which trashed recordings appear in the trash bin"
+    assert_includes overview_section, "operate on the targeted recording subtree"
     assert_includes overview_section, "does not soft-delete the underlying recordable data row"
     assert_includes overview_section, "does not trash Recording Studio event rows"
   end

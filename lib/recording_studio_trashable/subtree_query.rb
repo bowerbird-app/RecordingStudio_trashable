@@ -36,7 +36,8 @@ module RecordingStudioTrashable
       def trashed_recordings_relation_for(root_recording)
         return recording_model.none unless root_recording
 
-        base_relation = recording_model.recording_studio_trashable_trash_bin
+        base_relation = recording_model.recording_studio_trashable_trash_roots
+                                     .reorder(trashed_at: :desc, updated_at: :desc)
 
         base_relation.where(id: root_recording.id)
                      .or(base_relation.where(root_recording_id: root_recording.id))

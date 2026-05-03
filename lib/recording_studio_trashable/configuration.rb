@@ -13,7 +13,6 @@ module RecordingStudioTrashable
       retention_purge_impersonator_resolver: nil,
       mounted_page_authorizer: nil,
       full_page_layout: nil,
-      default_include_children: false,
       default_purge_after_days: nil,
       allow_user_retention_settings: false
     }.freeze
@@ -34,7 +33,6 @@ module RecordingStudioTrashable
                   :retention_purge_impersonator_resolver,
                   :mounted_page_authorizer,
                   :full_page_layout,
-                  :default_include_children,
                   :default_purge_after_days,
                   :allow_user_retention_settings
     attr_reader :hooks
@@ -85,7 +83,6 @@ module RecordingStudioTrashable
         use_recording_studio_accessible: use_recording_studio_accessible,
         authorization_roles: authorization_roles,
         full_page_layout: full_page_layout,
-        default_include_children: default_include_children,
         default_purge_after_days: default_purge_after_days,
         allow_user_retention_settings: allow_user_retention_settings,
         retention_purge_actor_resolver: retention_purge_actor_resolver,

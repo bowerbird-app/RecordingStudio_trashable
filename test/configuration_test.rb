@@ -10,14 +10,12 @@ class ConfigurationTest < Minitest::Test
   def test_merge_updates_known_attributes_and_roles
     @configuration.merge!(
       use_recording_studio_accessible: false,
-      default_include_children: true,
       default_purge_after_days: 21,
       allow_user_retention_settings: true,
       authorization_roles: { purge: :edit }
     )
 
     assert_equal false, @configuration.use_recording_studio_accessible
-    assert_equal true, @configuration.default_include_children
     assert_equal 21, @configuration.default_purge_after_days
     assert_equal true, @configuration.allow_user_retention_settings
     assert_equal :edit, @configuration.role_for(:purge)
@@ -37,7 +35,6 @@ class ConfigurationTest < Minitest::Test
 
     result = @configuration.to_h
 
-    assert_equal false, result.fetch(:default_include_children)
     assert_equal false, result.fetch(:allow_user_retention_settings)
     assert_nil result.fetch(:retention_purge_actor_resolver)
     assert_nil result.fetch(:retention_purge_impersonator_resolver)

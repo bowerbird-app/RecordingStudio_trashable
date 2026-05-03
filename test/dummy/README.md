@@ -10,7 +10,7 @@ This Rails app exists to validate Recording Studio Trashable inside a realistic 
 - Explicit trashable opt-in on `Page` only
 - Mounted workspace and project scoped trash bins
 - Restore, purge, and retention settings flows through the addon engine
-- Sidebar showcase pages for Setup, Configuration, Adding to a recordable, Cascading, and Methods
+- Sidebar showcase pages for Setup, Configuration, Adding to a recordable, and Methods
 
 ## Quick Start
 

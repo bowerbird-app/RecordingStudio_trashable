@@ -66,17 +66,22 @@ class TrashableCapabilitiesTest < Minitest::Test
       end
     end
 
-    attr_accessor :id, :parent_recording_id, :recordable_type, :trashed_at, :destroyed,
+    attr_accessor :id, :parent_recording_id, :recordable_type, :trashed_at, :trash_root, :destroyed,
                   :logged_events, :updated_with, :reloaded
 
-    def initialize(id:, parent_recording_id: nil, recordable_type: "Page", trashed_at: nil)
+    def initialize(id:, parent_recording_id: nil, recordable_type: "Page", trashed_at: nil, trash_root: false)
       @id = id
       @parent_recording_id = parent_recording_id
       @recordable_type = recordable_type
       @trashed_at = trashed_at
+      @trash_root = trash_root
       @logged_events = []
       self.class.records ||= {}
       self.class.records[id] = self
+    end
+
+    def trash_root?
+      !!trash_root
     end
 
     def reload
@@ -88,6 +93,7 @@ class TrashableCapabilitiesTest < Minitest::Test
     def update!(attributes)
       self.updated_with = attributes
       self.trashed_at = attributes[:trashed_at] if attributes.key?(:trashed_at)
+      self.trash_root = attributes[:trash_root] if attributes.key?(:trash_root)
       true
     end
     # rubocop:enable Naming/PredicateMethod
@@ -141,6 +147,7 @@ class TrashableCapabilitiesTest < Minitest::Test
     assert_includes source, "scope :recording_studio_trashable_active"
     assert_includes source, "scope :recording_studio_trashable_trashed"
     assert_includes source, "scope :recording_studio_trashable_including_trashed"
+    assert_includes source, "scope :recording_studio_trashable_trash_roots"
     assert_includes source, "scope :recording_studio_trashable_filter"
     assert_includes source, "scope :recording_studio_trashable_trash_bin"
   end
@@ -179,47 +186,86 @@ class TrashableCapabilitiesTest < Minitest::Test
     end
 
     assert recording.trashed_at
+    assert recording.trash_root
     assert_equal "trashed", recording.logged_events.first[:action]
-    assert_equal({ reason: "cleanup", include_children: false }, recording.logged_events.first[:metadata])
+    assert_equal({ reason: "cleanup" }, recording.logged_events.first[:metadata])
   end
 
-  def test_trash_uses_recordable_include_children_default_when_omitted
+  def test_trash_cascades_to_children_when_called
     parent = FakeRecording.new(id: "parent")
     child = FakeRecording.new(id: "child", parent_recording_id: "parent")
 
-    RecordingStudio.stub(:capability_options, { include_children: true }) do
-      stub_authorized do
-        parent.recording_studio_trashable_trash!(actor: :editor)
-      end
+    stub_authorized do
+      parent.recording_studio_trashable_trash!(actor: :editor)
     end
 
     assert parent.trashed_at
     assert child.trashed_at
-    assert_equal true, parent.logged_events.first[:metadata][:include_children]
+    assert parent.trash_root
+    refute child.trash_root
   end
 
-  def test_restore_cascades_to_children_when_requested
-    parent = FakeRecording.new(id: "parent", trashed_at: Time.now - 1.day)
-    child = FakeRecording.new(id: "child", parent_recording_id: "parent", trashed_at: Time.now - 1.day)
+  def test_trashing_parent_preserves_existing_child_trash_root
+    parent = FakeRecording.new(id: "parent")
+    child = FakeRecording.new(id: "child", parent_recording_id: "parent")
 
     stub_authorized do
-      parent.recording_studio_trashable_restore!(actor: :editor, include_children: true)
+      child.recording_studio_trashable_trash!(actor: :editor)
+      parent.recording_studio_trashable_trash!(actor: :editor)
+    end
+
+    assert parent.trashed_at
+    assert parent.trash_root
+    assert child.trashed_at
+    assert child.trash_root
+  end
+
+  def test_restore_cascades_to_children
+    parent = FakeRecording.new(id: "parent")
+    child = FakeRecording.new(id: "child", parent_recording_id: "parent", trashed_at: Time.now - 1.day)
+    parent.trashed_at = Time.now - 1.day
+    parent.trash_root = true
+
+    stub_authorized do
+      parent.recording_studio_trashable_restore!(actor: :editor)
     end
 
     assert_nil parent.trashed_at
     assert_nil child.trashed_at
+    refute parent.trash_root
+    refute child.trash_root
     assert_equal %w[child parent], FakeRecording.lock_proxy.looked_up_ids.sort
   end
 
-  def test_purge_requires_include_children_when_descendants_exist
+  def test_restore_stops_at_nested_trash_root
+    parent = FakeRecording.new(id: "parent")
+    child = FakeRecording.new(id: "child", parent_recording_id: "parent")
+    nested_root = FakeRecording.new(id: "nested-root", parent_recording_id: "child")
+    nested_descendant = FakeRecording.new(id: "nested-descendant", parent_recording_id: "nested-root")
+
+    stub_authorized do
+      nested_root.recording_studio_trashable_trash!(actor: :editor)
+      parent.recording_studio_trashable_trash!(actor: :editor)
+      parent.recording_studio_trashable_restore!(actor: :editor)
+    end
+
+    assert_nil parent.trashed_at
+    assert_nil child.trashed_at
+    assert nested_root.trashed_at
+    assert nested_root.trash_root
+    assert nested_descendant.trashed_at
+    refute nested_descendant.trash_root
+  end
+
+  def test_purge_requires_all_descendants_to_already_be_trashed
     parent = FakeRecording.new(id: "parent", trashed_at: Time.now - 1.day)
-    FakeRecording.new(id: "child", parent_recording_id: "parent", trashed_at: Time.now - 1.day)
+    FakeRecording.new(id: "child", parent_recording_id: "parent")
 
     error = assert_raises(ArgumentError) do
       stub_authorized { parent.recording_studio_trashable_purge!(actor: :admin) }
     end
 
-    assert_equal "Purging a recording with descendants requires include_children: true", error.message
+    assert_equal "Purging requires all targeted recordings to already be trashed", error.message
   end
 
   def test_purge_logs_purged_and_destroys_descendants_first
@@ -227,7 +273,7 @@ class TrashableCapabilitiesTest < Minitest::Test
     child = FakeRecording.new(id: "child", parent_recording_id: "parent", trashed_at: Time.now - 1.day)
 
     stub_authorized do
-      parent.recording_studio_trashable_purge!(actor: :admin, include_children: true)
+      parent.recording_studio_trashable_purge!(actor: :admin)
     end
 
     assert child.destroyed

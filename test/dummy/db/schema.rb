@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_18_000004) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_03_000005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -94,7 +94,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_18_000004) do
     t.string "recordable_type", null: false
     t.uuid "root_recording_id"
     t.datetime "trashed_at"
+    t.boolean "trash_root", default: false, null: false
     t.datetime "updated_at", null: false
+    t.index ["trashed_at", "trash_root"], name: "idx_rs_recordings_trashed_at_trash_root"
     t.index ["parent_recording_id"], name: "index_recording_studio_recordings_on_parent_recording_id"
     t.index ["parent_recording_id"], name: "index_rs_unique_active_access_boundary_per_parent", unique: true, where: "(((recordable_type)::text = 'RecordingStudio::AccessBoundary'::text) AND (trashed_at IS NULL))"
     t.index ["recordable_id", "root_recording_id"], name: "idx_rs_recordings_root_access", where: "(((recordable_type)::text = 'RecordingStudio::Access'::text) AND (parent_recording_id IS NOT NULL) AND (trashed_at IS NULL))"
