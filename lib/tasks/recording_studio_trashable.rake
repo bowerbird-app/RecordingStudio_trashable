@@ -3,7 +3,6 @@
 require "time"
 require "active_model"
 
-# rubocop:disable Metrics/BlockLength
 namespace :recording_studio_trashable do
   desc "Purge trashed recordings whose retention window has expired"
   task purge_due: :environment do
@@ -26,4 +25,3 @@ namespace :recording_studio_trashable do
     puts(RecordingStudioTrashable.purge_summary_message(result, dry_run: dry_run))
   end
 end
-# rubocop:enable Metrics/BlockLength

@@ -115,18 +115,25 @@ module RecordingStudioTrashable
     def purge_summary_message(result, dry_run: false)
       purge_count = dry_run ? result.would_purge_recordings.size : result.purged_recordings.size
       skipped_count = result.skipped_recordings.size
-
-      message = if dry_run
-                  purge_count.positive? ? "Dry run: #{count_label(purge_count, "recording")} would be purged." : "Dry run: no recordings would be purged."
-                elsif purge_count.positive?
-                  "Purged #{count_label(purge_count, "recording")}."
-                else
-                  "No recordings were purged."
-                end
+      message = base_purge_summary_message(purge_count, dry_run: dry_run)
 
       return message if skipped_count.zero?
 
-      "#{message} Skipped #{count_label(skipped_count, "recording")}."
+      "#{message} Skipped #{count_label(skipped_count, 'recording')}."
+    end
+
+    def base_purge_summary_message(purge_count, dry_run: false)
+      return dry_run_purge_summary_message(purge_count) if dry_run
+
+      return "Purged #{count_label(purge_count, 'recording')}." if purge_count.positive?
+
+      "No recordings were purged."
+    end
+
+    def dry_run_purge_summary_message(purge_count)
+      return "Dry run: no recordings would be purged." unless purge_count.positive?
+
+      "Dry run: #{count_label(purge_count, 'recording')} would be purged."
     end
 
     def root_scope_recordings
