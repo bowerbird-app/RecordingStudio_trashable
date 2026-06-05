@@ -231,5 +231,7 @@ end
 
 RecordingStudio.register_capability(
   :trashable,
-  RecordingStudio::Trashable::Capabilities::Trashable::RecordingMethods
+  recording_methods: RecordingStudio::Trashable::Capabilities::Trashable::RecordingMethods,
+  source: "recording_studio_trashable",
+  child_recordables: []
 )
