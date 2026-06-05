@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+- Require `recording_studio ~> 3.0`; host applications must use RecordingStudio 3.x recordable declarations and can no longer rely on the removed core `RecordingStudio::Services::AccessCheck` fallback
+
 ### Changed
 - Added `trash_root` tracking to recording trash state so trash bins only list explicit trash roots and restores leave nested explicit trash branches in place
+- Updated the dummy app recordables, seeds, and documentation for RecordingStudio 3.0 compatibility
+- Retention purges now skip a parent until every trashed descendant in that subtree is also retention-due, preventing partial subtree purges
 
 ## [0.1.1] - 2026-04-28
 

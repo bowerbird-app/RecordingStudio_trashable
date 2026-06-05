@@ -206,7 +206,7 @@ class AuthorizationTest < Minitest::Test
     )
     assert_includes(
       source,
-      "success_message: -> { \"\#{recording_studio_trashable_recording_label(@recording)} permantly deleted\" }"
+      "success_message: -> { \"\#{recording_studio_trashable_recording_label(@recording)} permanently deleted\" }"
     )
     assert_includes(
       source,
