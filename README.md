@@ -14,7 +14,7 @@ It extracts trash behavior from RecordingStudio core into addon-owned APIs witho
   - `recording_studio_trashable_restore!`
   - `recording_studio_trashable_purge!`
 - subtree trash bins with restore, purge, and retention settings UI
-- optional Recording Studio access-check integration
+- optional RecordingStudioAccessible authorization integration
 - addon-owned migrations for `trashed_at`, `trash_root`, and retention settings
 
 ## Installation
@@ -66,6 +66,25 @@ RecordingStudio.configure do |config|
   config.actor = -> { Current.actor }
 end
 
+class Workspace < ApplicationRecord
+  recording_studio_recordable label: "Workspace", plural_label: "Workspaces", root: true
+end
+
+class Project < ApplicationRecord
+  recording_studio_recordable label: "Project", plural_label: "Projects",
+                              root: false, allowed_parent_types: ["Workspace"]
+end
+
+class Folder < ApplicationRecord
+  recording_studio_recordable label: "Folder", plural_label: "Folders", root: false,
+                              allowed_parent_types: %w[Workspace Project Folder]
+end
+
+class Page < ApplicationRecord
+  recording_studio_recordable label: "Page", plural_label: "Pages", root: false,
+                              allowed_parent_types: %w[Workspace Project Folder Page]
+end
+
 RecordingStudioTrashable.configure do |config|
   config.authorization_roles = {
     trash: :edit,
@@ -86,6 +105,9 @@ Recordables stay opt-in. Include the capability only on the recordable models th
 
 ```ruby
 class Page < ApplicationRecord
+  recording_studio_recordable label: "Page", plural_label: "Pages", root: false,
+                              allowed_parent_types: %w[Workspace Project Folder Page]
+
   include RecordingStudio::Capabilities::Trashable.to(purge_after_days: 14)
 end
 ```
@@ -111,6 +133,7 @@ recording.recording_studio_trashable_purge!(actor: Current.actor)
 - direct trash marks the targeted recording as a `trash_root` and hides cascade-trashed descendants from the trash bin.
 - restore clears cascade-trashed descendants but leaves nested `trash_root` branches trashed until they are restored directly.
 - purge only deletes recordings that are already trashed; active recordings must be trashed first.
+- purge destroys descendants before parents and logs `purged` before deletion. Because purge then removes the recording and its attached events, that log entry is not durable audit history unless the host app copies it to an external audit store.
 
 ## Query helpers
 
@@ -146,11 +169,11 @@ The addon uses:
 
 By default the addon behaves like this:
 
-- if `RecordingStudioAccessible.authorized?` is loaded, authorization delegates to that adapter
-- otherwise, if `RecordingStudio::Services::AccessCheck.allowed?` is available, authorization delegates to Recording Studio directly
+- a custom resolver runs first and can allow or deny explicitly
+- otherwise, if `RecordingStudioAccessible.authorized?` is loaded, authorization delegates to that adapter
+- RecordingStudio core 3.0 no longer provides a core `RecordingStudio::Services::AccessCheck` fallback
 - if no resolver or Accessible authorizer is available, Trashable denies by default
 - built-in Accessible integration can be disabled entirely
-- a custom resolver can replace the built-in behavior
 - host apps can explicitly allow permissive fallback with `config.allow_unconfigured_authorization = true`
 
 ```ruby
@@ -201,7 +224,7 @@ For example, a synchronous form can just post the action and rely on the browser
 
 ## Retention
 
-Retention settings are stored in the addon-owned `recording_studio_trashable_retention_settings` table and scoped to a subtree root recording.
+Retention settings are stored in the addon-owned `recording_studio_trashable_retention_settings` table and scoped to a subtree root recording. Trashable also owns the `trashed_at` and `trash_root` schema it adds to `recording_studio_recordings`.
 
 Retention resolves in this order:
 
@@ -268,13 +291,14 @@ The dummy app demonstrates:
 
 ## Core follow-up assumptions
 
-Current RecordingStudio releases may still ship built-in trash behavior and `trashed_at`.
+RecordingStudio 3 requires every configured recordable type to declare `recording_studio_recordable(...)`. Root creation must use root-declared recordables, and child recordings must be created under an allowed parent recording.
 
-This addon assumes the extraction is in progress, so it:
+This addon:
 
 - keeps public trash APIs addon-owned and namespaced
-- treats `trashed_at` migration as compatibility-safe
+- owns its trash schema through addon migrations
 - avoids relying on RecordingStudio core's default trash behavior or exposing new default scopes
+- registers the `trashable` capability with `source: "recording_studio_trashable"` and no capability-owned `child_recordables`
 
 ## Validation
 

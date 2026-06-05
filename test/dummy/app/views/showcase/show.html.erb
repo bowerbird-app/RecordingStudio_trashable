@@ -1,4 +1,4 @@
-<div class="mx-auto flex w-full max-w-4xl flex-col gap-6">
+<div>
   <%= render FlatPack::PageTitle::Component.new(
     title: @page.fetch(:title),
     subtitle: @page[:subtitle] || "Allow a recordable type to be trashed",
@@ -6,9 +6,9 @@
   ) %>
 
   <% if @page[:sections].present? %>
-    <div class="space-y-8">
+    <div>
       <% @page.fetch(:sections).each do |section| %>
-        <section class="space-y-4">
+        <section>
           <%= render FlatPack::SectionTitle::Component.new(
             title: section.fetch(:title),
             subtitle: section[:subtitle],
@@ -19,7 +19,7 @@
           <% if section[:body].present? %>
             <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
               <% card.body do %>
-                <%= simple_format(section.fetch(:body), class: "text-sm leading-7") %>
+                <%= simple_format(section.fetch(:body)) %>
               <% end %>
             <% end %>
           <% end %>
@@ -37,7 +37,7 @@
     </div>
 
   <% elsif @page[:methods].present? %>
-    <div class="space-y-8">
+    <div>
       <% @page.fetch(:methods).each do |method| %>
         <section>
           <%= render FlatPack::SectionTitle::Component.new(
@@ -64,16 +64,16 @@
     <% if @page.fetch(:wrap_table_in_card, true) %>
       <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
         <% card.body do %>
-          <%= render FlatPack::Table::Component.new(data: rows, class: "text-sm") do |table| %>
-            <% table.column(title: columns.fetch(0), html: ->(row) { tag.span(row.fetch(:name), class: "font-mono text-xs text-slate-900") }) %>
-            <% table.column(title: columns.fetch(1), html: ->(row) { tag.div(row.fetch(:description), class: "leading-6") }) %>
+          <%= render FlatPack::Table::Component.new(data: rows) do |table| %>
+            <% table.column(title: columns.fetch(0), html: ->(row) { tag.code(row.fetch(:name)) }) %>
+            <% table.column(title: columns.fetch(1), html: ->(row) { tag.div(row.fetch(:description)) }) %>
           <% end %>
         <% end %>
       <% end %>
     <% else %>
-      <%= render FlatPack::Table::Component.new(data: rows, class: "text-sm") do |table| %>
-        <% table.column(title: columns.fetch(0), html: ->(row) { tag.span(row.fetch(:name), class: "font-mono text-xs text-slate-900") }) %>
-        <% table.column(title: columns.fetch(1), html: ->(row) { tag.div(row.fetch(:description), class: "leading-6") }) %>
+      <%= render FlatPack::Table::Component.new(data: rows) do |table| %>
+        <% table.column(title: columns.fetch(0), html: ->(row) { tag.code(row.fetch(:name)) }) %>
+        <% table.column(title: columns.fetch(1), html: ->(row) { tag.div(row.fetch(:description)) }) %>
       <% end %>
     <% end %>
 
@@ -91,7 +91,7 @@
   <% if @page[:body].present? %>
     <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
       <% card.body do %>
-        <p class="text-sm leading-7"><%= @page.fetch(:body) %></p>
+        <p><%= @page.fetch(:body) %></p>
       <% end %>
     <% end %>
   <% end %>

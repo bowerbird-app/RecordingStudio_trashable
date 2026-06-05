@@ -38,9 +38,9 @@ module RecordingStudioTrashable
 
         base_relation = recording_model.recording_studio_trashable_trash_roots
                                        .reorder(trashed_at: :desc, updated_at: :desc)
+        subtree_ids = recordings_for(root_recording).map(&:id)
 
-        base_relation.where(id: root_recording.id)
-                     .or(base_relation.where(root_recording_id: root_recording.id))
+        base_relation.where(id: subtree_ids)
       end
 
       def apply_search(relation, query) = relation.where(search_sql(relation, query))

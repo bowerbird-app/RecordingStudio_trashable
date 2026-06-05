@@ -141,6 +141,13 @@ class TrashableCapabilitiesTest < Minitest::Test
     assert_equal [:options, [:trashable], { on: "Page", cascade: true }], applied.last
   end
 
+  def test_trashable_capability_registration_has_source_without_child_recordables
+    registration = RecordingStudio.registered_capabilities.fetch(:trashable)
+
+    assert_equal "recording_studio_trashable", registration.fetch(:source)
+    assert_empty registration.fetch(:child_recordables)
+  end
+
   def test_query_scopes_are_explicit_and_namespaced
     source = File.read(File.expand_path("../lib/recording_studio/trashable/capabilities/trashable.rb", __dir__))
 
@@ -234,6 +241,8 @@ class TrashableCapabilitiesTest < Minitest::Test
     assert_nil child.trashed_at
     refute parent.trash_root
     refute child.trash_root
+    assert_equal "restored", child.logged_events.last[:action]
+    assert_equal "restored", parent.logged_events.last[:action]
     assert_equal %w[child parent], FakeRecording.lock_proxy.looked_up_ids.sort
   end
 

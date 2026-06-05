@@ -13,17 +13,7 @@ trashed_demo_page_count = 100
 Current.actor = user
 
 workspace = Workspace.find_or_create_by!(name: "Studio Workspace")
-workspace_recording = RecordingStudio::Recording.with_trashed.find_or_create_by!(
-  recordable: workspace,
-  parent_recording_id: nil
-)
-
-access = RecordingStudio::Access.find_or_create_by!(actor: user, role: :admin)
-RecordingStudio::Recording.with_trashed.find_or_create_by!(
-  root_recording_id: workspace_recording.id,
-  parent_recording_id: workspace_recording.id,
-  recordable: access
-)
+workspace_recording = RecordingStudio.root_recording_for(workspace)
 
 project_recording = DemoRecordingLookup.by_slug(type: "Project", slug: "album-launch")
 unless project_recording

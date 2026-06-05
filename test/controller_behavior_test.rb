@@ -145,7 +145,7 @@ class ControllerBehaviorTest < Minitest::Test
     controller.purge
 
     assert_equal "/back", URI.parse(controller.response.location).path
-    assert_equal "Mix Notes permantly deleted", controller.flash[:notice]
+    assert_equal "Mix Notes permanently deleted", controller.flash[:notice]
     assert_equal :editor, recording.lifecycle_calls[:purge][:actor]
   end
 
@@ -288,6 +288,27 @@ class ControllerBehaviorTest < Minitest::Test
     assert_equal({ purge_after_days: nil }, setting.assigned_attributes)
     assert_equal({ args: [:edit], kwargs: { status: :unprocessable_entity } }, render_call)
     assert_equal 422, controller.response.status
+  end
+
+  def test_retention_settings_update_stops_after_load_redirect
+    controller = build_controller(
+      RecordingStudioTrashable::RetentionSettingsController,
+      params: {
+        recording_id: "scope-1",
+        recording_studio_trashable_retention_setting: { purge_after_days: "14" }
+      }
+    )
+    setting = FakeRetentionSetting.new(save_result: true)
+
+    controller.define_singleton_method(:load_scope_recording) do
+      @retention_setting = setting
+      redirect_to "/blocked"
+    end
+
+    controller.update
+
+    assert_equal "/blocked", URI.parse(controller.response.location).path
+    assert_nil setting.assigned_attributes
   end
 
   def test_load_scope_recording_redirects_when_retention_settings_are_disabled

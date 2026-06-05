@@ -52,6 +52,34 @@ class RecordingStudioTrashableTest < Minitest::Test
     assert_includes current_model, "attribute :actor, :impersonator"
   end
 
+  def test_dummy_recordables_declare_recording_studio_3_hierarchy
+    assert_dummy_model_includes("workspace.rb", 'recording_studio_recordable label: "Workspace"')
+    assert_dummy_model_includes("workspace.rb", "root: true")
+
+    assert_dummy_model_includes("project.rb", 'recording_studio_recordable label: "Project"')
+    assert_dummy_model_includes("project.rb", 'plural_label: "Projects"')
+    assert_dummy_model_includes("project.rb", "root: false")
+    assert_dummy_model_matches("project.rb", /allowed_parent_types:\s*\[\s*"Workspace"\s*\]/)
+
+    assert_dummy_model_includes("folder.rb", 'recording_studio_recordable label: "Folder"')
+    assert_dummy_model_includes("folder.rb", 'plural_label: "Folders"')
+    assert_dummy_model_includes("folder.rb", "root: false")
+    assert_dummy_model_includes("folder.rb", "allowed_parent_types: %w[Workspace Project Folder]")
+
+    assert_dummy_model_includes("page.rb", 'recording_studio_recordable label: "Page"')
+    assert_dummy_model_includes("page.rb", 'plural_label: "Pages"')
+    assert_dummy_model_includes("page.rb", "root: false")
+    assert_dummy_model_includes("page.rb", "allowed_parent_types: %w[Workspace Project Folder Page]")
+  end
+
+  def test_dummy_page_remains_the_only_trashable_recordable
+    assert_dummy_model_includes("page.rb", "include RecordingStudio::Capabilities::Trashable.to")
+
+    %w[workspace.rb project.rb folder.rb].each do |model_file|
+      refute_includes dummy_model_source(model_file), "RecordingStudio::Capabilities::Trashable"
+    end
+  end
+
   def test_configure_and_allow_user_retention_settings_follow_configuration
     refute RecordingStudioTrashable.allow_user_retention_settings?
 
@@ -254,5 +282,19 @@ class RecordingStudioTrashableTest < Minitest::Test
     elsif RecordingStudio.const_defined?(:Recording, false)
       RecordingStudio.send(:remove_const, :Recording)
     end
+  end
+
+  private
+
+  def assert_dummy_model_includes(model_file, expected)
+    assert_includes dummy_model_source(model_file), expected
+  end
+
+  def assert_dummy_model_matches(model_file, expected)
+    assert_match expected, dummy_model_source(model_file)
+  end
+
+  def dummy_model_source(model_file)
+    File.read(File.expand_path("dummy/app/models/#{model_file}", __dir__))
   end
 end

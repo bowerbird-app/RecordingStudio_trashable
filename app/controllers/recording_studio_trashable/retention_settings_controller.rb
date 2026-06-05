@@ -8,6 +8,8 @@ module RecordingStudioTrashable
 
     def update
       load_scope_recording
+      return if performed?
+
       purge_after_days = RecordingStudioTrashable::RetentionPolicy.normalize_purge_after_days(retention_setting_params[:purge_after_days])
       @retention_setting.assign_attributes(purge_after_days: purge_after_days)
 

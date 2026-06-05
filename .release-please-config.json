@@ -1,0 +1,12 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "ruby",
+      "package-name": "recording_studio_trashable",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        "lib/recording_studio_trashable/version.rb"
+      ]
+    }
+  }
+}

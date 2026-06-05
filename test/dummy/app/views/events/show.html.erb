@@ -1,5 +1,5 @@
-<div class="mx-auto flex w-full max-w-6xl flex-col gap-6">
-  <nav aria-label="Breadcrumb" class="text-sm text-(--surface-muted-content-color)">
+<div>
+  <nav aria-label="Breadcrumb">
     <%= render FlatPack::Button::Component.new(
       text: "Back",
       icon: "arrow-left",
@@ -14,53 +14,31 @@
     variant: :h1
   ) %>
 
-  <div class="overflow-hidden rounded-xl border border-(--surface-border-color) bg-(--surface-color) shadow-sm">
-    <table class="min-w-full divide-y divide-(--surface-border-color) text-left text-sm">
-      <thead class="bg-(--surface-raised-color) text-(--surface-muted-content-color)">
-        <tr>
-          <th class="px-4 py-3 font-medium">action</th>
-          <th class="px-4 py-3 font-medium">item</th>
-          <th class="px-4 py-3 font-medium">actor</th>
-          <th class="px-4 py-3 font-medium">when</th>
-          <th class="px-4 py-3 font-medium">metadata</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-(--surface-border-color)">
-        <% if @events.empty? %>
-          <tr>
-            <td colspan="5" class="px-4 py-6 text-(--surface-muted-content-color)">No events recorded yet.</td>
-          </tr>
-        <% else %>
-          <% @events.each do |event| %>
-            <% trigger_id = "event-occurred-at-#{event.id}" %>
-            <tr>
-              <td class="px-4 py-4 font-medium text-(--surface-content-color)"><%= event.action %></td>
-              <td class="px-4 py-4 text-(--surface-content-color)">
-                <div class="font-medium"><%= event_recording_label(event) %></div>
-                <div class="text-xs text-(--surface-muted-content-color)"><%= event.recordable_type %></div>
-              </td>
-              <td class="px-4 py-4 text-(--surface-muted-content-color)"><%= event_actor_label(event) %></td>
-              <td class="px-4 py-4 text-(--surface-muted-content-color)">
-                <button
-                  id="<%= trigger_id %>"
-                  type="button"
-                  class="underline decoration-dotted underline-offset-2 hover:text-(--surface-content-color)"
-                >
-                  <%= time_ago_in_words(event.occurred_at) %> ago
-                </button>
-                <%= render FlatPack::Popover::Component.new(trigger_id: trigger_id, placement: :top) do |popover| %>
-                  <% popover.content do %>
-                    <%= l(event.occurred_at, format: :long) %>
-                  <% end %>
-                <% end %>
-              </td>
-              <td class="px-4 py-4 text-(--surface-muted-content-color)">
-                <pre class="max-w-lg whitespace-pre-wrap break-all text-xs"><%= event_metadata(event) %></pre>
-              </td>
-            </tr>
-          <% end %>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
+  <% if @events.empty? %>
+    <%= render FlatPack::Alert::Component.new(description: "No events recorded yet.", style: :info) %>
+  <% else %>
+    <%= render FlatPack::Table::Component.new(data: @events) do |table| %>
+      <% table.column(title: "action", html: ->(event) { event.action }) %>
+      <% table.column(
+           title: "item",
+           html: ->(event) { safe_join([event_recording_label(event), tag.br, event.recordable_type]) }
+         ) %>
+      <% table.column(title: "actor", html: ->(event) { event_actor_label(event) }) %>
+      <% table.column(
+           title: "when",
+           html: lambda { |event|
+             trigger_id = "event-occurred-at-#{event.id}"
+             safe_join([
+               button_tag("#{time_ago_in_words(event.occurred_at)} ago", id: trigger_id, type: "button"),
+               render(
+                 FlatPack::Popover::Component.new(trigger_id: trigger_id, placement: :top) do |popover|
+                   popover.content { l(event.occurred_at, format: :long) }
+                 end
+               )
+             ])
+           }
+         ) %>
+      <% table.column(title: "metadata", html: ->(event) { tag.pre(event_metadata(event)) }) %>
+    <% end %>
+  <% end %>
 </div>

@@ -24,20 +24,26 @@ module RecordingStudioTrashable
 
     def purge!
       result = Result.new(purged_recordings: [], skipped_recordings: [], would_purge_recordings: [])
+      candidates, skipped = purge_candidates
+      result.skipped_recordings.concat(skipped)
 
-      due_recordings.each { |recording| purge_recording(recording, result) }
+      candidates.each { |recording| purge_recording(recording, result) }
 
       result
     end
 
     private
 
-    def due_recordings
+    def purge_candidates
       recordings = RecordingStudioTrashable::SubtreeQuery.recordings_for(@scope_recording)
       index = recordings.index_by(&:id)
       eligible_recordings = recordings.select { |recording| due_recording?(recording) }
+      candidates, skipped = partition_purge_candidates(recordings, eligible_recordings)
 
-      eligible_recordings.sort_by { |recording| [-depth_for(recording, index), recording.trashed_at.to_f] }
+      [
+        sort_by_purge_order(candidates, index),
+        sort_by_purge_order(skipped, index)
+      ]
     end
 
     def due_recording?(recording)
@@ -47,6 +53,38 @@ module RecordingStudioTrashable
           scope_recording: @scope_recording,
           as_of: @as_of
         )
+    end
+
+    def partition_purge_candidates(recordings, eligible_recordings)
+      children_by_parent_id = recordings.group_by(&:parent_recording_id)
+      eligible_ids = eligible_recordings.map(&:id)
+
+      eligible_recordings.partition do |recording|
+        retention_due_subtree?(recording, children_by_parent_id, eligible_ids)
+      end
+    end
+
+    def sort_by_purge_order(recordings, index)
+      recordings.sort_by { |recording| [-depth_for(recording, index), recording.trashed_at.to_f] }
+    end
+
+    def retention_due_subtree?(recording, children_by_parent_id, eligible_ids)
+      subtree_for(recording, children_by_parent_id).all? do |target|
+        target.trashed_at.present? && eligible_ids.include?(target.id)
+      end
+    end
+
+    def subtree_for(recording, children_by_parent_id)
+      targets = [recording]
+      frontier = [recording.id]
+
+      until frontier.empty?
+        children = frontier.flat_map { |recording_id| children_by_parent_id.fetch(recording_id, []) }
+        targets.concat(children)
+        frontier = children.map(&:id)
+      end
+
+      targets
     end
 
     def purge_recording(recording, result)

@@ -156,16 +156,19 @@ class SubtreeQueryTest < Minitest::Test
       rows: [:match]
     )
     root_recording = Struct.new(:id).new("root-123")
+    child_recording = Struct.new(:id).new("child-123")
 
     RecordingStudioTrashable::SubtreeQuery.stub(:recording_model, FakeRecordingModel) do
-      result = RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for_query(root_recording, query: "Mix")
+      RecordingStudioTrashable::SubtreeQuery.stub(:recordings_for, [root_recording, child_recording]) do
+        result = RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for_query(root_recording, query: "Mix")
 
-      assert_equal [:match], result.to_a
+        assert_equal [:match], result.to_a
+      end
     end
 
     final_relation = FakeRelation.last_to_a_relation
-    assert_equal({ id: "root-123" }, final_relation.where_arguments.first)
-    assert_equal({ root_recording_id: "root-123" }, final_relation.or_relations.first.where_arguments.first)
+    assert_equal({ id: %w[root-123 child-123] }, final_relation.where_arguments.first)
+    assert_empty final_relation.or_relations
 
     search_sql = final_relation.where_arguments.last
     assert_includes search_sql, 'LOWER("recording_studio_recordings"."recordable_type") LIKE '
@@ -181,16 +184,19 @@ class SubtreeQueryTest < Minitest::Test
   def test_trashed_recordings_for_query_skips_search_sql_for_blank_queries
     FakeRecordingModel.base_relation = FakeRelation.new(types: [], rows: [:match])
     root_recording = Struct.new(:id).new("root-123")
+    child_recording = Struct.new(:id).new("child-123")
 
     RecordingStudioTrashable::SubtreeQuery.stub(:recording_model, FakeRecordingModel) do
-      result = RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for_query(root_recording, query: "   ")
+      RecordingStudioTrashable::SubtreeQuery.stub(:recordings_for, [root_recording, child_recording]) do
+        result = RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for_query(root_recording, query: "   ")
 
-      assert_equal [:match], result.to_a
+        assert_equal [:match], result.to_a
+      end
     end
 
     final_relation = FakeRelation.last_to_a_relation
     assert_equal 1, final_relation.where_arguments.length
-    assert_equal({ id: "root-123" }, final_relation.where_arguments.first)
+    assert_equal({ id: %w[root-123 child-123] }, final_relation.where_arguments.first)
   end
 
   def test_trashed_recordings_for_query_escapes_wildcards_in_the_search_term
@@ -201,10 +207,34 @@ class SubtreeQueryTest < Minitest::Test
     root_recording = Struct.new(:id).new("root-123")
 
     RecordingStudioTrashable::SubtreeQuery.stub(:recording_model, FakeRecordingModel) do
-      RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for_query(root_recording, query: "100%_Mix").to_a
+      RecordingStudioTrashable::SubtreeQuery.stub(:recordings_for, [root_recording]) do
+        RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for_query(root_recording, query: "100%_Mix").to_a
+      end
     end
 
     search_sql = FakeRelation.last_to_a_relation.where_arguments.last
     assert_includes search_sql, "%100\\%\\_mix%"
+  end
+
+  def test_trashed_recordings_for_query_includes_nested_subtree_roots_with_different_workspace_root
+    FakeRecordingModel.base_relation = FakeRelation.new(types: [], rows: [:nested_root])
+    project = Struct.new(:id).new("project-recording")
+    nested_page_root = Struct.new(:id, :root_recording_id, :parent_recording_id).new(
+      "nested-page-root",
+      "workspace-recording",
+      "project-recording"
+    )
+
+    RecordingStudioTrashable::SubtreeQuery.stub(:recording_model, FakeRecordingModel) do
+      RecordingStudioTrashable::SubtreeQuery.stub(:recordings_for, [project, nested_page_root]) do
+        result = RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for_query(project)
+
+        assert_equal [:nested_root], result.to_a
+      end
+    end
+
+    final_relation = FakeRelation.last_to_a_relation
+    assert_equal({ id: %w[project-recording nested-page-root] }, final_relation.where_arguments.first)
+    assert_empty final_relation.or_relations
   end
 end

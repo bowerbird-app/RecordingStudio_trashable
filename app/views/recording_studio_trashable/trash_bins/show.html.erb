@@ -1,40 +1,30 @@
-<div class="mx-auto flex w-full max-w-5xl flex-col gap-6">
-  <nav aria-label="Breadcrumb" class="text-sm text-(--surface-muted-content-color)">
-    <%= render FlatPack::Button::Component.new(
-      text: "Back",
-      icon: "arrow-left",
-      style: :ghost,
-      url: recording_studio_trashable_back_path
-    ) %>
-  </nav>
+<div data-controller="recording-studio-trashable--live-search">
+  <%= render FlatPack::PageNav::Component.new(
+    anchor_url: recording_studio_trashable_back_path,
+    class: "mb-4"
+  ) %>
 
-  <div class="flex flex-col gap-4">
-    <%= render FlatPack::PageTitle::Component.new(
-      title: "Trash",
-      subtitle: "Recently trashed roots",
-      variant: :h1
-    ) %>
+  <%= render FlatPack::PageTitle::Component.new(
+    title: "Trash",
+    subtitle: "Recently trashed roots",
+    variant: :h1
+  ) %>
 
-    <% if recording_studio_trashable_retention_settings_enabled? &&
-          recording_studio_trashable_page_authorized?(:settings, recording: @scope_recording) %>
-      <div>
-        <%= render FlatPack::Button::Component.new(
-          text: "Trash settings",
-          style: :secondary,
-          url: edit_recording_trash_settings_path(@scope_recording, recording_studio_trashable_back_link_params)
-        ) %>
-      </div>
-    <% end %>
-  </div>
+  <% if recording_studio_trashable_retention_settings_enabled? &&
+        recording_studio_trashable_page_authorized?(:settings, recording: @scope_recording) %>
+    <p>
+      <%= render FlatPack::Button::Component.new(
+        text: "Trash settings",
+        style: :secondary,
+        url: edit_recording_trash_settings_path(@scope_recording, recording_studio_trashable_back_link_params)
+      ) %>
+    </p>
+  <% end %>
 
-  <div
-    class="overflow-hidden rounded-xl border border-(--surface-border-color) bg-(--surface-color) shadow-sm"
-    data-controller="recording-studio-trashable--live-search"
-  >
-    <div class="border-b border-(--surface-border-color) bg-(--surface-raised-color) px-4 py-4">
+  <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+    <% card.body do %>
       <%= form_with url: recording_trash_bin_path(@scope_recording),
                     method: :get,
-                    class: "flex flex-col gap-3",
                     data: {
                       recording_studio_trashable__live_search_target: "form",
                       action: "input->recording-studio-trashable--live-search#queueSubmit search->recording-studio-trashable--live-search#queueSubmit",
@@ -42,36 +32,20 @@
                       recording_studio_trashable__live_search_delay_value: 250
                     } do %>
         <%= hidden_field_tag :back_path, recording_studio_trashable_back_path %>
-        <div>
-          <%= render FlatPack::SearchInput::Component.new(
-            name: :q,
-            value: @search_query,
-            placeholder: "Search trash",
-            id: "trash-bin-search"
-          ) %>
-        </div>
+        <%= render FlatPack::SearchInput::Component.new(
+          name: :q,
+          value: @search_query,
+          placeholder: "Search trash",
+          id: "trash-bin-search"
+        ) %>
       <% end %>
-    </div>
 
-    <div class="relative">
-      <div
-        class="pointer-events-none absolute inset-0 z-10 hidden bg-(--surface-color) px-4 py-4"
-        data-recording-studio-trashable--live-search-target="skeleton"
-      >
-        <div class="space-y-4">
-          <% 5.times do %>
-            <div class="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,0.75fr)_minmax(0,1fr)_minmax(0,1fr)] gap-4">
-              <%= render FlatPack::Skeleton::Component.new(variant: :text, class: "h-5 w-3/4") %>
-              <%= render FlatPack::Skeleton::Component.new(variant: :text, class: "h-5 w-2/3") %>
-              <%= render FlatPack::Skeleton::Component.new(variant: :text, class: "h-5 w-1/3") %>
-              <%= render FlatPack::Skeleton::Component.new(variant: :text, class: "h-5 w-1/2") %>
-              <div class="flex gap-2">
-                <%= render FlatPack::Skeleton::Component.new(variant: :button, class: "w-20") %>
-                <%= render FlatPack::Skeleton::Component.new(variant: :button, class: "w-20") %>
-              </div>
-            </div>
-          <% end %>
-        </div>
+      <div hidden data-recording-studio-trashable--live-search-target="skeleton">
+        <% 5.times do %>
+          <p><%= render FlatPack::Skeleton::Component.new(variant: :text) %></p>
+        <% end %>
+        <p><%= render FlatPack::Skeleton::Component.new(variant: :button) %></p>
+        <p><%= render FlatPack::Skeleton::Component.new(variant: :button) %></p>
       </div>
 
       <%= turbo_frame_tag "trash-bin-results",
@@ -79,72 +53,81 @@
                             recording_studio_trashable__live_search_target: "frame",
                             action: "turbo:before-fetch-request->recording-studio-trashable--live-search#showLoading turbo:frame-load->recording-studio-trashable--live-search#hideLoading"
                           } do %>
-        <table class="min-w-full divide-y divide-(--surface-border-color) text-left text-sm">
-          <thead class="bg-(--surface-raised-color) text-(--surface-muted-content-color)">
-            <tr>
-              <th class="px-4 py-3 font-medium">Name</th>
-              <th class="px-4 py-3 font-medium">Type</th>
-              <th class="px-4 py-3 font-medium">Trashed</th>
-              <th class="px-4 py-3 font-medium">Action</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-(--surface-border-color)" data-pagination-content>
-            <% if @trashed_recordings.empty? %>
-              <tr>
-                <td colspan="4" class="px-4 py-6 text-(--surface-muted-content-color)">
-                  <%= @search_query.present? ? "No trash roots match your search." : "No trash roots." %>
-                </td>
-              </tr>
-            <% else %>
-              <% @trashed_recordings.each do |recording| %>
-                <% trashed_at_trigger_id = "trashed-at-#{recording.id}" %>
-                <tr>
-                  <td class="px-4 py-4 font-medium text-(--surface-content-color)">
-                    <%= recording_studio_trashable_recording_label(recording) %>
-                  </td>
-                  <td class="px-4 py-4 text-(--surface-muted-content-color)"><%= recording.recordable_type %></td>
-                  <td class="px-4 py-4 text-(--surface-muted-content-color)">
-                    <button
-                      id="<%= trashed_at_trigger_id %>"
-                      type="button"
-                      class="underline decoration-dotted underline-offset-2 hover:text-(--surface-content-color)"
-                    >
-                      <%= time_ago_in_words(recording.trashed_at) %> ago
-                    </button>
-                    <%= render FlatPack::Popover::Component.new(trigger_id: trashed_at_trigger_id, placement: :top) do |popover| %>
-                      <% popover.content do %>
-                        <%= l(recording.trashed_at, format: :long) %>
-                      <% end %>
-                    <% end %>
-                  </td>
-                  <td class="px-4 py-4">
-                    <div class="flex flex-wrap gap-2">
-                      <% if recording_studio_trashable_action_authorized?(:restore, recording) %>
-                        <%= form_with url: restore_recording_path(recording), method: :patch, data: { turbo: false } do %>
-                          <%= hidden_field_tag :back_path, recording_studio_trashable_back_path %>
-                          <%= render FlatPack::Button::Component.new(text: "Restore", style: :secondary, type: "submit") %>
-                        <% end %>
-                      <% end %>
-                      <% if recording_studio_trashable_action_authorized?(:purge, recording) %>
-                        <%= form_with url: purge_recording_path(recording), method: :delete, data: { turbo: false } do %>
-                          <%= hidden_field_tag :back_path, recording_studio_trashable_back_path %>
-                          <%= render FlatPack::Button::Component.new(text: "Purge", style: :error, type: "submit") %>
-                        <% end %>
-                      <% end %>
-                    </div>
-                  </td>
-                </tr>
-              <% end %>
-            <% end %>
-          </tbody>
-        </table>
+        <% if @trashed_recordings.empty? %>
+          <%= render FlatPack::Alert::Component.new(
+            description: @search_query.present? ? "No trash roots match your search." : "No trash roots.",
+            style: :info
+          ) %>
+        <% else %>
+          <%= render FlatPack::Table::Component.new(
+            data: @trashed_recordings,
+            tbody_data: { pagination_content: true }
+          ) do |table| %>
+            <% table.column(title: "Name", html: ->(recording) { recording_studio_trashable_recording_label(recording) }) %>
+            <% table.column(title: "Type", html: ->(recording) { recording.recordable_type }) %>
+            <% table.column(
+                 title: "Trashed",
+                 html: lambda { |recording|
+                   trashed_at_trigger_id = "trashed-at-#{recording.id}"
+                   safe_join([
+                     button_tag(
+                       "#{time_ago_in_words(recording.trashed_at)} ago",
+                       id: trashed_at_trigger_id,
+                       type: "button"
+                     ),
+                     render(
+                       FlatPack::Popover::Component.new(trigger_id: trashed_at_trigger_id, placement: :top) do |popover|
+                         popover.content { l(recording.trashed_at, format: :long) }
+                       end
+                     )
+                   ])
+                 }
+               ) %>
+            <% table.column(
+                 title: "Action",
+                 html: lambda { |recording|
+                   actions = []
 
-        <%= render FlatPack::Pagination::Component.new(
-          pagy: @pagy,
-          mode: :infinite,
-          loading_variant: :table
-        ) %>
+                   if recording_studio_trashable_action_authorized?(:restore, recording)
+                     actions << form_with(
+                       url: restore_recording_path(recording),
+                       method: :patch,
+                       data: { turbo: false },
+                       html: { class: "shrink-0" }
+                     ) do
+                       safe_join([
+                         hidden_field_tag(:back_path, recording_studio_trashable_back_path),
+                         render(FlatPack::Button::Component.new(text: "Restore", style: :secondary, type: "submit"))
+                       ])
+                     end
+                   end
+
+                   if recording_studio_trashable_action_authorized?(:purge, recording)
+                     actions << form_with(
+                       url: purge_recording_path(recording),
+                       method: :delete,
+                       data: { turbo: false },
+                       html: { class: "shrink-0" }
+                     ) do
+                       safe_join([
+                         hidden_field_tag(:back_path, recording_studio_trashable_back_path),
+                         render(FlatPack::Button::Component.new(text: "Purge", style: :error, type: "submit"))
+                       ])
+                     end
+                   end
+
+                   content_tag(:div, safe_join(actions), class: "flex flex-wrap items-center gap-2 xl:flex-nowrap")
+                 }
+               ) %>
+          <% end %>
+
+          <%= render FlatPack::Pagination::Component.new(
+            pagy: @pagy,
+            mode: :infinite,
+            loading_variant: :table
+          ) %>
+        <% end %>
       <% end %>
-    </div>
-  </div>
+    <% end %>
+  <% end %>
 </div>

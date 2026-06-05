@@ -36,7 +36,8 @@ module RecordingStudioTrashable
       def resolve_custom_authorization(resolver, **payload)
         return nil unless resolver
 
-        !!resolver.call(**payload)
+        result = resolver.call(**payload)
+        result.nil? ? nil : !!result
       end
 
       def accessible_authorized?(configuration, actor:, recording:, role:)
@@ -44,10 +45,11 @@ module RecordingStudioTrashable
         return configuration.allow_unconfigured_authorization unless accessible_authorizer_available?
         return configuration.allow_unconfigured_authorization if recording.nil? || actor.nil?
 
-        if accessible_authorizer.respond_to?(:authorized?)
-          accessible_authorizer.authorized?(actor: actor, recording: recording, role: role)
+        authorizer = accessible_authorizer
+        if authorizer.respond_to?(:authorized?)
+          authorizer.authorized?(actor: actor, recording: recording, role: role)
         else
-          accessible_authorizer.allowed?(actor: actor, recording: recording, role: role)
+          authorizer.allowed?(actor: actor, recording: recording, role: role)
         end
       end
 
@@ -56,11 +58,9 @@ module RecordingStudioTrashable
       end
 
       def accessible_authorizer
-        if defined?(RecordingStudioAccessible) && RecordingStudioAccessible.respond_to?(:authorized?)
+        if defined?(RecordingStudioAccessible) &&
+           (RecordingStudioAccessible.respond_to?(:authorized?) || RecordingStudioAccessible.respond_to?(:allowed?))
           RecordingStudioAccessible
-        elsif defined?(::RecordingStudio::Services::AccessCheck) &&
-              ::RecordingStudio::Services::AccessCheck.respond_to?(:allowed?)
-          ::RecordingStudio::Services::AccessCheck
         end
       end
 

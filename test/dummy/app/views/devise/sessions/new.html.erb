@@ -1,45 +1,41 @@
-<div class="mx-auto flex w-full max-w-md flex-col justify-center px-4 py-8">
-  <%= render FlatPack::Grid::Component.new(cols: 1, align: :center, class: "w-full justify-items-center") do %>
-    <%= render FlatPack::Card::Component.new(style: :default, class: "h-auto w-full") do |card| %>
+<div>
+  <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(
           title: "Sign In",
-          variant: :h2,
-          class: "mb-0 pb-0"
+          variant: :h2
         ) %>
       <% end %>
 
       <% card.body do %>
         <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
-          <div class="space-y-4">
-            <%= render FlatPack::EmailInput::Component.new(
-              name: "user[email]",
-              label: "Email",
-              value: "admin@admin.com",
-              placeholder: "you@example.com"
-            ) %>
+          <%= render FlatPack::EmailInput::Component.new(
+            name: "user[email]",
+            label: "Email",
+            value: "admin@admin.com",
+            placeholder: "you@example.com"
+          ) %>
 
-            <%= render FlatPack::PasswordInput::Component.new(
-              name: "user[password]",
-              label: "Password",
-              value: "Password",
-              required: true
-            ) %>
+          <%= render FlatPack::PasswordInput::Component.new(
+            name: "user[password]",
+            label: "Password",
+            value: "Password",
+            required: true
+          ) %>
 
-            <% if devise_mapping.rememberable? %>
-              <%= render FlatPack::Checkbox::Component.new(
-                name: "#{resource_name}[remember_me]",
-                label: "Remember me"
-              ) %>
-            <% end %>
-
-            <%= render FlatPack::Button::Component.new(
-              text: "Sign In",
-              style: :primary,
-              size: :md,
-              type: "submit"
+          <% if devise_mapping.rememberable? %>
+            <%= render FlatPack::Checkbox::Component.new(
+              name: "#{resource_name}[remember_me]",
+              label: "Remember me"
             ) %>
-          </div>
+          <% end %>
+
+          <%= render FlatPack::Button::Component.new(
+            text: "Sign In",
+            style: :primary,
+            size: :md,
+            type: "submit"
+          ) %>
         <% end %>
       <% end %>
 
@@ -50,6 +46,5 @@
           size: :sm
         ) %>
       <% end %>
-    <% end %>
   <% end %>
 </div>
