@@ -166,7 +166,8 @@ class RetentionPurgerTest < Minitest::Test
     grandchild = FakeRecording.new(id: "fresh-grandchild", parent_recording_id: "child", trashed_at: Time.now - 1.day)
 
     RecordingStudioTrashable::SubtreeQuery.stub(:recordings_for, [parent, child, grandchild]) do
-      RecordingStudioTrashable::RetentionPolicy.stub(:due?, ->(recording:, **) { recording.id != "fresh-grandchild" }) do
+      due_policy = ->(recording:, **) { recording.id != "fresh-grandchild" }
+      RecordingStudioTrashable::RetentionPolicy.stub(:due?, due_policy) do
         RecordingStudioTrashable.stub(:authorized?, true) do
           result = RecordingStudioTrashable.purge_due_recordings(scope_recording: :workspace, actor: :system)
 

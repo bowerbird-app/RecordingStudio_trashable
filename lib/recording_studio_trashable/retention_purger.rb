@@ -37,16 +37,12 @@ module RecordingStudioTrashable
     def purge_candidates
       recordings = RecordingStudioTrashable::SubtreeQuery.recordings_for(@scope_recording)
       index = recordings.index_by(&:id)
-      children_by_parent_id = recordings.group_by(&:parent_recording_id)
       eligible_recordings = recordings.select { |recording| due_recording?(recording) }
-      eligible_ids = eligible_recordings.map(&:id)
-      candidates, skipped = eligible_recordings.partition do |recording|
-        retention_due_subtree?(recording, children_by_parent_id, eligible_ids)
-      end
+      candidates, skipped = partition_purge_candidates(recordings, eligible_recordings)
 
       [
-        candidates.sort_by { |recording| [-depth_for(recording, index), recording.trashed_at.to_f] },
-        skipped.sort_by { |recording| [-depth_for(recording, index), recording.trashed_at.to_f] }
+        sort_by_purge_order(candidates, index),
+        sort_by_purge_order(skipped, index)
       ]
     end
 
@@ -57,6 +53,19 @@ module RecordingStudioTrashable
           scope_recording: @scope_recording,
           as_of: @as_of
         )
+    end
+
+    def partition_purge_candidates(recordings, eligible_recordings)
+      children_by_parent_id = recordings.group_by(&:parent_recording_id)
+      eligible_ids = eligible_recordings.map(&:id)
+
+      eligible_recordings.partition do |recording|
+        retention_due_subtree?(recording, children_by_parent_id, eligible_ids)
+      end
+    end
+
+    def sort_by_purge_order(recordings, index)
+      recordings.sort_by { |recording| [-depth_for(recording, index), recording.trashed_at.to_f] }
     end
 
     def retention_due_subtree?(recording, children_by_parent_id, eligible_ids)

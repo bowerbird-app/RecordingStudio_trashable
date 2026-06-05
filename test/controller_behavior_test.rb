@@ -145,7 +145,7 @@ class ControllerBehaviorTest < Minitest::Test
     controller.purge
 
     assert_equal "/back", URI.parse(controller.response.location).path
-    assert_equal "Mix Notes permantly deleted", controller.flash[:notice]
+    assert_equal "Mix Notes permanently deleted", controller.flash[:notice]
     assert_equal :editor, recording.lifecycle_calls[:purge][:actor]
   end
 

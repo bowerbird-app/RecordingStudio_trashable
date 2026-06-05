@@ -14,15 +14,15 @@ class AuthorizationTest < Minitest::Test
         true
       end
     end
+  end
 
-    class FakeAllowedAccessibleAuthorizer
-      class << self
-        attr_accessor :last_payload
+  class FakeAllowedAccessibleAuthorizer
+    class << self
+      attr_accessor :last_payload
 
-        def allowed?(**payload)
-          self.last_payload = payload
-          true
-        end
+      def allowed?(**payload)
+        self.last_payload = payload
+        true
       end
     end
   end
@@ -166,9 +166,7 @@ class AuthorizationTest < Minitest::Test
     refute_includes File.read(File.expand_path("../lib/recording_studio_trashable/authorization.rb", __dir__)),
                     "AccessCheck"
   ensure
-    if RecordingStudio.const_defined?(:Services, false)
-      RecordingStudio.send(:remove_const, :Services)
-    end
+    RecordingStudio.send(:remove_const, :Services) if RecordingStudio.const_defined?(:Services, false)
     RecordingStudio.const_set(:Services, original_services) if services_was_defined
   end
 
