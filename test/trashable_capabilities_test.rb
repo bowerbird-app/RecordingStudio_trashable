@@ -241,6 +241,8 @@ class TrashableCapabilitiesTest < Minitest::Test
     assert_nil child.trashed_at
     refute parent.trash_root
     refute child.trash_root
+    assert_equal "restored", child.logged_events.last[:action]
+    assert_equal "restored", parent.logged_events.last[:action]
     assert_equal %w[child parent], FakeRecording.lock_proxy.looked_up_ids.sort
   end
 

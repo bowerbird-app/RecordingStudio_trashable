@@ -14,6 +14,17 @@ class AuthorizationTest < Minitest::Test
         true
       end
     end
+
+    class FakeAllowedAccessibleAuthorizer
+      class << self
+        attr_accessor :last_payload
+
+        def allowed?(**payload)
+          self.last_payload = payload
+          true
+        end
+      end
+    end
   end
 
   class FakeCurrent
@@ -91,15 +102,74 @@ class AuthorizationTest < Minitest::Test
     end
   end
 
+  def test_custom_authorization_resolver_can_abstain_to_accessible_authorizer
+    RecordingStudioTrashable.configure do |config|
+      config.use_recording_studio_accessible = true
+      config.authorization_roles = { trash: :edit }
+      config.authorization_resolver = ->(**) {}
+    end
+    FakeAccessibleAuthorizer.last_payload = nil
+
+    RecordingStudioTrashable.const_set(:RecordingStudioAccessible, FakeAccessibleAuthorizer)
+
+    assert RecordingStudioTrashable.authorized?(action: :trash, actor: :user, recording: :recording)
+    assert_equal(
+      { actor: :user, recording: :recording, role: :edit },
+      FakeAccessibleAuthorizer.last_payload
+    )
+  ensure
+    if RecordingStudioTrashable.const_defined?(:RecordingStudioAccessible, false)
+      RecordingStudioTrashable.send(:remove_const, :RecordingStudioAccessible)
+    end
+  end
+
+  def test_authorized_uses_recording_studio_accessible_allowed_adapter
+    RecordingStudioTrashable.configure do |config|
+      config.use_recording_studio_accessible = true
+      config.authorization_roles = { trash: :edit }
+    end
+    FakeAllowedAccessibleAuthorizer.last_payload = nil
+
+    RecordingStudioTrashable.const_set(:RecordingStudioAccessible, FakeAllowedAccessibleAuthorizer)
+
+    assert RecordingStudioTrashable.authorized?(action: :trash, actor: :user, recording: :recording)
+    assert_equal(
+      { actor: :user, recording: :recording, role: :edit },
+      FakeAllowedAccessibleAuthorizer.last_payload
+    )
+  ensure
+    if RecordingStudioTrashable.const_defined?(:RecordingStudioAccessible, false)
+      RecordingStudioTrashable.send(:remove_const, :RecordingStudioAccessible)
+    end
+  end
+
   def test_authorized_does_not_fall_back_to_removed_core_access_check
     RecordingStudioTrashable.configure do |config|
       config.use_recording_studio_accessible = true
       config.authorization_roles = { trash: :edit }
     end
 
+    called = false
+    services_was_defined = RecordingStudio.const_defined?(:Services, false)
+    original_services = RecordingStudio.const_get(:Services) if services_was_defined
+    RecordingStudio.send(:remove_const, :Services) if services_was_defined
+    RecordingStudio.const_set(:Services, Module.new)
+    RecordingStudio::Services.const_set(:AccessCheck, Class.new do
+      define_singleton_method(:allowed?) do |**|
+        called = true
+        true
+      end
+    end)
+
     refute RecordingStudioTrashable.authorized?(action: :trash, actor: :user, recording: :recording)
+    refute called
     refute_includes File.read(File.expand_path("../lib/recording_studio_trashable/authorization.rb", __dir__)),
                     "AccessCheck"
+  ensure
+    if RecordingStudio.const_defined?(:Services, false)
+      RecordingStudio.send(:remove_const, :Services)
+    end
+    RecordingStudio.const_set(:Services, original_services) if services_was_defined
   end
 
   def test_current_actor_and_impersonator_fall_back_to_current_attributes

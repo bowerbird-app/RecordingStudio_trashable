@@ -57,16 +57,19 @@ class RecordingStudioTrashableTest < Minitest::Test
     assert_dummy_model_includes("workspace.rb", "root: true")
 
     assert_dummy_model_includes("project.rb", 'recording_studio_recordable label: "Project"')
+    assert_dummy_model_includes("project.rb", 'plural_label: "Projects"')
     assert_dummy_model_includes("project.rb", "root: false")
     assert_dummy_model_includes("project.rb", 'allowed_parent_types: ["Workspace"]')
 
     assert_dummy_model_includes("folder.rb", 'recording_studio_recordable label: "Folder"')
+    assert_dummy_model_includes("folder.rb", 'plural_label: "Folders"')
     assert_dummy_model_includes("folder.rb", "root: false")
     assert_dummy_model_includes("folder.rb", "allowed_parent_types: %w[Workspace Project Folder]")
 
     assert_dummy_model_includes("page.rb", 'recording_studio_recordable label: "Page"')
+    assert_dummy_model_includes("page.rb", 'plural_label: "Pages"')
     assert_dummy_model_includes("page.rb", "root: false")
-    assert_dummy_model_includes("page.rb", "allowed_parent_types: %w[Workspace Project Folder]")
+    assert_dummy_model_includes("page.rb", "allowed_parent_types: %w[Workspace Project Folder Page]")
   end
 
   def test_dummy_page_remains_the_only_trashable_recordable

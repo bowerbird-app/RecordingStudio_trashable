@@ -71,17 +71,18 @@ class Workspace < ApplicationRecord
 end
 
 class Project < ApplicationRecord
-  recording_studio_recordable label: "Project", root: false, allowed_parent_types: ["Workspace"]
+  recording_studio_recordable label: "Project", plural_label: "Projects",
+                              root: false, allowed_parent_types: ["Workspace"]
 end
 
 class Folder < ApplicationRecord
-  recording_studio_recordable label: "Folder", root: false,
+  recording_studio_recordable label: "Folder", plural_label: "Folders", root: false,
                               allowed_parent_types: %w[Workspace Project Folder]
 end
 
 class Page < ApplicationRecord
-  recording_studio_recordable label: "Page", root: false,
-                              allowed_parent_types: %w[Workspace Project Folder]
+  recording_studio_recordable label: "Page", plural_label: "Pages", root: false,
+                              allowed_parent_types: %w[Workspace Project Folder Page]
 end
 
 RecordingStudioTrashable.configure do |config|
@@ -104,8 +105,8 @@ Recordables stay opt-in. Include the capability only on the recordable models th
 
 ```ruby
 class Page < ApplicationRecord
-  recording_studio_recordable label: "Page", root: false,
-                              allowed_parent_types: %w[Workspace Project Folder]
+  recording_studio_recordable label: "Page", plural_label: "Pages", root: false,
+                              allowed_parent_types: %w[Workspace Project Folder Page]
 
   include RecordingStudio::Capabilities::Trashable.to(purge_after_days: 14)
 end
@@ -132,7 +133,7 @@ recording.recording_studio_trashable_purge!(actor: Current.actor)
 - direct trash marks the targeted recording as a `trash_root` and hides cascade-trashed descendants from the trash bin.
 - restore clears cascade-trashed descendants but leaves nested `trash_root` branches trashed until they are restored directly.
 - purge only deletes recordings that are already trashed; active recordings must be trashed first.
-- purge destroys descendants before parents and logs `purged` before deletion, so the audit history preserves the explicit purge action until the recording and its events are intentionally removed.
+- purge destroys descendants before parents and logs `purged` before deletion. Because purge then removes the recording and its attached events, that log entry is not durable audit history unless the host app copies it to an external audit store.
 
 ## Query helpers
 
