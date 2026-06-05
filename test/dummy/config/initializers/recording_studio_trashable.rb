@@ -3,6 +3,7 @@
 RecordingStudioTrashable.configure do |config|
   config.default_purge_after_days = 30
   config.allow_user_retention_settings = true
+  config.authorization_resolver = ->(action:, actor:, **) { action.present? && actor.present? }
 end
 
 Rails.application.config.to_prepare do

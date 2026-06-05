@@ -244,15 +244,14 @@ class UiSurfaceTest < Minitest::Test
     assert_includes sidebar_source, "FlatPack::Alert::Component"
   end
 
-  def test_dummy_application_controller_provisions_demo_access_for_signed_in_users
-    source = File.read(File.expand_path("dummy/app/controllers/application_controller.rb", __dir__))
+  def test_dummy_uses_resolver_authorization_for_signed_in_demo_users
+    controller_source = File.read(File.expand_path("dummy/app/controllers/application_controller.rb", __dir__))
+    initializer_source = File.read(File.expand_path("dummy/config/initializers/recording_studio_trashable.rb", __dir__))
 
-    assert_includes source, "before_action :ensure_demo_access!"
-    assert_includes source, "workspace_recording = DemoRecordingLookup.workspace_root"
-    assert_includes source, "RecordingStudio::Access.find_or_initialize_by(actor: current_user)"
-    assert_includes source, "access.role = :admin"
-    assert_includes source, "access.save! if access.new_record? || access.changed?"
-    assert_includes source, "recordable: access"
+    assert_includes controller_source, "before_action :set_current_actor"
+    refute_includes controller_source, "RecordingStudio::Access"
+    assert_includes initializer_source, "config.authorization_resolver"
+    assert_includes initializer_source, "action.present? && actor.present?"
   end
 
   def test_devise_sign_in_view_keeps_form_in_normal_layout_flow

@@ -58,9 +58,6 @@ module RecordingStudioTrashable
       def accessible_authorizer
         if defined?(RecordingStudioAccessible) && RecordingStudioAccessible.respond_to?(:authorized?)
           RecordingStudioAccessible
-        elsif defined?(::RecordingStudio::Services::AccessCheck) &&
-              ::RecordingStudio::Services::AccessCheck.respond_to?(:allowed?)
-          ::RecordingStudio::Services::AccessCheck
         end
       end
 

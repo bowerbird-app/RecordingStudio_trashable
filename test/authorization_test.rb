@@ -91,25 +91,15 @@ class AuthorizationTest < Minitest::Test
     end
   end
 
-  def test_authorized_falls_back_to_recording_studio_access_check_when_adapter_is_absent
+  def test_authorized_does_not_fall_back_to_removed_core_access_check
     RecordingStudioTrashable.configure do |config|
       config.use_recording_studio_accessible = true
       config.authorization_roles = { trash: :edit }
     end
 
-    payload = nil
-
-    RecordingStudio::Services::AccessCheck.stub(:allowed?, lambda { |**kwargs|
-      payload = kwargs
-      true
-    }) do
-      assert RecordingStudioTrashable.authorized?(action: :trash, actor: :user, recording: :recording)
-    end
-
-    assert_equal(
-      { actor: :user, recording: :recording, role: :edit },
-      payload
-    )
+    refute RecordingStudioTrashable.authorized?(action: :trash, actor: :user, recording: :recording)
+    refute_includes File.read(File.expand_path("../lib/recording_studio_trashable/authorization.rb", __dir__)),
+                    "AccessCheck"
   end
 
   def test_current_actor_and_impersonator_fall_back_to_current_attributes
