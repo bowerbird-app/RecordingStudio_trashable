@@ -8,13 +8,20 @@ class UiSurfaceTest < Minitest::Test
     trash_bin_view = read_repo_file("../app/views/recording_studio_trashable/trash_bins/show.html.erb")
     retention_view = read_repo_file("../app/views/recording_studio_trashable/retention_settings/edit.html.erb")
 
-    assert_includes home_view, "aria-label=\"Breadcrumb\""
-    assert_includes home_view, 'icon: "arrow-left"'
+    assert_includes home_view, "FlatPack::PageNav::Component"
+    assert_includes home_view, "anchor_url: recording_studio_trashable_back_path"
+    assert_includes home_view, 'class: "mb-4"'
+    assert_includes home_view, "FlatPack::SectionTitle::Component"
+    assert_includes home_view, 'anchor_id: "capabilities"'
+    assert_includes home_view, 'anchor_id: "authorization"'
+    assert_includes home_view, "FlatPack::Card::Component"
     refute_includes home_view, 'text: "Capabilities", style: :ghost, url: "#capabilities"'
     refute_includes home_view, 'text: "Authorization", style: :ghost, url: "#authorization"'
+    refute_includes home_view, "text-xl font-semibold"
     assert_includes trash_bin_view, "FlatPack::PageTitle::Component"
-    assert_includes trash_bin_view, "aria-label=\"Breadcrumb\""
-    assert_includes trash_bin_view, 'icon: "arrow-left"'
+    assert_includes trash_bin_view, "FlatPack::PageNav::Component"
+    assert_includes trash_bin_view, "anchor_url: recording_studio_trashable_back_path"
+    assert_includes trash_bin_view, 'class: "mb-4"'
     assert_includes trash_bin_view, "recording_studio_trashable_back_path"
     assert_includes trash_bin_view, "recording_studio_trashable_back_link_params"
     assert_includes trash_bin_view, "hidden_field_tag :back_path"
@@ -39,11 +46,14 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, 'turbo_frame: "trash-bin-results"'
     assert_includes trash_bin_view, "recording_studio_trashable__live_search_delay_value: 250"
     assert_includes trash_bin_view, 'data-recording-studio-trashable--live-search-target="skeleton"'
+    assert_includes trash_bin_view, "hidden data-recording-studio-trashable--live-search-target=\"skeleton\""
+    assert_includes trash_bin_view, "FlatPack::Card::Component"
     assert_includes trash_bin_view, "FlatPack::Skeleton::Component"
     assert_includes trash_bin_view, 'turbo_frame_tag "trash-bin-results"'
     assert_includes trash_bin_view, "turbo:before-fetch-request->recording-studio-trashable--live-search#showLoading"
     assert_includes trash_bin_view, "turbo:frame-load->recording-studio-trashable--live-search#hideLoading"
-    assert_includes trash_bin_view, "data-pagination-content"
+    assert_includes trash_bin_view, "FlatPack::Table::Component"
+    assert_includes trash_bin_view, "tbody_data: { pagination_content: true }"
     assert_includes trash_bin_view, "FlatPack::Pagination::Component"
     assert_includes trash_bin_view, "mode: :infinite"
     assert_includes trash_bin_view, "loading_variant: :table"
@@ -51,34 +61,42 @@ class UiSurfaceTest < Minitest::Test
     refute_includes trash_bin_view, 'FlatPack::Button::Component.new(text: "Search"'
     refute_includes trash_bin_view, 'text: "Clear"'
     assert_includes trash_bin_view, "No trash roots match your search."
-    assert_includes trash_bin_view, ">Name<"
-    assert_includes trash_bin_view, ">Type<"
-    assert_includes trash_bin_view, ">Trashed<"
-    assert_includes trash_bin_view, ">Action<"
+    assert_includes trash_bin_view, "title: \"Name\""
+    assert_includes trash_bin_view, 'title: "Type"'
+    assert_includes trash_bin_view, 'title: "Trashed"'
+    assert_includes trash_bin_view, 'title: "Action"'
     assert_includes trash_bin_view, "time_ago_in_words(recording.trashed_at)"
     assert_includes trash_bin_view, "FlatPack::Popover::Component"
     assert_includes trash_bin_view, "l(recording.trashed_at, format: :long)"
     assert_includes trash_bin_view, "recording_studio_trashable_action_authorized?(:restore"
     assert_includes trash_bin_view, "recording_studio_trashable_action_authorized?(:purge"
-    assert_includes trash_bin_view, "form_with url: restore_recording_path("
-    assert_includes trash_bin_view, "form_with url: purge_recording_path("
-    assert_includes trash_bin_view, "hidden_field_tag :back_path, recording_studio_trashable_back_path"
+    assert_includes trash_bin_view, "restore_recording_path(recording)"
+    assert_includes trash_bin_view, "purge_recording_path(recording)"
+    assert_includes trash_bin_view, "html: { class: \"shrink-0\" }"
+    assert_includes(
+      trash_bin_view,
+      'content_tag(:div, safe_join(actions), class: "flex flex-wrap items-center gap-2 xl:flex-nowrap")'
+    )
+    assert_includes trash_bin_view, "hidden_field_tag(:back_path, recording_studio_trashable_back_path)"
+    refute_includes trash_bin_view, "rounded-xl border"
     refute_includes trash_bin_view, 'redirect_target: "origin"'
     refute_includes trash_bin_view, "origin_path: request.fullpath"
     refute_includes trash_bin_view, "return_to_recording_id: @scope_recording.id"
-    assert_includes retention_view, "aria-label=\"Breadcrumb\""
-    assert_includes retention_view, 'icon: "arrow-left"'
-    assert_includes retention_view, "FlatPack::Button::Component"
+    assert_includes retention_view, "FlatPack::PageNav::Component"
+    assert_includes retention_view, "anchor_url: recording_studio_trashable_back_path"
+    assert_includes retention_view, 'class: "mb-4"'
+    assert_includes retention_view, "FlatPack::Select::Component"
     assert_includes retention_view, "recording_studio_trashable_back_path"
     assert_includes retention_view,
                     "recording_trash_settings_path(@scope_recording, recording_studio_trashable_back_link_params)"
-    assert_includes retention_view, "max-w-5xl"
-    assert_includes retention_view, 'class="text-sm text-(--surface-muted-content-color)"'
     assert_includes retention_view, 'title: "Retention period"'
     assert_includes retention_view, 'subtitle: "Number of days to keep trashed items."'
-    assert_includes retention_view, "form.select :purge_after_days"
+    assert_includes retention_view, 'label: "Retention period"'
+    assert_includes retention_view, "name: \"\#{form.object_name}[purge_after_days]\""
     assert_includes retention_view, 'text: "Save"'
     refute_includes retention_view, "FlatPack::Card::Component"
+    refute_includes retention_view, "form.select :purge_after_days"
+    refute_includes retention_view, "rounded-lg border border["
     refute_includes retention_view, 'text: "Back to trash bin"'
   end
 
@@ -92,6 +110,10 @@ class UiSurfaceTest < Minitest::Test
     assert_includes application_controller, "recording_studio_trashable_retention_settings_enabled?"
     assert_includes application_controller, "def recording_studio_trashable_back_path"
     assert_includes application_controller, "def recording_studio_trashable_back_link_params"
+    assert_includes layout_view, 'data-theme="rounded"'
+    assert_includes layout_view, 'stylesheet_link_tag "flat_pack/variables"'
+    assert_includes layout_view, 'stylesheet_link_tag "flat_pack/application"'
+    assert_includes layout_view, 'stylesheet_link_tag "tailwind"'
     refute_includes layout_view, "FlatPack::SidebarLayout::Component"
     refute_includes layout_view, "layouts/flat_pack/top_nav"
     refute_includes layout_view, "layouts/flat_pack/sidebar"
@@ -126,12 +148,27 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_controller, "@pagy, @trashed_recordings = pagy(trashed_recordings, limit: PAGE_SIZE)"
   end
 
-  def test_dummy_tailwind_sources_include_flat_pack_gem_paths
+  def test_dummy_layouts_use_rounded_theme_with_flatpack_assets
+    layout = File.read(File.expand_path("dummy/app/views/layouts/application.html.erb", __dir__))
+    sidebar_layout = File.read(File.expand_path("dummy/app/views/layouts/flat_pack_sidebar.html.erb", __dir__))
+    top_nav = File.read(File.expand_path("dummy/app/views/layouts/flat_pack/_top_nav.html.erb", __dir__))
     css = File.read(File.expand_path("dummy/app/assets/tailwind/application.css", __dir__))
 
+    assert_includes layout, 'data-theme="rounded"'
+    assert_includes sidebar_layout, 'data-theme="rounded"'
+    assert_includes layout, 'stylesheet_link_tag "flat_pack/variables"'
+    assert_includes sidebar_layout, 'stylesheet_link_tag "flat_pack/variables"'
+    assert_includes layout, 'stylesheet_link_tag "tailwind"'
+    assert_includes sidebar_layout, 'stylesheet_link_tag "tailwind"'
     assert_includes css, "vendor/bundle/**/flatpack/app/components/**/*.{rb,erb}"
     assert_includes css, "vendor/bundle/**/flat_pack/app/components/**/*.{rb,erb}"
     assert_includes css, "flat_pack-*/app/components/**/*.{rb,erb}"
+    assert_includes top_nav, "FlatPack::TopNav::Component"
+    refute_includes top_nav, 'icon: "menu"'
+    refute_includes top_nav, 'aria: {label: "Toggle sidebar"}'
+    refute_includes top_nav, 'action: "click->flat-pack--sidebar-layout#toggleMobile"'
+    refute_includes css, "@theme {"
+    refute_includes css, "--color-fp-primary"
   end
 
   def test_engine_registers_live_search_assets
@@ -148,8 +185,8 @@ class UiSurfaceTest < Minitest::Test
     assert_includes live_search_controller, "export default class extends Controller"
     assert_includes live_search_controller, "this.formTarget.requestSubmit()"
     assert_includes live_search_controller, "setTimeout(() => this.submit(), this.delayValue)"
-    assert_includes live_search_controller, 'this.skeletonTarget.classList.remove("hidden")'
-    assert_includes live_search_controller, 'this.skeletonTarget.classList.add("hidden")'
+    assert_includes live_search_controller, "this.skeletonTarget.hidden = false"
+    assert_includes live_search_controller, "this.skeletonTarget.hidden = true"
     assert_includes live_search_controller, 'this.frameTarget.style.visibility = "hidden"'
     assert_includes live_search_controller, 'this.frameTarget.style.visibility = ""'
     assert_includes live_search_controller, 'event.target.value.trim() === ""'
@@ -180,17 +217,25 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, "text: \"Purge\""
     assert_includes source, "main_app.purge_due_recordings_path"
     assert_includes source, "back_path: main_app.root_path"
-    assert_includes source, ">name<"
-    assert_includes source, ">type<"
-    assert_includes source, ">trash root<"
-    assert_includes source, ">status<"
-    assert_includes source, ">action<"
+    assert_includes source, "FlatPack::Table::Component"
+    assert_includes source, 'title: "name"'
+    assert_includes source, 'title: "type"'
+    assert_includes source, 'title: "trash root"'
+    assert_includes source, 'title: "status"'
+    assert_includes source, 'title: "action"'
+    assert_includes source, "FlatPack::Badge::Component"
+    assert_includes source, "style = recording.trashed_at.present? ? :warning : :success"
     assert_includes source, 'recording.trash_root? ? "yes" : "no"'
     assert_includes source, "recording_studio_trashable.trash_recording_path("
     assert_includes source, "recording_studio_trashable.restore_recording_path("
     assert_includes source, "recording_studio_trashable.purge_recording_path("
     assert_includes source, "data: { turbo: false }"
-    assert_includes source, "hidden_field_tag :back_path, request.fullpath"
+    assert_includes source, 'html: { class: "shrink-0" }'
+    assert_includes(
+      source,
+      'content_tag(:div, safe_join(actions), class: "flex flex-wrap items-center gap-2 xl:flex-nowrap")'
+    )
+    assert_includes source, "hidden_field_tag(:back_path, request.fullpath)"
     refute_includes source, 'redirect_target: "origin"'
     refute_includes source, "origin_path: request.fullpath"
     refute_includes source, "return_to_recording_id: @workspace_recording.id"
@@ -205,6 +250,7 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, "Trash not enabled"
     assert_includes source, "FlatPack::Popover::Component"
     assert_includes source, "This recordable type has not had trash enabled."
+    refute_includes source, "bg-red-50"
     assert_includes controller_source, "DemoRecordingLookup.recent_projects(@workspace_recording, limit: 2)"
     assert_includes controller_source, "DemoRecordingLookup.recent_active_pages(@workspace_recording, limit: 2)"
     assert_includes controller_source, "DemoRecordingLookup.recent_trash_roots(@workspace_recording, limit: 2)"
@@ -257,8 +303,9 @@ class UiSurfaceTest < Minitest::Test
   def test_devise_sign_in_view_keeps_form_in_normal_layout_flow
     source = File.read(File.expand_path("dummy/app/views/devise/sessions/new.html.erb", __dir__))
 
-    assert_includes source, 'class="mx-auto flex w-full max-w-md flex-col justify-center px-4 py-8"'
+    assert_includes source, "FlatPack::Card::Component.new(style: :default)"
     refute_includes source, 'class="fixed inset-0 p-4"'
+    refute_includes source, 'class="mx-auto flex w-full max-w-md flex-col justify-center px-4 py-8"'
   end
 
   def test_dummy_events_page_is_owned_by_dummy_app
@@ -279,11 +326,13 @@ class UiSurfaceTest < Minitest::Test
     assert_includes view_source, 'title: "Events"'
     assert_includes view_source, 'subtitle: "All Recording Studio events in the dummy app"'
     assert_includes view_source, "main_app.root_path"
+    assert_includes view_source, "FlatPack::Table::Component"
     assert_includes view_source, "FlatPack::Popover::Component"
     assert_includes view_source, "event_recording_label(event)"
     assert_includes view_source, "event_actor_label(event)"
     assert_includes view_source, "event_metadata(event)"
     assert_includes view_source, "No events recorded yet."
+    refute_includes view_source, "rounded-xl border"
     assert_includes sidebar_source, 'label: "Events"'
     assert_includes sidebar_source, "href: main_app.events_path"
     refute_includes sidebar_source, "recording_studio_trashable.recording_events_path"
@@ -459,7 +508,7 @@ class UiSurfaceTest < Minitest::Test
     assert_includes showcase_view, "title: section.fetch(:title)"
     assert_includes showcase_view, "subtitle: section[:subtitle]"
     assert_includes showcase_view, "anchor_id: section[:anchor_id]"
-    assert_includes showcase_view, "simple_format(section.fetch(:body), class: \"text-sm leading-7\")"
+    assert_includes showcase_view, "simple_format(section.fetch(:body))"
     assert_includes showcase_view, "code: section.fetch(:code)"
     assert_includes showcase_view, "language: section[:code_language] || :ruby"
     assert_includes showcase_view, "@page[:methods].present?"
@@ -473,7 +522,9 @@ class UiSurfaceTest < Minitest::Test
     assert_includes showcase_view, 'title: method[:code_title] || "Usage"'
     assert_includes showcase_view, "@page.fetch(:table_rows)"
     assert_includes showcase_view, "@page.fetch(:wrap_table_in_card, true)"
-    assert_includes showcase_view, 'FlatPack::Table::Component.new(data: rows, class: "text-sm")'
+    assert_includes showcase_view, "tag.code(row.fetch(:name))"
+    assert_includes showcase_view, "tag.div(row.fetch(:description))"
+    assert_includes showcase_view, "FlatPack::Table::Component.new(data: rows)"
     assert_includes showcase_view, '@page[:subtitle] || "Allow a recordable type to be trashed"'
     assert_includes showcase_view, "@page[:code_language] || :ruby"
     assert_includes showcase_view, '@page[:code_title] || "Code Example"'

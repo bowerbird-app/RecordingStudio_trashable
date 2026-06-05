@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="h-full overflow-hidden overscroll-none">
+<html data-theme="rounded">
   <head>
     <title><%= content_for(:title) || "Dummy" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -22,7 +22,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="m-0 h-full overflow-hidden overscroll-none bg-(--surface-page-background-color) text-(--surface-content-color)">
+  <body>
     <%= render "layouts/icon_sprite" %>
 
     <%= render FlatPack::SidebarLayout::Component.new(side: :left, storage_key: "flat-pack-sidebar-layout") do |layout| %>
@@ -40,9 +40,7 @@
             <% next if message.blank? %>
 
             <% style = type.to_sym == :notice ? :success : :danger %>
-            <div class="mb-6">
-              <%= render FlatPack::Alert::Component.new(description: message, style: style) %>
-            </div>
+            <%= render FlatPack::Alert::Component.new(description: message, style: style) %>
           <% end %>
 
           <%= yield %>

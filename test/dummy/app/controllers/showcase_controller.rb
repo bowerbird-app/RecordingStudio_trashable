@@ -54,7 +54,7 @@ class ShowcaseController < ApplicationController
           title: "Run the generators",
           anchor_id: "run-the-generators",
           subtitle: "Use the install generator first, then copy the addon migrations into the host app.",
-          body: "The install generator mounts the engine, writes the Trashable initializer, and adds Tailwind source paths when the host app already has Tailwind configured. After that, run the migrations generator so the host app gets the compatibility migrations for trashed_at, trash_root, and the retention settings table.",
+          body: "The install generator mounts the engine, writes the Trashable initializer, and adds the Tailwind source paths FlatPack needs when the host app already has Tailwind configured. After that, run the migrations generator so the host app gets the compatibility migrations for trashed_at, trash_root, and the retention settings table.",
           code_title: "Install and migration generators",
           code_language: :bash,
           code: <<~BASH

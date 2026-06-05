@@ -36,7 +36,7 @@ export default class extends Controller {
 
   showLoading() {
     if (this.hasSkeletonTarget) {
-      this.skeletonTarget.classList.remove("hidden")
+      this.skeletonTarget.hidden = false
     }
 
     if (this.hasFrameTarget) {
@@ -46,7 +46,7 @@ export default class extends Controller {
 
   hideLoading() {
     if (this.hasSkeletonTarget) {
-      this.skeletonTarget.classList.add("hidden")
+      this.skeletonTarget.hidden = true
     }
 
     if (this.hasFrameTarget) {

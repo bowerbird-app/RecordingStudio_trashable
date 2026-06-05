@@ -59,7 +59,7 @@ class RecordingStudioTrashableTest < Minitest::Test
     assert_dummy_model_includes("project.rb", 'recording_studio_recordable label: "Project"')
     assert_dummy_model_includes("project.rb", 'plural_label: "Projects"')
     assert_dummy_model_includes("project.rb", "root: false")
-    assert_dummy_model_includes("project.rb", 'allowed_parent_types: ["Workspace"]')
+    assert_dummy_model_matches("project.rb", /allowed_parent_types:\s*\[\s*"Workspace"\s*\]/)
 
     assert_dummy_model_includes("folder.rb", 'recording_studio_recordable label: "Folder"')
     assert_dummy_model_includes("folder.rb", 'plural_label: "Folders"')
@@ -288,6 +288,10 @@ class RecordingStudioTrashableTest < Minitest::Test
 
   def assert_dummy_model_includes(model_file, expected)
     assert_includes dummy_model_source(model_file), expected
+  end
+
+  def assert_dummy_model_matches(model_file, expected)
+    assert_match expected, dummy_model_source(model_file)
   end
 
   def dummy_model_source(model_file)
