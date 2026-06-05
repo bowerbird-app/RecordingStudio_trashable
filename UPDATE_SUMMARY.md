@@ -8,6 +8,7 @@ This branch updates `recording_studio_trashable` for RecordingStudio 3.0 compati
 
 - `recording_studio` is pinned to tag `recording_studio/v3.0.0` in the root and dummy app Gemfiles.
 - Both lockfiles resolve RecordingStudio to revision `7667687155bf05ab41b66dfccae330dc3834c39c`.
+- Both lockfiles resolve FlatPack tag `v0.1.33` to commit `bb6155be46d90db4932627d632bc26849538ca10`.
 - The gemspec now requires `recording_studio ~> 3.0`.
 
 ### Compatibility changes
