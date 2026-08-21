@@ -111,7 +111,7 @@
                      ) do
                        safe_join([
                          hidden_field_tag(:back_path, recording_studio_trashable_back_path),
-                         render(FlatPack::Button::Component.new(text: "Purge", style: :error, type: "submit"))
+                         render(FlatPack::Button::Component.new(text: "Purge", style: :danger, type: "submit"))
                        ])
                      end
                    end

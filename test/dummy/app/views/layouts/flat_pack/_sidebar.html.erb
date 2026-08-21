@@ -9,24 +9,24 @@
 
   <% sidebar.items do %>
     <nav aria-label="Main navigation">
-      <%= render FlatPack::Sidebar::Item::Component.new(label: "Home", href: main_app.root_path, icon: :home) %>
-      <%= render FlatPack::Sidebar::Item::Component.new(label: "Overview", href: main_app.showcase_path("overview"), icon: :dashboard) %>
-      <%= render FlatPack::Sidebar::Item::Component.new(label: "Setup", href: main_app.showcase_path("setup"), icon: :settings) %>
-      <%= render FlatPack::Sidebar::Item::Component.new(label: "Configuration", href: main_app.showcase_path("configuration"), icon: :cog) %>
-      <%= render FlatPack::Sidebar::Item::Component.new(label: "Adding to a recordable", href: main_app.showcase_path("adding-to-a-recordable"), icon: :plus) %>
-      <%= render FlatPack::Sidebar::Item::Component.new(label: "Trash cans", href: main_app.showcase_path("trash-cans"), icon: :trash) %>
-      <%= render FlatPack::Sidebar::Item::Component.new(label: "Trash roots", href: main_app.showcase_path("trash-roots"), icon: :table) %>
-      <%= render FlatPack::Sidebar::Item::Component.new(label: "Retention", href: main_app.showcase_path("retention"), icon: :settings) %>
-      <%= render FlatPack::Sidebar::Item::Component.new(label: "Events", href: main_app.events_path, icon: :table) %>
-      <%= render FlatPack::Sidebar::Item::Component.new(label: "Responses", href: main_app.showcase_path("responses"), icon: :link) %>
-      <%= render FlatPack::Sidebar::Item::Component.new(label: "Methods", href: main_app.showcase_path("methods"), icon: :file) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(text: "Home", href: main_app.root_path, icon: :home) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(text: "Overview", href: main_app.showcase_path("overview"), icon: :dashboard) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(text: "Setup", href: main_app.showcase_path("setup"), icon: :settings) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(text: "Configuration", href: main_app.showcase_path("configuration"), icon: :cog) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(text: "Adding to a recordable", href: main_app.showcase_path("adding-to-a-recordable"), icon: :plus) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(text: "Trash cans", href: main_app.showcase_path("trash-cans"), icon: :trash) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(text: "Trash roots", href: main_app.showcase_path("trash-roots"), icon: :table) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(text: "Retention", href: main_app.showcase_path("retention"), icon: :settings) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(text: "Events", href: main_app.events_path, icon: :table) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(text: "Responses", href: main_app.showcase_path("responses"), icon: :link) %>
+      <%= render FlatPack::Sidebar::Item::Component.new(text: "Methods", href: main_app.showcase_path("methods"), icon: :file) %>
     </nav>
   <% end %>
 
   <% sidebar.footer do %>
     <%= render FlatPack::Sidebar::Footer::Component.new do %>
       <%= render FlatPack::Sidebar::Item::Component.new(
-        label: "Sign out",
+        text: "Sign out",
         href: main_app.destroy_user_session_path,
         icon: :lock,
         data: { turbo_method: :delete }

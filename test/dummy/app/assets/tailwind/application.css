@@ -11,6 +11,10 @@
 @source "../../vendor/bundle/**/flat_pack/app/components/**/*.{rb,erb}";
 @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flat_pack-*/app/components/**/*.{rb,erb}";
+@source "../../../../../../home/**/.local/share/mise/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";
+@source "../../../../../../home/**/.local/share/mise/**/bundler/gems/flat_pack-*/app/components/**/*.{rb,erb}";
+@source "../../../../../../home/**/.bundle/**/gems/flatpack-*/app/components/**/*.{rb,erb}";
+@source "../../../../../../home/**/.bundle/**/gems/flat_pack-*/app/components/**/*.{rb,erb}";
 
 /* Include the engine's views in the Tailwind build */
 @source "../../../../../app/views/**/*.erb";

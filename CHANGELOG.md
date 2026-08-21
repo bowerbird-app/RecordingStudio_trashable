@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Runtime dependency is now RecordingStudio `~> 4.1` (tested with `4.1.0`)
 - Dummy and development bundles pin RecordingStudio `v4.1.0` and FlatPack `v0.1.133`
 - Dummy app installs the RecordingStudio 4 harden / unique-root indexes
+- Dummy and mounted views follow FlatPack `0.1.133` APIs (`Sidebar::Item` `text:`, purge buttons `style: :danger`)
 
 ### Upgrade Notes
 - Host apps must move to RecordingStudio `~> 4.1` with this gem. Stay on `0.2.x` if you are still on RecordingStudio 3.

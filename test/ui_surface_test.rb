@@ -72,6 +72,8 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, "recording_studio_trashable_action_authorized?(:purge"
     assert_includes trash_bin_view, "restore_recording_path(recording)"
     assert_includes trash_bin_view, "purge_recording_path(recording)"
+    assert_includes trash_bin_view, "style: :danger"
+    refute_includes trash_bin_view, "style: :error"
     assert_includes trash_bin_view, "html: { class: \"shrink-0\" }"
     assert_includes(
       trash_bin_view,
@@ -333,7 +335,7 @@ class UiSurfaceTest < Minitest::Test
     assert_includes view_source, "event_metadata(event)"
     assert_includes view_source, "No events recorded yet."
     refute_includes view_source, "rounded-xl border"
-    assert_includes sidebar_source, 'label: "Events"'
+    assert_includes sidebar_source, 'text: "Events"'
     assert_includes sidebar_source, "href: main_app.events_path"
     refute_includes sidebar_source, "recording_studio_trashable.recording_events_path"
   end
@@ -556,17 +558,17 @@ class UiSurfaceTest < Minitest::Test
     sidebar_source = File.read(sidebar_path)
     sprite_source = File.read(sprite_path)
 
-    assert_includes sidebar_source, 'label: "Overview"'
+    assert_includes sidebar_source, 'text: "Overview"'
     assert_includes sidebar_source, 'href: main_app.showcase_path("overview")'
-    assert_includes sidebar_source, 'label: "Events"'
+    assert_includes sidebar_source, 'text: "Events"'
     assert_includes sidebar_source, "href: main_app.events_path"
-    assert_includes sidebar_source, 'label: "Retention"'
+    assert_includes sidebar_source, 'text: "Retention"'
     assert_includes sidebar_source, 'href: main_app.showcase_path("retention")'
-    assert_includes sidebar_source, 'label: "Responses"'
+    assert_includes sidebar_source, 'text: "Responses"'
     assert_includes sidebar_source, 'href: main_app.showcase_path("responses")'
-    assert_includes sidebar_source, 'label: "Trash cans"'
+    assert_includes sidebar_source, 'text: "Trash cans"'
     assert_includes sidebar_source, 'href: main_app.showcase_path("trash-cans")'
-    assert_includes sidebar_source, 'label: "Trash roots"'
+    assert_includes sidebar_source, 'text: "Trash roots"'
     assert_includes sidebar_source, 'href: main_app.showcase_path("trash-roots")'
 
     sidebar_icons = sidebar_source.scan(/icon:\s*:(\w+(?:-\w+)*)/).flatten
