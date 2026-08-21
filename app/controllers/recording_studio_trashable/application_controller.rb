@@ -9,7 +9,8 @@ module RecordingStudioTrashable
     include ::Pagy::Backend
 
     protect_from_forgery with: :exception
-    layout "recording_studio_trashable/application"
+    include RecordingStudio::UsesDefaultLayout
+
     helper ::Pagy::Frontend
 
     helper_method :recording_studio_trashable_recording_label,

@@ -1,10 +1,14 @@
 # Recording Studio Trashable notes
 
+This addon requires RecordingStudio `~> 4.1` (tested with `4.1.0`). Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
+
 ## Capability registration
 
 Use `RecordingStudio.register_capability`, `RecordingStudio.enable_capability`, and `RecordingStudio.set_capability_options` exactly once per opt-in recordable model.
 
 ## Mounted UI
+
+Mounted screens use Recording Studio core's default layout (`RecordingStudio::UsesDefaultLayout`). That shell owns back/close PageNav, flash alerts, and page width. Views call `recording_studio_page_nav` instead of inventing breadcrumbs or a second dashboard chrome.
 
 The mounted UI is subtree-scoped. Pass a root recording id to the trash bin route and the addon will list trashed `trash_root` recordings in that subtree ordered by `trashed_at DESC`, while cascade-trashed descendants stay hidden behind their nearest explicit trash root.
 

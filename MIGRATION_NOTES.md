@@ -48,10 +48,11 @@ FlatPack is the successor to MakeupArtist with similar components:
 
 See: https://github.com/bowerbird-app/flatpack for component documentation
 
-## RecordingStudio 3.0 Compatibility Notes
+## RecordingStudio 4 Compatibility Notes
 
-- `recording_studio_trashable` depends on `recording_studio ~> 3.0`; app Gemfiles should pin the RecordingStudio repository to tag `recording_studio/v3.0.0` when testing this update.
+- `recording_studio_trashable` depends on `recording_studio ~> 4.1`; app Gemfiles should pin the RecordingStudio repository to tag `v4.1.0` when testing this update.
 - Every configured host recordable must declare `recording_studio_recordable(...)`. In the dummy app, `Workspace` is the only root; `Project`, `Folder`, and `Page` are child recordables with explicit `allowed_parent_types` matching the demo tree, including nested Page recordings used by trash-root examples.
 - Trashable registers only the `trashable` capability source (`recording_studio_trashable`). It does not declare capability-owned `child_recordables`.
-- RecordingStudio core 3.0 does not provide the old `RecordingStudio::Services::AccessCheck` fallback. Configure a custom resolver, use `RecordingStudioAccessible`, or leave the default deny behavior in place.
+- RecordingStudio core does not provide the old `RecordingStudio::Services::AccessCheck` fallback. Configure a custom resolver, use `RecordingStudioAccessible`, or leave the default deny behavior in place.
+- Host apps should install RecordingStudio 4 harden / unique-root indexes (`rails generate recording_studio:migrations` then `db:migrate`) and resolve duplicate root recordings before the unique index is created.
 - Trashable owns its `trashed_at`, `trash_root`, and retention settings schema. Purge permanently removes recording rows after logging the explicit `purged` action, so host apps should document any external audit-history retention policy they require before scheduled purges run.

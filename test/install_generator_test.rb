@@ -6,6 +6,17 @@ require "tmpdir"
 require "generators/recording_studio_trashable/install/install_generator"
 
 class InstallGeneratorTest < Minitest::Test
+  def test_install_docs_describe_recording_studio_4_hierarchy_setup
+    template_path = File.expand_path(
+      "../lib/generators/recording_studio_trashable/install/templates/INSTALL.md",
+      __dir__
+    )
+    template = File.read(template_path)
+
+    assert_includes template, "Recording Studio 4.1.0+"
+    assert_includes template, "RecordingStudio::Capabilities::Trashable.to"
+  end
+
   def test_install_template_mentions_optional_host_default_scope
     template_path = File.expand_path(
       "../lib/generators/recording_studio_trashable/install/templates/INSTALL.md",

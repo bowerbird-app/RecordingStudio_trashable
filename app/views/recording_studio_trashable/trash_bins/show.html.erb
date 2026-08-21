@@ -1,9 +1,11 @@
-<div data-controller="recording-studio-trashable--live-search">
-  <%= render FlatPack::PageNav::Component.new(
-    anchor_url: recording_studio_trashable_back_path,
-    class: "mb-4"
-  ) %>
+<% recording_studio_page_nav(
+  title: "Trash",
+  page_nav_back_url: recording_studio_trashable_back_path,
+  page_nav_anchor_url: recording_studio_trashable_back_path,
+  page_nav_anchor_label: "Close"
+) %>
 
+<div class="flex flex-col gap-6" data-controller="recording-studio-trashable--live-search">
   <%= render FlatPack::PageTitle::Component.new(
     title: "Trash",
     subtitle: "Recently trashed roots",
@@ -111,7 +113,7 @@
                      ) do
                        safe_join([
                          hidden_field_tag(:back_path, recording_studio_trashable_back_path),
-                         render(FlatPack::Button::Component.new(text: "Purge", style: :error, type: "submit"))
+                         render(FlatPack::Button::Component.new(text: "Purge", style: :danger, type: "submit"))
                        ])
                      end
                    end

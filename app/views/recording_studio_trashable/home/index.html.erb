@@ -1,24 +1,12 @@
-<div class="mx-auto flex w-full max-w-5xl flex-col gap-8">
-  <nav aria-label="Breadcrumb">
-    <%= render FlatPack::Button::Component.new(
-      text: "Back",
-      icon: "arrow-left",
-      style: :ghost,
-      url: recording_studio_trashable_host_root_path
-    ) %>
-    <span aria-hidden="true">/</span>
-    <span>Addon pages</span>
-    <span aria-hidden="true">/</span>
-    <span aria-current="page">Overview</span>
-  </nav>
+<% recording_studio_page_nav(
+  title: "Overview",
+  page_nav_back_url: recording_studio_trashable_back_path,
+  page_nav_anchor_url: recording_studio_trashable_host_root_path,
+  page_nav_anchor_label: "Close"
+) %>
 
-  <%= render FlatPack::PageNav::Component.new(
-    anchor_url: recording_studio_trashable_back_path,
-    class: "mb-4"
-  ) %>
-  </p>
-
-  <section id="capabilities" aria-labelledby="capabilities-title">
+<div class="flex flex-col gap-8">
+  <section id="capabilities" aria-labelledby="capabilities-title" class="flex flex-col gap-4">
     <%= render FlatPack::SectionTitle::Component.new(
       title: "Capabilities",
       anchor_link: true,
@@ -29,24 +17,24 @@
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(
           title: "What this addon owns",
-          subtitle: "Mounted UI and namespaced lifecycle APIs that stay out of RecordingStudio core.",
+          subtitle: "Mounted screens and trash actions that stay out of Recording Studio core.",
           variant: :h3
         ) %>
       <% end %>
 
       <% card.body do %>
-        <ul>
+        <ul class="flex flex-col gap-3 leading-relaxed">
           <li><code>recording_studio_trashable_trash!</code> for soft delete.</li>
-          <li><code>recording_studio_trashable_restore!</code> for bringing a recording back.</li>
+          <li><code>recording_studio_trashable_restore!</code> for bringing an item back.</li>
           <li><code>recording_studio_trashable_purge!</code> for permanent delete.</li>
           <li>Explicit query helpers instead of another default scope.</li>
-          <li>Retention settings stored per subtree root recording.</li>
+          <li>Keep-for settings stored on each workspace or folder you pick.</li>
         </ul>
       <% end %>
     <% end %>
   </section>
 
-  <section id="authorization" aria-labelledby="authorization-title">
+  <section id="authorization" aria-labelledby="authorization-title" class="flex flex-col gap-4">
     <%= render FlatPack::SectionTitle::Component.new(
       title: "Authorization",
       anchor_link: true,
@@ -57,16 +45,16 @@
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(
           title: "Default authorization",
-          subtitle: "Built-in Accessible integration can be kept, disabled, or replaced.",
+          subtitle: "Built-in Accessible checks can be kept, turned off, or replaced.",
           variant: :h3
         ) %>
       <% end %>
 
       <% card.body do %>
-        <dl>
+        <dl class="flex flex-col gap-3 leading-relaxed">
           <% @configuration.authorization_roles.each do |action, role| %>
-            <div>
-              <dt><%= action %></dt>
+            <div class="flex flex-wrap items-baseline gap-2">
+              <dt class="font-medium"><%= action %></dt>
               <dd><%= role %></dd>
             </div>
           <% end %>

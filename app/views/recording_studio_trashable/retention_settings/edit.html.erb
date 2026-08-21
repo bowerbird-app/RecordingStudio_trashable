@@ -1,9 +1,11 @@
-<div>
-  <%= render FlatPack::PageNav::Component.new(
-    anchor_url: recording_studio_trashable_back_path,
-    class: "mb-4"
-  ) %>
+<% recording_studio_page_nav(
+  title: "Retention period",
+  page_nav_back_url: recording_studio_trashable_back_path,
+  page_nav_anchor_url: recording_studio_trashable_back_path,
+  page_nav_anchor_label: "Close"
+) %>
 
+<div class="flex flex-col gap-6">
   <%= render FlatPack::PageTitle::Component.new(
     title: "Retention period",
     subtitle: "Number of days to keep trashed items.",

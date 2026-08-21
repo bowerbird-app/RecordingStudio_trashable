@@ -19,7 +19,7 @@ It extracts trash behavior from RecordingStudio core into addon-owned APIs witho
 
 ## Installation
 
-Add the gems to your host app:
+Add the gems to your host app. This addon requires Recording Studio 4.1.0 or newer:
 
 ```ruby
 gem "recording_studio"
@@ -171,7 +171,7 @@ By default the addon behaves like this:
 
 - a custom resolver runs first and can allow or deny explicitly
 - otherwise, if `RecordingStudioAccessible.authorized?` is loaded, authorization delegates to that adapter
-- RecordingStudio core 3.0 no longer provides a core `RecordingStudio::Services::AccessCheck` fallback
+- RecordingStudio core no longer provides a core `RecordingStudio::Services::AccessCheck` fallback
 - if no resolver or Accessible authorizer is available, Trashable denies by default
 - built-in Accessible integration can be disabled entirely
 - host apps can explicitly allow permissive fallback with `config.allow_unconfigured_authorization = true`
@@ -287,11 +287,12 @@ The dummy app demonstrates:
 - `Page` as trashable and `Folder` as non-trashable
 - workspace and project scoped trash bins
 - trash, restore, purge, and retention settings flows
-- sidebar docs pages for Setup, Configuration, Adding to a recordable, and Methods
+- Recording Studio core default layout (back/close PageNav) for dummy and mounted screens
+- docs pages for Setup, Configuration, Adding to a recordable, and Methods, linked from the home hub
 
 ## Core follow-up assumptions
 
-RecordingStudio 3 requires every configured recordable type to declare `recording_studio_recordable(...)`. Root creation must use root-declared recordables, and child recordings must be created under an allowed parent recording.
+Recording Studio 4 requires every configured recordable type to declare `recording_studio_recordable(...)`. Root creation must use root-declared recordables, and child recordings must be created under an allowed parent recording. This gem requires RecordingStudio `~> 4.1` (tested with `4.1.0`).
 
 This addon:
 
