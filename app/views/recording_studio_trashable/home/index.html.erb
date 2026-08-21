@@ -23,7 +23,7 @@
       <% end %>
 
       <% card.body do %>
-        <ul class="flex flex-col gap-2">
+        <ul class="flex flex-col gap-3 leading-relaxed">
           <li><code>recording_studio_trashable_trash!</code> for soft delete.</li>
           <li><code>recording_studio_trashable_restore!</code> for bringing an item back.</li>
           <li><code>recording_studio_trashable_purge!</code> for permanent delete.</li>
@@ -51,10 +51,10 @@
       <% end %>
 
       <% card.body do %>
-        <dl class="flex flex-col gap-2">
+        <dl class="flex flex-col gap-3 leading-relaxed">
           <% @configuration.authorization_roles.each do |action, role| %>
-            <div>
-              <dt><%= action %></dt>
+            <div class="flex flex-wrap items-baseline gap-2">
+              <dt class="font-medium"><%= action %></dt>
               <dd><%= role %></dd>
             </div>
           <% end %>

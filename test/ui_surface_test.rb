@@ -14,6 +14,7 @@ class UiSurfaceTest < Minitest::Test
     refute_includes home_view, "FlatPack::PageNav::Component"
     refute_includes home_view, 'aria-label="Breadcrumb"'
     refute_includes home_view, "Addon pages"
+    assert_includes home_view, 'class="flex flex-col gap-3 leading-relaxed"'
     assert_includes home_view, "FlatPack::SectionTitle::Component"
     assert_includes home_view, 'anchor_id: "capabilities"'
     assert_includes home_view, 'anchor_id: "authorization"'
@@ -532,8 +533,8 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, "config.current_impersonator_resolver = ->(controller:) { controller.true_user }"
     assert_includes showcase_view, "recording_studio_page_nav("
     assert_includes showcase_view, "page_nav_back_url: main_app.root_path"
-    assert_includes showcase_view, 'class="flex flex-col gap-8"'
-    assert_includes showcase_view, 'class="flex flex-col gap-4"'
+    assert_includes showcase_view, 'class="flex flex-col gap-10"'
+    assert_includes showcase_view, 'class="flex flex-col gap-6"'
     refute_includes showcase_view, 'aria-label="Breadcrumb"'
     assert_includes showcase_view, "FlatPack::CodeBlock::Component"
     assert_includes showcase_view, "@page[:sections].present?"
@@ -561,6 +562,8 @@ class UiSurfaceTest < Minitest::Test
     assert_includes showcase_view, '@page[:subtitle] || "Allow a recordable type to be trashed"'
     assert_includes showcase_view, "@page[:code_language] || :ruby"
     assert_includes showcase_view, '@page[:code_title] || "Code Example"'
+    assert_includes showcase_view, "separated: true"
+    refute_includes showcase_view, "separated: false"
   end
 
   def test_adding_to_a_recordable_owns_the_recordable_example_code

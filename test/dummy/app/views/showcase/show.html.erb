@@ -5,7 +5,7 @@
   page_nav_anchor_label: "Close"
 ) %>
 
-<div class="flex flex-col gap-8">
+<div class="flex flex-col gap-10">
   <%= render FlatPack::PageTitle::Component.new(
     title: @page.fetch(:title),
     subtitle: @page[:subtitle] || "Allow a recordable type to be trashed",
@@ -13,9 +13,9 @@
   ) %>
 
   <% if @page[:sections].present? %>
-    <div class="flex flex-col gap-8">
+    <div class="flex flex-col gap-10">
       <% @page.fetch(:sections).each do |section| %>
-        <section class="flex flex-col gap-4">
+        <section class="flex flex-col gap-6">
           <%= render FlatPack::SectionTitle::Component.new(
             title: section.fetch(:title),
             subtitle: section[:subtitle],
@@ -36,7 +36,7 @@
               code: section.fetch(:code),
               language: section[:code_language] || :ruby,
               title: section[:code_title] || "Usage",
-              separated: false
+              separated: true
             ) %>
           <% end %>
         </section>
@@ -44,9 +44,9 @@
     </div>
 
   <% elsif @page[:methods].present? %>
-    <div class="flex flex-col gap-8">
+    <div class="flex flex-col gap-10">
       <% @page.fetch(:methods).each do |method| %>
-        <section class="flex flex-col gap-4">
+        <section class="flex flex-col gap-6">
           <%= render FlatPack::SectionTitle::Component.new(
             title: method.fetch(:title),
             subtitle: method.fetch(:name),
@@ -58,7 +58,7 @@
             code: method.fetch(:code),
             language: method[:code_language] || :ruby,
             title: method[:code_title] || "Usage",
-            separated: false
+            separated: true
           ) %>
         </section>
       <% end %>
@@ -91,7 +91,7 @@
       code: @page.fetch(:code),
       language: @page[:code_language] || :ruby,
       title: @page[:code_title] || "Code Example",
-      separated: false
+      separated: true
     ) %>
   <% end %>
 
