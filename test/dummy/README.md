@@ -5,12 +5,12 @@ This Rails app exists to validate Recording Studio Trashable inside a realistic 
 ## What It Covers
 
 - Devise authentication with a seeded admin user
-- `Current.actor` wiring for Recording Studio 4.1 and addon events
+- `Current.actor` wiring for Recording Studio 4.2 and addon events
 - Workspace root recording plus project, folder, and page examples
-- Explicit trashable opt-in on `Page` only
+- Explicit trashable opt-in on `Page` only via `RecordingStudio::Capabilities::Trashable.to`
 - Mounted workspace and project scoped trash bins
 - Restore, purge, and retention settings flows through the addon engine
-- Sidebar showcase pages for Setup, Configuration, Adding to a recordable, and Methods
+- Recording Studio core default layout with docs pages for Setup, Configuration, Adding to a recordable, and Methods
 
 ## Quick Start
 

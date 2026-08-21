@@ -50,7 +50,7 @@ See: https://github.com/bowerbird-app/flatpack for component documentation
 
 ## RecordingStudio 4 Compatibility Notes
 
-- `recording_studio_trashable` depends on `recording_studio ~> 4.1`; app Gemfiles should pin the RecordingStudio repository to tag `v4.1.0` when testing this update.
+- `recording_studio_trashable` depends on `recording_studio ~> 4.2`; app Gemfiles should pin the RecordingStudio repository to tag `v4.2.0` when testing this update. Host recordables opt in with `include RecordingStudio::Capabilities::Trashable.to(...)`.
 - Every configured host recordable must declare `recording_studio_recordable(...)`. In the dummy app, `Workspace` is the only root; `Project`, `Folder`, and `Page` are child recordables with explicit `allowed_parent_types` matching the demo tree, including nested Page recordings used by trash-root examples.
 - Trashable registers only the `trashable` capability source (`recording_studio_trashable`). It does not declare capability-owned `child_recordables`.
 - RecordingStudio core does not provide the old `RecordingStudio::Services::AccessCheck` fallback. Configure a custom resolver, use `RecordingStudioAccessible`, or leave the default deny behavior in place.

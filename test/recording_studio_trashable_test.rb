@@ -18,13 +18,13 @@ class RecordingStudioTrashableTest < Minitest::Test
     refute_nil RecordingStudioTrashable::VERSION
   end
 
-  def test_recording_studio_dependency_is_4_1_or_newer
+  def test_recording_studio_dependency_is_4_2_or_newer
     spec = Gem.loaded_specs.fetch("recording_studio")
     gemspec = File.read(File.expand_path("../recording_studio_trashable.gemspec", __dir__))
 
-    assert spec.version >= Gem::Version.new("4.1.0"),
-           "expected recording_studio >= 4.1.0, got #{spec.version}"
-    assert_includes gemspec, 'spec.add_dependency "recording_studio", "~> 4.1"'
+    assert spec.version >= Gem::Version.new("4.2.0"),
+           "expected recording_studio >= 4.2.0, got #{spec.version}"
+    assert_includes gemspec, 'spec.add_dependency "recording_studio", "~> 4.2"'
   end
 
   def test_version_matches_latest_changelog_release

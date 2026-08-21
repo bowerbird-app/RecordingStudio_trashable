@@ -127,18 +127,26 @@ class TrashableCapabilitiesTest < Minitest::Test
     RecordingStudioTrashable.stub(:authorized?, value, &)
   end
 
-  def test_capability_builder_registers_capability_options
-    applied = []
-    base = Struct.new(:name).new("Page")
+  def test_to_wraps_core_include_for_factory
+    source = File.read(File.expand_path("../lib/recording_studio/trashable/capabilities/trashable.rb", __dir__))
 
-    RecordingStudio.stub(:enable_capability, ->(*args, **kwargs) { applied << [:enable, args, kwargs] }) do
-      RecordingStudio.stub(:set_capability_options, ->(*args, **kwargs) { applied << [:options, args, kwargs] }) do
-        RecordingStudio::Trashable::Capabilities::Trashable.apply_capability(base, cascade: true)
-      end
+    assert_includes source, "RecordingStudio::Capabilities.include_for(:trashable"
+    refute_includes source, "def self.build_capability_module"
+    refute_includes source, "def self.apply_capability"
+    refute_includes source, "RecordingStudio.enable_capability(:trashable"
+  end
+
+  def test_to_delegates_to_include_for_with_validated_options
+    captured = nil
+
+    RecordingStudio::Capabilities.stub(:include_for, lambda { |name, **options|
+      captured = [name, options]
+      Module.new
+    }) do
+      RecordingStudio::Capabilities::Trashable.to("purge_after_days" => 14)
     end
 
-    assert_equal [:enable, [:trashable], { on: "Page" }], applied.first
-    assert_equal [:options, [:trashable], { on: "Page", cascade: true }], applied.last
+    assert_equal [:trashable, { purge_after_days: 14 }], captured
   end
 
   def test_trashable_capability_registration_has_source_without_child_recordables
@@ -309,5 +317,45 @@ class TrashableCapabilitiesTest < Minitest::Test
     end
 
     assert_match(/Not authorized to trash/, error.message)
+  end
+end
+
+class TrashableEnablementFactoryTest < Minitest::Test
+  module Probe
+    HostPage = Class.new
+    HostFolder = Class.new
+  end
+
+  def setup
+    @original_capabilities =
+      RecordingStudio.configuration.instance_variable_get(:@capabilities).transform_values(&:dup)
+    @original_capability_options =
+      RecordingStudio.configuration.instance_variable_get(:@capability_options).dup
+  end
+
+  def teardown
+    RecordingStudio.configuration.instance_variable_set(:@capabilities, @original_capabilities)
+    RecordingStudio.configuration.instance_variable_set(:@capability_options, @original_capability_options)
+  end
+
+  def test_installing_the_gem_registers_trashable_without_enabling_it
+    registration = RecordingStudio.registered_capabilities.fetch(:trashable)
+
+    assert_equal "recording_studio_trashable", registration.fetch(:source)
+    refute RecordingStudio.capability_enabled?(:trashable, for: Probe::HostPage)
+    refute RecordingStudio.capability_enabled?(:trashable, for: Probe::HostFolder)
+    refute RecordingStudio.capability_enabled?(:trashable, for: "Page")
+    refute RecordingStudio.capability_enabled?(:trashable, for: "Workspace")
+    refute RecordingStudio.capability_enabled?(:trashable, for: "Project")
+    refute RecordingStudio.capability_enabled?(:trashable, for: "Folder")
+  end
+
+  def test_to_enables_trashable_and_sets_options
+    Probe::HostPage.include(RecordingStudio::Capabilities::Trashable.to(purge_after_days: 14))
+
+    assert RecordingStudio.capability_enabled?(:trashable, for: Probe::HostPage)
+    assert_equal({ purge_after_days: 14 }, RecordingStudio.capability_options(:trashable, for: Probe::HostPage))
+    refute RecordingStudio.capability_enabled?(:trashable, for: Probe::HostFolder)
+    assert_nil RecordingStudio.capability_options(:trashable, for: Probe::HostFolder)
   end
 end
