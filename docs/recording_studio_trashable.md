@@ -1,10 +1,10 @@
 # Recording Studio Trashable notes
 
-This addon requires RecordingStudio `~> 4.1` (tested with `4.1.0`). Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
+This addon requires RecordingStudio `~> 4.2` (tested with `4.2.0`). Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
 
 ## Capability registration
 
-Use `RecordingStudio.register_capability`, `RecordingStudio.enable_capability`, and `RecordingStudio.set_capability_options` exactly once per opt-in recordable model.
+The engine registers `:trashable` at boot with `RecordingStudio.register_capability`. Hosts enable it on each recordable with `include RecordingStudio::Capabilities::Trashable.to(**opts)`, which wraps `RecordingStudio::Capabilities.include_for(:trashable, **options)`. Installing the gem does not enable the capability. Parent rules stay on `recording_studio_recordable`.
 
 ## Mounted UI
 

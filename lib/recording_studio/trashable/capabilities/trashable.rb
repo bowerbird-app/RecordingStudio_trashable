@@ -36,22 +36,7 @@ module RecordingStudio
     module Capabilities
       module Trashable
         def self.to(**options)
-          build_capability_module(capability_options(options))
-        end
-
-        def self.build_capability_module(options)
-          Module.new do
-            extend ActiveSupport::Concern
-
-            included do |base|
-              RecordingStudio::Trashable::Capabilities::Trashable.apply_capability(base, options)
-            end
-          end
-        end
-
-        def self.apply_capability(base, options)
-          RecordingStudio.enable_capability(:trashable, on: base.name)
-          RecordingStudio.set_capability_options(:trashable, on: base.name, **options)
+          RecordingStudio::Capabilities.include_for(:trashable, **capability_options(options))
         end
 
         def self.capability_options(options)

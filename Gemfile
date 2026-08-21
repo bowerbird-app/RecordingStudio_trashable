@@ -3,7 +3,7 @@
 source "https://rubygems.org"
 
 gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.133"
-gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v4.1.0"
+gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v4.2.0"
 
 gemspec
 

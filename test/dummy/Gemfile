@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
 gem "recording_studio_trashable", path: "../.."
-gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v4.1.0"
+gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v4.2.0"
 
 gem "devise"
 gem "rails", "~> 8.1.1"

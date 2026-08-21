@@ -19,7 +19,7 @@ It extracts trash behavior from RecordingStudio core into addon-owned APIs witho
 
 ## Installation
 
-Add the gems to your host app. This addon requires Recording Studio 4.1.0 or newer:
+Add the gems to your host app. This addon requires Recording Studio 4.2.0 or newer:
 
 ```ruby
 gem "recording_studio"
@@ -292,7 +292,7 @@ The dummy app demonstrates:
 
 ## Core follow-up assumptions
 
-Recording Studio 4 requires every configured recordable type to declare `recording_studio_recordable(...)`. Root creation must use root-declared recordables, and child recordings must be created under an allowed parent recording. This gem requires RecordingStudio `~> 4.1` (tested with `4.1.0`).
+Recording Studio 4 requires every configured recordable type to declare `recording_studio_recordable(...)`. Root creation must use root-declared recordables, and child recordings must be created under an allowed parent recording. This gem requires RecordingStudio `~> 4.2` (tested with `4.2.0`). Host opt-in is `include RecordingStudio::Capabilities::Trashable.to(**opts)`, a thin wrapper around `RecordingStudio::Capabilities.include_for(:trashable, **options)`. Installing this gem does not enable trash on any recordable type.
 
 This addon:
 
