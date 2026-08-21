@@ -287,7 +287,8 @@ The dummy app demonstrates:
 - `Page` as trashable and `Folder` as non-trashable
 - workspace and project scoped trash bins
 - trash, restore, purge, and retention settings flows
-- sidebar docs pages for Setup, Configuration, Adding to a recordable, and Methods
+- Recording Studio core default layout (back/close PageNav) for dummy and mounted screens
+- docs pages for Setup, Configuration, Adding to a recordable, and Methods, linked from the home hub
 
 ## Core follow-up assumptions
 

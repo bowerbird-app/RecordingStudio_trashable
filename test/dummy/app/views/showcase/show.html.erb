@@ -1,4 +1,11 @@
-<div>
+<% recording_studio_page_nav(
+  title: @page.fetch(:title),
+  page_nav_back_url: main_app.root_path,
+  page_nav_anchor_url: main_app.root_path,
+  page_nav_anchor_label: "Close"
+) %>
+
+<div class="flex flex-col gap-8">
   <%= render FlatPack::PageTitle::Component.new(
     title: @page.fetch(:title),
     subtitle: @page[:subtitle] || "Allow a recordable type to be trashed",
@@ -6,9 +13,9 @@
   ) %>
 
   <% if @page[:sections].present? %>
-    <div>
+    <div class="flex flex-col gap-8">
       <% @page.fetch(:sections).each do |section| %>
-        <section>
+        <section class="flex flex-col gap-4">
           <%= render FlatPack::SectionTitle::Component.new(
             title: section.fetch(:title),
             subtitle: section[:subtitle],
@@ -37,9 +44,9 @@
     </div>
 
   <% elsif @page[:methods].present? %>
-    <div>
+    <div class="flex flex-col gap-8">
       <% @page.fetch(:methods).each do |method| %>
-        <section>
+        <section class="flex flex-col gap-4">
           <%= render FlatPack::SectionTitle::Component.new(
             title: method.fetch(:title),
             subtitle: method.fetch(:name),

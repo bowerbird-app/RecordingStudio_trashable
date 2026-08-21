@@ -8,6 +8,8 @@ Use `RecordingStudio.register_capability`, `RecordingStudio.enable_capability`, 
 
 ## Mounted UI
 
+Mounted screens use Recording Studio core's default layout (`RecordingStudio::UsesDefaultLayout`). That shell owns back/close PageNav, flash alerts, and page width. Views call `recording_studio_page_nav` instead of inventing breadcrumbs or a second dashboard chrome.
+
 The mounted UI is subtree-scoped. Pass a root recording id to the trash bin route and the addon will list trashed `trash_root` recordings in that subtree ordered by `trashed_at DESC`, while cascade-trashed descendants stay hidden behind their nearest explicit trash root.
 
 Lifecycle actions redirect back by default. In standard form flows the controller can use the request referrer, and callers can still pass `back_path` when they need an explicit return location. Async callers can opt into JSON by sending `async: true` or using a JSON request format.

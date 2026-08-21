@@ -15,6 +15,7 @@ This branch updates `recording_studio_trashable` for RecordingStudio 4.1 compati
 
 - Host recordables still use `recording_studio_recordable(...)` declarations and opt into trash with `RecordingStudio::Capabilities::Trashable.to(...)`.
 - The dummy app installs the RecordingStudio 4 harden / unique-root indexes.
+- Dummy and mounted screens use Recording Studio core default layout and a constrained Flatpack sign-in.
 - Authorization is unchanged: configure a custom resolver, use `RecordingStudioAccessible`, or keep the default deny behavior.
 
 ### Release classification

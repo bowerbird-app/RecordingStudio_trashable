@@ -8,9 +8,12 @@ class UiSurfaceTest < Minitest::Test
     trash_bin_view = read_repo_file("../app/views/recording_studio_trashable/trash_bins/show.html.erb")
     retention_view = read_repo_file("../app/views/recording_studio_trashable/retention_settings/edit.html.erb")
 
-    assert_includes home_view, "FlatPack::PageNav::Component"
-    assert_includes home_view, "anchor_url: recording_studio_trashable_back_path"
-    assert_includes home_view, 'class: "mb-4"'
+    assert_includes home_view, "recording_studio_page_nav("
+    assert_includes home_view, "page_nav_back_url: recording_studio_trashable_back_path"
+    assert_includes home_view, "page_nav_anchor_url: recording_studio_trashable_host_root_path"
+    refute_includes home_view, "FlatPack::PageNav::Component"
+    refute_includes home_view, 'aria-label="Breadcrumb"'
+    refute_includes home_view, "Addon pages"
     assert_includes home_view, "FlatPack::SectionTitle::Component"
     assert_includes home_view, 'anchor_id: "capabilities"'
     assert_includes home_view, 'anchor_id: "authorization"'
@@ -19,9 +22,10 @@ class UiSurfaceTest < Minitest::Test
     refute_includes home_view, 'text: "Authorization", style: :ghost, url: "#authorization"'
     refute_includes home_view, "text-xl font-semibold"
     assert_includes trash_bin_view, "FlatPack::PageTitle::Component"
-    assert_includes trash_bin_view, "FlatPack::PageNav::Component"
-    assert_includes trash_bin_view, "anchor_url: recording_studio_trashable_back_path"
-    assert_includes trash_bin_view, 'class: "mb-4"'
+    assert_includes trash_bin_view, "recording_studio_page_nav("
+    assert_includes trash_bin_view, "page_nav_back_url: recording_studio_trashable_back_path"
+    assert_includes trash_bin_view, "page_nav_anchor_url: recording_studio_trashable_back_path"
+    refute_includes trash_bin_view, "FlatPack::PageNav::Component"
     assert_includes trash_bin_view, "recording_studio_trashable_back_path"
     assert_includes trash_bin_view, "recording_studio_trashable_back_link_params"
     assert_includes trash_bin_view, "hidden_field_tag :back_path"
@@ -84,9 +88,10 @@ class UiSurfaceTest < Minitest::Test
     refute_includes trash_bin_view, 'redirect_target: "origin"'
     refute_includes trash_bin_view, "origin_path: request.fullpath"
     refute_includes trash_bin_view, "return_to_recording_id: @scope_recording.id"
-    assert_includes retention_view, "FlatPack::PageNav::Component"
-    assert_includes retention_view, "anchor_url: recording_studio_trashable_back_path"
-    assert_includes retention_view, 'class: "mb-4"'
+    assert_includes retention_view, "recording_studio_page_nav("
+    assert_includes retention_view, "page_nav_back_url: recording_studio_trashable_back_path"
+    assert_includes retention_view, "page_nav_anchor_url: recording_studio_trashable_back_path"
+    refute_includes retention_view, "FlatPack::PageNav::Component"
     assert_includes retention_view, "FlatPack::Select::Component"
     assert_includes retention_view, "recording_studio_trashable_back_path"
     assert_includes retention_view,
@@ -102,23 +107,31 @@ class UiSurfaceTest < Minitest::Test
     refute_includes retention_view, 'text: "Back to trash bin"'
   end
 
-  def test_engine_uses_a_blank_namespaced_layout
+  def test_engine_uses_recording_studio_default_layout
     application_controller = read_repo_file("../app/controllers/recording_studio_trashable/application_controller.rb")
-    layout_view = read_repo_file("../app/views/layouts/recording_studio_trashable/application.html.erb")
+    dummy_application_controller = File.read(
+      File.expand_path("dummy/app/controllers/application_controller.rb", __dir__)
+    )
+    dummy_default_layout = File.read(
+      File.expand_path("dummy/config/initializers/recording_studio_default_layout.rb", __dir__)
+    )
 
-    assert_includes application_controller, 'layout "recording_studio_trashable/application"'
+    assert_includes application_controller, "include RecordingStudio::UsesDefaultLayout"
+    refute_includes application_controller, 'layout "recording_studio_trashable/application"'
     assert_includes application_controller, "include ::Pagy::Backend"
     assert_includes application_controller, "helper ::Pagy::Frontend"
     assert_includes application_controller, "recording_studio_trashable_retention_settings_enabled?"
     assert_includes application_controller, "def recording_studio_trashable_back_path"
     assert_includes application_controller, "def recording_studio_trashable_back_link_params"
-    assert_includes layout_view, 'data-theme="rounded"'
-    assert_includes layout_view, 'stylesheet_link_tag "flat_pack/variables"'
-    assert_includes layout_view, 'stylesheet_link_tag "flat_pack/application"'
-    assert_includes layout_view, 'stylesheet_link_tag "tailwind"'
-    refute_includes layout_view, "FlatPack::SidebarLayout::Component"
-    refute_includes layout_view, "layouts/flat_pack/top_nav"
-    refute_includes layout_view, "layouts/flat_pack/sidebar"
+    assert_includes dummy_application_controller, "include RecordingStudio::UsesDefaultLayout"
+    assert_includes dummy_application_controller, '"recording_studio/default_layout"'
+    refute_includes dummy_application_controller, '"flat_pack_sidebar"'
+    assert_includes dummy_default_layout, "RecordingStudio::ApplicationController.include(RecordingStudio::UsesDefaultLayout)"
+    refute File.exist?(
+      File.expand_path("../app/views/layouts/recording_studio_trashable/application.html.erb", __dir__)
+    )
+    refute File.exist?(File.expand_path("dummy/app/views/layouts/flat_pack_sidebar.html.erb", __dir__))
+    refute File.exist?(File.expand_path("dummy/app/views/layouts/flat_pack/_sidebar.html.erb", __dir__))
   end
 
   def test_retention_copy_uses_select_based_retention_period_options
@@ -152,23 +165,27 @@ class UiSurfaceTest < Minitest::Test
 
   def test_dummy_layouts_use_rounded_theme_with_flatpack_assets
     layout = File.read(File.expand_path("dummy/app/views/layouts/application.html.erb", __dir__))
-    sidebar_layout = File.read(File.expand_path("dummy/app/views/layouts/flat_pack_sidebar.html.erb", __dir__))
-    top_nav = File.read(File.expand_path("dummy/app/views/layouts/flat_pack/_top_nav.html.erb", __dir__))
+    importmap = File.read(File.expand_path("dummy/config/importmap.rb", __dir__))
+    javascript = File.read(File.expand_path("dummy/app/javascript/application.js", __dir__))
     css = File.read(File.expand_path("dummy/app/assets/tailwind/application.css", __dir__))
 
     assert_includes layout, 'data-theme="rounded"'
-    assert_includes sidebar_layout, 'data-theme="rounded"'
+    assert_includes layout, "bg-(--surface-page-background-color)"
+    assert_includes layout, "mx-auto flex min-h-full w-full max-w-6xl items-center justify-center p-6"
+    assert_includes layout, 'stylesheet_link_tag "application.css"'
+    assert_includes layout, 'stylesheet_link_tag "tailwind.css"'
     assert_includes layout, 'stylesheet_link_tag "flat_pack/variables"'
-    assert_includes sidebar_layout, 'stylesheet_link_tag "flat_pack/variables"'
-    assert_includes layout, 'stylesheet_link_tag "tailwind"'
-    assert_includes sidebar_layout, 'stylesheet_link_tag "tailwind"'
+    assert_includes layout, 'stylesheet_link_tag "flat_pack/rich_text"'
+    refute_includes layout, 'stylesheet_link_tag "flat_pack/application"'
+    assert_operator layout.index('stylesheet_link_tag "tailwind.css"'), :<,
+                    layout.index('stylesheet_link_tag "flat_pack/variables"')
+    assert_includes importmap, 'pin "@hotwired/turbo-rails", to: "turbo.min.js"'
+    assert_includes importmap, 'pin "flat_pack/heroicons"'
+    assert_includes javascript, 'import "@hotwired/turbo-rails"'
     assert_includes css, "vendor/bundle/**/flatpack/app/components/**/*.{rb,erb}"
     assert_includes css, "vendor/bundle/**/flat_pack/app/components/**/*.{rb,erb}"
     assert_includes css, "flat_pack-*/app/components/**/*.{rb,erb}"
-    assert_includes top_nav, "FlatPack::TopNav::Component"
-    refute_includes top_nav, 'icon: "menu"'
-    refute_includes top_nav, 'aria: {label: "Toggle sidebar"}'
-    refute_includes top_nav, 'action: "click->flat-pack--sidebar-layout#toggleMobile"'
+    assert_includes css, "RecordingStudio-*/app/views/**/*.erb"
     refute_includes css, "@theme {"
     refute_includes css, "--color-fp-primary"
   end
@@ -212,8 +229,11 @@ class UiSurfaceTest < Minitest::Test
     expired_default_retention = "expired_default_retention_recording.update!(trashed_at: 45.days.ago)"
     expired_scope_retention = "expired_scope_retention_recording.update!(trashed_at: 21.days.ago)"
 
+    assert_includes source, "recording_studio_page_nav("
     assert_includes source, "title: \"Trash demo\""
     assert_includes source, "subtitle: \"Recording Studio Trash functionality\""
+    assert_includes source, 'title: "Docs"'
+    assert_includes source, "demo_doc_links"
     assert_includes source, "text: \"Trash can\""
     assert_includes source, "text: \"Trash settings\""
     assert_includes source, "text: \"Purge\""
@@ -280,16 +300,12 @@ class UiSurfaceTest < Minitest::Test
 
   def test_dummy_layout_renders_flash_messages_with_flat_pack_alerts
     layout_path = File.expand_path("dummy/app/views/layouts/application.html.erb", __dir__)
-    sidebar_layout_path = File.expand_path("dummy/app/views/layouts/flat_pack_sidebar.html.erb", __dir__)
     source = File.read(layout_path)
-    sidebar_source = File.read(sidebar_layout_path)
 
     assert_includes source, "flash.each do |type, message|"
     assert_includes source, "type.to_sym == :notice ? :success : :danger"
     assert_includes source, "FlatPack::Alert::Component"
-    assert_includes sidebar_source, "flash.each do |type, message|"
-    assert_includes sidebar_source, "type.to_sym == :notice ? :success : :danger"
-    assert_includes sidebar_source, "FlatPack::Alert::Component"
+    refute_includes source, "FlatPack::SidebarLayout::Component"
   end
 
   def test_dummy_uses_resolver_authorization_for_signed_in_demo_users
@@ -302,19 +318,25 @@ class UiSurfaceTest < Minitest::Test
     assert_includes initializer_source, "action.present? && actor.present?"
   end
 
-  def test_devise_sign_in_view_keeps_form_in_normal_layout_flow
+  def test_devise_sign_in_view_uses_constrained_flatpack_card
     source = File.read(File.expand_path("dummy/app/views/devise/sessions/new.html.erb", __dir__))
 
-    assert_includes source, "FlatPack::Card::Component.new(style: :default)"
+    assert_includes source, "FlatPack::Grid::Component.new("
+    assert_includes source, 'class: "mx-auto w-full max-w-md px-4 py-12"'
+    assert_includes source, "FlatPack::Card::Component.new(style: :elevated)"
+    assert_includes source, 'title: "Sign In"'
+    assert_includes source, 'class: "mb-6"'
+    assert_includes source, 'html: { class: "space-y-4" }'
+    refute_includes source, "<% card.header do %>"
     refute_includes source, 'class="fixed inset-0 p-4"'
-    refute_includes source, 'class="mx-auto flex w-full max-w-md flex-col justify-center px-4 py-8"'
   end
 
   def test_dummy_events_page_is_owned_by_dummy_app
     routes_source = File.read(File.expand_path("dummy/config/routes.rb", __dir__))
     controller_source = File.read(File.expand_path("dummy/app/controllers/events_controller.rb", __dir__))
     view_source = File.read(File.expand_path("dummy/app/views/events/show.html.erb", __dir__))
-    sidebar_source = File.read(File.expand_path("dummy/app/views/layouts/flat_pack/_sidebar.html.erb", __dir__))
+    home_source = File.read(File.expand_path("dummy/app/views/home/index.html.erb", __dir__))
+    application_controller = File.read(File.expand_path("dummy/app/controllers/application_controller.rb", __dir__))
 
     assert_includes routes_source, 'get "events", to: "events#show", as: :events'
     assert_includes controller_source, "class EventsController < ApplicationController"
@@ -334,10 +356,14 @@ class UiSurfaceTest < Minitest::Test
     assert_includes view_source, "event_actor_label(event)"
     assert_includes view_source, "event_metadata(event)"
     assert_includes view_source, "No events recorded yet."
+    assert_includes view_source, "recording_studio_page_nav("
+    assert_includes view_source, "page_nav_back_url: main_app.root_path"
     refute_includes view_source, "rounded-xl border"
-    assert_includes sidebar_source, 'text: "Events"'
-    assert_includes sidebar_source, "href: main_app.events_path"
-    refute_includes sidebar_source, "recording_studio_trashable.recording_events_path"
+    refute_includes view_source, 'aria-label="Breadcrumb"'
+    assert_includes home_source, "demo_doc_links"
+    assert_includes application_controller, 'text: "Events"'
+    assert_includes application_controller, "main_app.events_path"
+    refute_includes application_controller, "recording_studio_trashable.recording_events_path"
   end
 
   def test_recordings_controller_redirects_back_by_default_and_supports_async_responses
@@ -504,6 +530,11 @@ class UiSurfaceTest < Minitest::Test
     refute_includes source, "manage_retention: :admin"
     assert_includes source, "config.current_actor_resolver = ->(controller:) { controller.current_user }"
     assert_includes source, "config.current_impersonator_resolver = ->(controller:) { controller.true_user }"
+    assert_includes showcase_view, "recording_studio_page_nav("
+    assert_includes showcase_view, "page_nav_back_url: main_app.root_path"
+    assert_includes showcase_view, 'class="flex flex-col gap-8"'
+    assert_includes showcase_view, 'class="flex flex-col gap-4"'
+    refute_includes showcase_view, 'aria-label="Breadcrumb"'
     assert_includes showcase_view, "FlatPack::CodeBlock::Component"
     assert_includes showcase_view, "@page[:sections].present?"
     assert_includes showcase_view, "@page.fetch(:sections).each do |section|"
@@ -552,32 +583,27 @@ class UiSurfaceTest < Minitest::Test
     )
   end
 
-  def test_dummy_sidebar_icons_exist_in_the_sprite
-    sidebar_path = File.expand_path("dummy/app/views/layouts/flat_pack/_sidebar.html.erb", __dir__)
-    sprite_path = File.expand_path("dummy/app/views/layouts/_icon_sprite.html.erb", __dir__)
-    sidebar_source = File.read(sidebar_path)
-    sprite_source = File.read(sprite_path)
+  def test_dummy_home_links_to_docs_pages_without_sidebar_chrome
+    home_source = File.read(File.expand_path("dummy/app/views/home/index.html.erb", __dir__))
+    application_controller = File.read(File.expand_path("dummy/app/controllers/application_controller.rb", __dir__))
 
-    assert_includes sidebar_source, 'text: "Overview"'
-    assert_includes sidebar_source, 'href: main_app.showcase_path("overview")'
-    assert_includes sidebar_source, 'text: "Events"'
-    assert_includes sidebar_source, "href: main_app.events_path"
-    assert_includes sidebar_source, 'text: "Retention"'
-    assert_includes sidebar_source, 'href: main_app.showcase_path("retention")'
-    assert_includes sidebar_source, 'text: "Responses"'
-    assert_includes sidebar_source, 'href: main_app.showcase_path("responses")'
-    assert_includes sidebar_source, 'text: "Trash cans"'
-    assert_includes sidebar_source, 'href: main_app.showcase_path("trash-cans")'
-    assert_includes sidebar_source, 'text: "Trash roots"'
-    assert_includes sidebar_source, 'href: main_app.showcase_path("trash-roots")'
-
-    sidebar_icons = sidebar_source.scan(/icon:\s*:(\w+(?:-\w+)*)/).flatten
-
-    assert sidebar_icons.any?, "Expected the dummy sidebar to declare icons"
-
-    sidebar_icons.each do |icon_name|
-      assert_includes sprite_source, %(id="icon-#{icon_name}"), "Expected icon #{icon_name} to exist in the sprite"
-    end
+    assert_includes home_source, "recording_studio_page_nav("
+    assert_includes home_source, 'title: "Docs"'
+    assert_includes home_source, "demo_doc_links"
+    assert_includes application_controller, 'text: "Overview"'
+    assert_includes application_controller, 'showcase_path("overview")'
+    assert_includes application_controller, 'text: "Events"'
+    assert_includes application_controller, "main_app.events_path"
+    assert_includes application_controller, 'text: "Retention"'
+    assert_includes application_controller, 'showcase_path("retention")'
+    assert_includes application_controller, 'text: "Responses"'
+    assert_includes application_controller, 'showcase_path("responses")'
+    assert_includes application_controller, 'text: "Trash cans"'
+    assert_includes application_controller, 'showcase_path("trash-cans")'
+    assert_includes application_controller, 'text: "Trash roots"'
+    assert_includes application_controller, 'showcase_path("trash-roots")'
+    refute_includes application_controller, "FlatPack::SidebarLayout::Component"
+    refute File.exist?(File.expand_path("dummy/app/views/layouts/flat_pack/_sidebar.html.erb", __dir__))
   end
 
   def test_overview_page_explains_trash_setup_and_boundaries

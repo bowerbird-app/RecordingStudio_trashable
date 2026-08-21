@@ -3,18 +3,24 @@
 /* Include dummy app views for Tailwind CSS */
 @source "../../views/**/*.erb";
 
-/* Include RecordingStudio engine views for Tailwind CSS */
-@source "../../vendor/bundle/**/recording_studio/app/views/**/*.erb";
+/* Include RecordingStudio engine views for Tailwind CSS, including default_layout */
+@source "../../vendor/bundle/**/recording_studio*/app/views/**/*.erb";
+@source "../../vendor/bundle/**/bundler/gems/RecordingStudio-*/app/views/**/*.erb";
+@source "../../../../../../usr/local/bundle/**/bundler/gems/RecordingStudio-*/app/views/**/*.erb";
+@source "../../../../../../home/**/.bundle/**/bundler/gems/RecordingStudio-*/app/views/**/*.erb";
+@source "../../../../../../home/**/.local/share/mise/**/bundler/gems/RecordingStudio-*/app/views/**/*.erb";
 
 /* Scan FlatPack components for utility classes */
 @source "../../vendor/bundle/**/flatpack/app/components/**/*.{rb,erb}";
 @source "../../vendor/bundle/**/flat_pack/app/components/**/*.{rb,erb}";
+@source "../../vendor/bundle/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flat_pack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../home/**/.local/share/mise/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../home/**/.local/share/mise/**/bundler/gems/flat_pack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../home/**/.bundle/**/gems/flatpack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../home/**/.bundle/**/gems/flat_pack-*/app/components/**/*.{rb,erb}";
+@source "../../../../../../home/**/.bundle/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";
 
-/* Include the engine's views in the Tailwind build */
+/* Include this engine's views in the Tailwind build */
 @source "../../../../../app/views/**/*.erb";

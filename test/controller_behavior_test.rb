@@ -14,6 +14,18 @@ unless defined?(ApplicationController)
   end
 end
 
+unless defined?(RecordingStudio::UsesDefaultLayout)
+  module RecordingStudio
+    module UsesDefaultLayout
+      extend ActiveSupport::Concern
+
+      included do
+        layout "recording_studio/default_layout"
+      end
+    end
+  end
+end
+
 require_relative "../app/controllers/recording_studio_trashable/application_controller"
 require_relative "../app/controllers/recording_studio_trashable/recordings_controller"
 require_relative "../app/controllers/recording_studio_trashable/retention_settings_controller"

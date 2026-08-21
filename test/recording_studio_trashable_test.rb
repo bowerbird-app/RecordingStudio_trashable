@@ -41,18 +41,22 @@ class RecordingStudioTrashableTest < Minitest::Test
     assert_equal RecordingStudio::Trashable::Capabilities::Trashable, RecordingStudio::Capabilities::Trashable
   end
 
-  def test_dummy_sidebar_mentions_showcase_pages
-    sidebar_path = File.expand_path("dummy/app/views/layouts/flat_pack/_sidebar.html.erb", __dir__)
-    source = File.read(sidebar_path)
+  def test_dummy_home_mentions_showcase_pages
+    home_path = File.expand_path("dummy/app/views/home/index.html.erb", __dir__)
+    controller_path = File.expand_path("dummy/app/controllers/application_controller.rb", __dir__)
+    home_source = File.read(home_path)
+    controller_source = File.read(controller_path)
 
-    assert_includes source, "main_app.root_path"
-    assert_includes source, "main_app.showcase_path"
-    assert_includes source, "main_app.destroy_user_session_path"
-    refute_includes source, "Workspace trash bin"
-    refute_includes source, "Project trash bin"
-    assert_includes source, "Adding to a recordable"
-    assert_includes source, "Trash cans"
-    assert_includes source, "Methods"
+    assert_includes home_source, "recording_studio_page_nav("
+    assert_includes home_source, "main_app.destroy_user_session_path"
+    assert_includes home_source, "demo_doc_links"
+    assert_includes controller_source, "main_app.showcase_path"
+    assert_includes controller_source, "main_app.events_path"
+    refute_includes controller_source, "Workspace trash bin"
+    refute_includes controller_source, "Project trash bin"
+    assert_includes controller_source, "Adding to a recordable"
+    assert_includes controller_source, "Trash cans"
+    assert_includes controller_source, "Methods"
   end
 
   def test_dummy_current_supports_actor_and_impersonator

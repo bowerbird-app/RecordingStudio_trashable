@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 RecordingStudio.configure do |config|
+  config.app_name = "Trashable Demo" if config.respond_to?(:app_name=)
   config.recordable_types = %w[Workspace Project Folder Page]
   config.actor = -> { Current.actor }
   config.event_notifications_enabled = true
