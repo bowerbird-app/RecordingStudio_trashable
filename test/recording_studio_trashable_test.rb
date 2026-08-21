@@ -18,6 +18,15 @@ class RecordingStudioTrashableTest < Minitest::Test
     refute_nil RecordingStudioTrashable::VERSION
   end
 
+  def test_recording_studio_dependency_is_4_1_or_newer
+    spec = Gem.loaded_specs.fetch("recording_studio")
+    gemspec = File.read(File.expand_path("../recording_studio_trashable.gemspec", __dir__))
+
+    assert spec.version >= Gem::Version.new("4.1.0"),
+           "expected recording_studio >= 4.1.0, got #{spec.version}"
+    assert_includes gemspec, 'spec.add_dependency "recording_studio", "~> 4.1"'
+  end
+
   def test_version_matches_latest_changelog_release
     changelog = File.read(File.expand_path("../CHANGELOG.md", __dir__))
 
@@ -52,7 +61,7 @@ class RecordingStudioTrashableTest < Minitest::Test
     assert_includes current_model, "attribute :actor, :impersonator"
   end
 
-  def test_dummy_recordables_declare_recording_studio_3_hierarchy
+  def test_dummy_recordables_declare_recording_studio_hierarchy
     assert_dummy_model_includes("workspace.rb", 'recording_studio_recordable label: "Workspace"')
     assert_dummy_model_includes("workspace.rb", "root: true")
 

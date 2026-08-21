@@ -1,26 +1,25 @@
-# RecordingStudio 3.0 Update Summary
+# RecordingStudio 4.1 Update Summary
 
 ## Current branch summary
 
-This branch updates `recording_studio_trashable` for RecordingStudio 3.0 compatibility.
+This branch updates `recording_studio_trashable` for RecordingStudio 4.1 compatibility.
 
 ### Dependency changes
 
-- `recording_studio` is pinned to tag `recording_studio/v3.0.0` in the root and dummy app Gemfiles.
-- Both lockfiles resolve RecordingStudio to revision `7667687155bf05ab41b66dfccae330dc3834c39c`.
-- Both lockfiles resolve FlatPack tag `v0.1.33` to commit `bb6155be46d90db4932627d632bc26849538ca10`.
-- The gemspec now requires `recording_studio ~> 3.0`.
+- `recording_studio` is pinned to tag `v4.1.0` in the root and dummy app Gemfiles.
+- `flat_pack` is pinned to tag `v0.1.133` in the root and dummy app Gemfiles.
+- The gemspec now requires `recording_studio ~> 4.1`.
+- The gem version is `0.3.0` for the breaking dependency floor.
 
 ### Compatibility changes
 
-- Host recordables now use RecordingStudio 3.x `recording_studio_recordable(...)` declarations.
-- The removed core `RecordingStudio::Services::AccessCheck` fallback is no longer used; applications should configure a custom resolver, use `RecordingStudioAccessible`, or keep the default deny behavior.
-- Trash bins use `trash_root` tracking so only explicitly trashed subtree roots are listed.
-- Retention purges skip a parent until every trashed descendant in that subtree is also retention-due.
+- Host recordables still use `recording_studio_recordable(...)` declarations and opt into trash with `RecordingStudio::Capabilities::Trashable.to(...)`.
+- The dummy app installs the RecordingStudio 4 harden / unique-root indexes.
+- Authorization is unchanged: configure a custom resolver, use `RecordingStudioAccessible`, or keep the default deny behavior.
 
 ### Release classification
 
-This is a breaking change because it drops compatibility with pre-3.0 RecordingStudio APIs. The commit and release metadata should use a Conventional Commits breaking-change signal (`feat!` or a `BREAKING CHANGE:` footer), which should classify the automatic release as major.
+This is a breaking change because it drops compatibility with RecordingStudio 3.x. Host apps still on RecordingStudio 3 should stay on Trashable `0.2.x`.
 
 ### Verification notes
 
