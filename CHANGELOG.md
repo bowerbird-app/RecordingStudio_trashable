@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0](https://github.com/bowerbird-app/RecordingStudio_trashable/compare/recording_studio_trashable-v0.1.1...recording_studio_trashable/v1.0.0) (2026-09-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* recording_studio_trashable now requires RecordingStudio 3.x recordable declarations and no longer supports the removed core AccessCheck fallback.
+
+### Features
+
+* add trashable defaults and retention purger ([2847c85](https://github.com/bowerbird-app/RecordingStudio_trashable/commit/2847c8564443cf6c68c3f9a0015e8ca19895188d))
+* **cursor:** add Billing 0.9.13 Cloud Agent boot ([#6](https://github.com/bowerbird-app/RecordingStudio_trashable/issues/6)) ([2a7abd6](https://github.com/bowerbird-app/RecordingStudio_trashable/commit/2a7abd69e0569d0144424cb129959b716e0f3d71))
+* require RecordingStudio 3.0 ([e0abfae](https://github.com/bowerbird-app/RecordingStudio_trashable/commit/e0abfae7e55be7aec0524ef1a0bb026faff2ba94))
+* tighten trash auth and retention flows ([577d9af](https://github.com/bowerbird-app/RecordingStudio_trashable/commit/577d9af3826726e3c5502cccb4c0512b88f763f3))
+* wrap trashable enablement with core 4.2 include_for factory ([#5](https://github.com/bowerbird-app/RecordingStudio_trashable/issues/5)) ([1e1c0f7](https://github.com/bowerbird-app/RecordingStudio_trashable/commit/1e1c0f7f3b4f418f3015ec78769aacb8024c2ed8))
+
+
+### Bug Fixes
+
+* restore dummy app engine pages ([61342d7](https://github.com/bowerbird-app/RecordingStudio_trashable/commit/61342d732fbae4191f2e72257c85e3662d993264))
+* tighten mounted auth and retention semantics ([490a7c4](https://github.com/bowerbird-app/RecordingStudio_trashable/commit/490a7c435f510bf9a5884f23fe3c06466b14cce7))
+
 ## [Unreleased]
 
 ## [0.4.1] - 2026-09-02
