@@ -37,22 +37,25 @@ module RecordingStudioTrashable
     def purge_candidates
       recordings = RecordingStudioTrashable::SubtreeQuery.recordings_for(@scope_recording)
       index = recordings.index_by(&:id)
-      eligible_recordings = recordings.select { |recording| due_recording?(recording) }
+      settings_by_recording_id = RecordingStudioTrashable::RetentionPolicy.settings_by_recording_id(recordings)
+      eligible_recordings = recordings.select { |recording| due_recording?(recording, index, settings_by_recording_id) }
       candidates, skipped = partition_purge_candidates(recordings, eligible_recordings)
 
-      [
-        sort_by_purge_order(candidates, index),
-        sort_by_purge_order(skipped, index)
-      ]
+      [sort_by_purge_order(candidates, index), sort_by_purge_order(skipped, index)]
     end
 
-    def due_recording?(recording)
-      recording.trashed_at.present? &&
-        RecordingStudioTrashable::RetentionPolicy.due?(
-          recording: recording,
-          scope_recording: @scope_recording,
-          as_of: @as_of
-        )
+    def due_recording?(recording, recordings_by_id, settings_by_recording_id)
+      recording.trashed_at.present? && retention_due?(recording, recordings_by_id, settings_by_recording_id)
+    end
+
+    def retention_due?(recording, recordings_by_id, settings_by_recording_id)
+      RecordingStudioTrashable::RetentionPolicy.due?(
+        recording: recording,
+        scope_recording: @scope_recording,
+        as_of: @as_of,
+        recordings_by_id: recordings_by_id,
+        settings_by_recording_id: settings_by_recording_id
+      )
     end
 
     def partition_purge_candidates(recordings, eligible_recordings)
@@ -91,7 +94,7 @@ module RecordingStudioTrashable
       validate_purge_recording!(recording)
 
       if @dry_run
-        mark_would_purge(result, recording)
+        result.would_purge_recordings << recording
         return
       end
 
@@ -99,10 +102,6 @@ module RecordingStudioTrashable
       result.purged_recordings << recording
     rescue RecordingStudioTrashable::PurgeTargetsNotTrashedError
       result.skipped_recordings << recording
-    end
-
-    def mark_would_purge(result, recording)
-      result.would_purge_recordings << recording
     end
 
     def purge_options

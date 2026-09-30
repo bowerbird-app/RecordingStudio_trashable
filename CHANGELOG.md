@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Purge locks the subtree and deletes those locked rows in the same transaction, so a restore that lands after the preflight check is not permanently deleted.
+- Retention sweeps use the nearest saved setting inside the scope. A project retention period applies when the sweep starts at the workspace.
 
 ## [0.4.1] - 2026-09-02
 

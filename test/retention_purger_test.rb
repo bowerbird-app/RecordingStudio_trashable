@@ -225,6 +225,28 @@ class RetentionPurgerTest < Minitest::Test
     end
   end
 
+  def test_purge_due_recordings_passes_preloaded_subtree_context_to_the_policy
+    parent = FakeRecording.new(id: "parent", trashed_at: Time.now - 10.days)
+    child = FakeRecording.new(id: "child", parent_recording_id: "parent", trashed_at: Time.now - 9.days)
+    captured = []
+
+    RecordingStudioTrashable::SubtreeQuery.stub(:recordings_for, [parent, child]) do
+      policy = lambda do |recording:, recordings_by_id:, settings_by_recording_id:, **|
+        captured << [recording.id, recordings_by_id.keys.sort, settings_by_recording_id]
+        false
+      end
+      RecordingStudioTrashable::RetentionPolicy.stub(:due?, policy) do
+        RecordingStudioTrashable.stub(:authorized?, true) do
+          RecordingStudioTrashable.purge_due_recordings(scope_recording: :workspace, actor: :system)
+        end
+      end
+    end
+
+    context_keys = captured.map { |(_id, keys, _settings)| keys }
+    assert_equal [%w[child parent], %w[child parent]], context_keys
+    assert_equal [{}, {}], captured.map(&:last)
+  end
+
   def test_purge_due_recordings_reraises_unrelated_argument_errors
     parent = FakeRecording.new(id: "parent", trashed_at: Time.now - 10.days)
 
