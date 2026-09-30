@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Purge locks the subtree and deletes those locked rows in the same transaction, so a restore that lands after the preflight check is not permanently deleted.
+
 ## [0.4.1] - 2026-09-02
 
 ### Added

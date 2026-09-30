@@ -36,7 +36,9 @@ class TrashableCapabilitiesTest < Minitest::Test
 
     def find(id)
       looked_up_ids << id
-      @records.fetch(id)
+      record = @records.fetch(id)
+      resolver = FakeRecording.lock_resolver
+      resolver ? resolver.call(id, record) : record
     end
   end
 
@@ -44,7 +46,7 @@ class TrashableCapabilitiesTest < Minitest::Test
     include RecordingStudio::Trashable::Capabilities::Trashable::RecordingMethods
 
     class << self
-      attr_accessor :records, :lock_proxy
+      attr_accessor :records, :lock_proxy, :lock_resolver
 
       def transaction
         yield
@@ -115,12 +117,14 @@ class TrashableCapabilitiesTest < Minitest::Test
   def setup
     FakeRecording.records = {}
     FakeRecording.lock_proxy = nil
+    FakeRecording.lock_resolver = nil
     @original_authorized = RecordingStudioTrashable.method(:authorized?)
   end
 
   def teardown
     FakeRecording.records = {}
     FakeRecording.lock_proxy = nil
+    FakeRecording.lock_resolver = nil
   end
 
   def stub_authorized(value: true, &)
@@ -307,6 +311,24 @@ class TrashableCapabilitiesTest < Minitest::Test
     end
 
     assert_equal "Purging requires all targeted recordings to already be trashed", error.message
+  end
+
+  def test_purge_uses_the_locked_row_and_refuses_a_restored_target
+    recording = FakeRecording.new(id: "page-1", trashed_at: Time.now - 1.day, trash_root: true)
+    FakeRecording.lock_resolver = lambda do |_id, record|
+      locked = record.dup
+      locked.trashed_at = nil
+      locked.trash_root = false
+      locked
+    end
+
+    error = assert_raises(RecordingStudioTrashable::PurgeTargetsNotTrashedError) do
+      stub_authorized { recording.recording_studio_trashable_purge!(actor: :admin) }
+    end
+
+    assert_equal "Purging requires all targeted recordings to already be trashed", error.message
+    refute recording.destroyed
+    assert recording.trashed_at
   end
 
   def test_lifecycle_raises_when_not_authorized
