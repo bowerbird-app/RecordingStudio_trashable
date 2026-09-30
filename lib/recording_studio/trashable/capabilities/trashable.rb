@@ -86,8 +86,10 @@ module RecordingStudio
           end
 
           def recording_studio_trashable_purge!(actor: nil, impersonator: nil, metadata: {})
-            recording_studio_trashable_validate_purge!(actor: actor)
+            recording_studio_trashable_assert_capability!
             recording_studio_trashable_with_locked_targets do |targets|
+              recording_studio_trashable_authorize!(:purge, actor: actor)
+              recording_studio_trashable_assert_purge_targets!(targets)
               targets.reverse_each do |recording|
                 recording.log_event!(
                   action: "purged",
@@ -148,50 +150,68 @@ module RecordingStudio
 
           def recording_studio_trashable_with_locked_targets(mode: :all)
             self.class.transaction do
-              targets = recording_studio_trashable_targets(mode: mode)
-              ids = targets.map(&:id).compact.uniq.sort
-              if self.class.respond_to?(:lock)
-                relation = self.class.recording_studio_trashable_including_trashed
-                ids.each { |recording_id| relation.lock.find(recording_id) }
-              end
-              yield targets
+              yield recording_studio_trashable_locked_targets(mode: mode)
             end
           end
 
-          def recording_studio_trashable_targets(mode: :all)
-            descendants = case mode
-                          when :restore
-                            recording_studio_trashable_descendants(prune_trash_roots: true)
-                          else
-                            recording_studio_trashable_descendants
-                          end
+          def recording_studio_trashable_locked_targets(mode:)
+            root = recording_studio_trashable_lock_records([self]).fetch(id)
+            descendants = recording_studio_trashable_locked_descendants(
+              [root.id],
+              prune_trash_roots: mode == :restore
+            )
 
-            [self, *descendants]
+            [root, *descendants]
           end
 
-          def recording_studio_trashable_descendants(prune_trash_roots: false)
+          def recording_studio_trashable_locked_descendants(frontier_ids, prune_trash_roots:)
             descendants = []
-            frontier = [id]
 
-            until frontier.empty?
-              children = self.class.recording_studio_trashable_including_trashed
-                             .where(parent_recording_id: frontier)
-                             .reorder(created_at: :asc)
-                             .to_a
-              next_frontier = []
+            until frontier_ids.empty?
+              children = recording_studio_trashable_lock_children(frontier_ids)
+              next_frontier_ids = []
 
               children.each do |child|
                 next if prune_trash_roots && recording_studio_trashable_trash_root?(child)
 
                 descendants << child
-
-                next_frontier << child.id
+                next_frontier_ids << child.id
               end
 
-              frontier = next_frontier
+              frontier_ids = next_frontier_ids
             end
 
             descendants
+          end
+
+          def recording_studio_trashable_lock_children(parent_ids)
+            rows = self.class.recording_studio_trashable_including_trashed
+                       .where(parent_recording_id: parent_ids)
+                       .reorder(created_at: :asc, id: :asc)
+                       .to_a
+            return [] if rows.empty?
+
+            locked_by_id = recording_studio_trashable_lock_records(rows)
+            rows.map { |row| locked_by_id.fetch(row.id) }
+          end
+
+          def recording_studio_trashable_lock_records(recordings)
+            ids = recordings.map(&:id).compact.uniq
+            return {} if ids.empty?
+
+            recording_studio_trashable_locked_rows(ids).index_by(&:id)
+          end
+
+          def recording_studio_trashable_locked_rows(ids)
+            return self.class.lock_ids!(ids).to_a if self.class.respond_to?(:lock_ids!)
+            return recording_studio_trashable_lock_each(ids) if self.class.respond_to?(:lock)
+
+            ids.filter_map { |recording_id| self.class.find_by(id: recording_id) }
+          end
+
+          def recording_studio_trashable_lock_each(ids)
+            relation = self.class.recording_studio_trashable_including_trashed
+            ids.sort.map { |recording_id| relation.lock.find(recording_id) }
           end
 
           def recording_studio_trashable_trash_root?(recording)

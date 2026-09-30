@@ -5,6 +5,7 @@ require "test_helper"
 class RetentionPolicyTest < Minitest::Test
   DummySetting = Struct.new(:purge_after_days)
   DummyRecording = Struct.new(:trashed_at, :recordable_type)
+  RetentionNode = Struct.new(:id, :parent_recording_id, :recordable_type, keyword_init: true)
 
   def setup
     @original_configuration = RecordingStudioTrashable.instance_variable_get(:@configuration)
@@ -27,8 +28,9 @@ class RetentionPolicyTest < Minitest::Test
 
   def test_normalize_purge_after_days_returns_integer_or_nil
     assert_equal 14, RecordingStudioTrashable::RetentionPolicy.normalize_purge_after_days("14")
-    assert_nil RecordingStudioTrashable::RetentionPolicy.normalize_purge_after_days("bad")
     assert_nil RecordingStudioTrashable::RetentionPolicy.normalize_purge_after_days("")
+    assert_nil RecordingStudioTrashable::RetentionPolicy.normalize_purge_after_days("  ")
+    assert_raises(ArgumentError) { RecordingStudioTrashable::RetentionPolicy.normalize_purge_after_days("bad") }
   end
 
   def test_purge_after_days_uses_scope_setting_before_default
@@ -76,6 +78,16 @@ class RetentionPolicyTest < Minitest::Test
     end
   end
 
+  def purge_after_days_for(scope_recording, recording, recordings_by_id:, settings_by_recording_id:)
+    RecordingStudioTrashable::RetentionPolicy.purge_after_days_for(
+      scope_recording,
+      recordable_type: recording.recordable_type,
+      recording: recording,
+      recordings_by_id: recordings_by_id,
+      settings_by_recording_id: settings_by_recording_id
+    )
+  end
+
   def test_due_reports_true_once_deadline_passes
     recording = DummyRecording.new(Time.now - 10.days, "Page")
 
@@ -102,6 +114,69 @@ class RetentionPolicyTest < Minitest::Test
         as_of: Time.utc(2026, 1, 8, 12, 0, 0)
       )
     end
+  end
+
+  def test_nearest_saved_setting_beats_an_ancestor_manual_override
+    workspace = RetentionNode.new(id: "workspace")
+    project = RetentionNode.new(id: "project", parent_recording_id: "workspace")
+    page = RetentionNode.new(id: "page", parent_recording_id: "project", recordable_type: "Page")
+    recordings_by_id = [workspace, project, page].index_by(&:id)
+
+    RecordingStudioTrashable.configure do |config|
+      config.default_purge_after_days = 30
+      config.allow_user_retention_settings = true
+    end
+
+    RecordingStudio.stub(:capability_options, { purge_after_days: 14 }) do
+      assert_equal 14, purge_after_days_for(
+        workspace,
+        page,
+        recordings_by_id: recordings_by_id,
+        settings_by_recording_id: {
+          "workspace" => DummySetting.new(nil),
+          "project" => DummySetting.new(14)
+        }
+      )
+    end
+  end
+
+  def test_ancestor_manual_override_applies_when_no_nearer_setting_exists
+    workspace = RetentionNode.new(id: "workspace")
+    page = RetentionNode.new(id: "page", parent_recording_id: "workspace", recordable_type: "Page")
+    recordings_by_id = [workspace, page].index_by(&:id)
+
+    RecordingStudioTrashable.configure do |config|
+      config.default_purge_after_days = 30
+      config.allow_user_retention_settings = true
+    end
+
+    RecordingStudio.stub(:capability_options, { purge_after_days: 14 }) do
+      assert_nil purge_after_days_for(
+        workspace,
+        page,
+        recordings_by_id: recordings_by_id,
+        settings_by_recording_id: { "workspace" => DummySetting.new(nil) }
+      )
+    end
+  end
+
+  def test_retention_resolution_stops_at_the_sweep_scope
+    workspace = RetentionNode.new(id: "workspace")
+    project = RetentionNode.new(id: "project", parent_recording_id: "workspace")
+    page = RetentionNode.new(id: "page", parent_recording_id: "project", recordable_type: "Page")
+    recordings_by_id = [workspace, project, page].index_by(&:id)
+
+    RecordingStudioTrashable.configure do |config|
+      config.default_purge_after_days = 30
+      config.allow_user_retention_settings = true
+    end
+
+    assert_equal 30, purge_after_days_for(
+      project,
+      page,
+      recordings_by_id: recordings_by_id,
+      settings_by_recording_id: { "workspace" => DummySetting.new(7) }
+    )
   end
 
   def test_purge_at_returns_nil_for_manual_only_retention

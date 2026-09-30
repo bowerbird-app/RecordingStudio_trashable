@@ -226,11 +226,14 @@ For example, a synchronous form can just post the action and rely on the browser
 
 Retention settings are stored in the addon-owned `recording_studio_trashable_retention_settings` table and scoped to a subtree root recording. Trashable also owns the `trashed_at` and `trash_root` schema it adds to `recording_studio_recordings`.
 
-Retention resolves in this order:
+During a sweep, each recording resolves retention from the nearest saved setting on the path from that recording up to and including the sweep scope:
 
-1. subtree retention setting saved through the mounted UI when `config.allow_user_retention_settings = true`
-2. per-recordable capability option such as `purge_after_days: 14`
-3. addon-wide `config.default_purge_after_days`
+1. the recording's own retention setting, when `config.allow_user_retention_settings = true`
+2. the nearest ancestor setting inside the sweep scope, including a saved blank value that means keep until manually purged
+3. per-recordable capability option such as `purge_after_days: 14`
+4. addon-wide `config.default_purge_after_days`
+
+Settings above the sweep scope are ignored. A workspace "keep until manually purged" setting does not hide a shorter setting saved on a project inside that workspace.
 
 By default, subtree users cannot override retention through the mounted UI. When
 `config.allow_user_retention_settings` is left `false`, saved subtree settings are ignored and

@@ -61,10 +61,11 @@ class ControllerBehaviorTest < Minitest::Test
   end
 
   class FakeRetentionSetting
-    attr_reader :assigned_attributes
+    attr_reader :assigned_attributes, :errors
 
     def initialize(save_result: true)
       @save_result = save_result
+      @errors = FakeErrors.new
     end
 
     def assign_attributes(attributes)
@@ -73,6 +74,18 @@ class ControllerBehaviorTest < Minitest::Test
 
     def save
       @save_result
+    end
+  end
+
+  class FakeErrors
+    attr_reader :details
+
+    def initialize
+      @details = []
+    end
+
+    def add(attribute, message)
+      @details << [attribute, message]
     end
   end
 
@@ -275,12 +288,40 @@ class ControllerBehaviorTest < Minitest::Test
     assert_equal "Trash settings updated.", controller.flash[:notice]
   end
 
-  def test_retention_settings_update_renders_edit_when_save_fails
+  def test_retention_settings_update_rejects_non_numeric_purge_after_days
     controller = build_controller(
       RecordingStudioTrashable::RetentionSettingsController,
       params: {
         recording_id: "scope-1",
         recording_studio_trashable_retention_setting: { purge_after_days: "bad" }
+      }
+    )
+    setting = FakeRetentionSetting.new(save_result: true)
+    render_call = nil
+
+    controller.define_singleton_method(:load_scope_recording) do
+      @scope_recording = FakeScopeRecording.new(id: "scope-1")
+      @retention_setting = setting
+    end
+    controller.define_singleton_method(:render) do |*args, **kwargs|
+      render_call = { args: args, kwargs: kwargs }
+      response.status = Rack::Utils.status_code(kwargs.fetch(:status)) if kwargs[:status]
+    end
+
+    controller.update
+
+    assert_nil setting.assigned_attributes
+    assert_equal [[:purge_after_days, "must be a positive whole number"]], setting.errors.details
+    assert_equal({ args: [:edit], kwargs: { status: :unprocessable_entity } }, render_call)
+    assert_equal 422, controller.response.status
+  end
+
+  def test_retention_settings_update_renders_edit_when_save_fails
+    controller = build_controller(
+      RecordingStudioTrashable::RetentionSettingsController,
+      params: {
+        recording_id: "scope-1",
+        recording_studio_trashable_retention_setting: { purge_after_days: "0" }
       }
     )
     setting = FakeRetentionSetting.new(save_result: false)
@@ -297,7 +338,7 @@ class ControllerBehaviorTest < Minitest::Test
 
     controller.update
 
-    assert_equal({ purge_after_days: nil }, setting.assigned_attributes)
+    assert_equal({ purge_after_days: 0 }, setting.assigned_attributes)
     assert_equal({ args: [:edit], kwargs: { status: :unprocessable_entity } }, render_call)
     assert_equal 422, controller.response.status
   end

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-09-30
+
+### Changed
+- The trash bin drops the "Recently trashed roots" subtitle. Empty states say "Nothing in the trash." Search still uses "Search trash".
+- Trash settings is a cog icon labeled Settings, and search results sit on the page instead of inside a card.
+- The dummy retention purge job runs as the seeded system user, and demo links navigate with FlatPack `href`.
+
+### Fixed
+- Purge locks the subtree and deletes those locked rows in the same transaction, so a restore that lands after the preflight check is not permanently deleted.
+- Retention sweeps use the nearest saved setting inside the scope. A project retention period applies when the sweep starts at the workspace.
+- Invalid retention input is rejected instead of being saved as "keep until manually purged".
+
 ## [0.4.1] - 2026-09-02
 
 ### Added
@@ -80,7 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.2.0...v0.3.0
