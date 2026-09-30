@@ -38,7 +38,8 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, "icon: :cog"
     refute_includes trash_bin_view, 'text: "Trash settings"'
     assert_includes trash_bin_view,
-                    "href: edit_recording_trash_settings_path(@scope_recording, recording_studio_trashable_back_link_params)"
+                    "href: edit_recording_trash_settings_path(" \
+                    "@scope_recording, recording_studio_trashable_back_link_params)"
     assert_includes trash_bin_view, "form_with url: recording_trash_bin_path(@scope_recording),"
     assert_includes trash_bin_view, "FlatPack::SearchInput::Component"
     assert_includes trash_bin_view, "@search_query"
