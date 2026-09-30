@@ -31,9 +31,10 @@
         )
       ) %>
       <%= render FlatPack::Button::Component.new(
-        text: "Trash settings",
+        text: "Settings",
+        icon: :cog,
         style: :secondary,
-        url: recording_studio_trashable.edit_recording_trash_settings_path(
+        href: recording_studio_trashable.edit_recording_trash_settings_path(
           @workspace_recording,
           back_path: main_app.root_path
         )

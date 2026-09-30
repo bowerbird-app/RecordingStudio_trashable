@@ -34,16 +34,18 @@ class UiSurfaceTest < Minitest::Test
     refute_includes trash_bin_view, 'subtitle: "Recently trashed roots"'
     assert_includes trash_bin_view, "recording_studio_trashable_retention_settings_enabled?"
     assert_includes trash_bin_view, "recording_studio_trashable_page_authorized?(:settings"
-    assert_includes trash_bin_view, 'text: "Trash settings"'
+    assert_includes trash_bin_view, 'text: "Settings"'
+    assert_includes trash_bin_view, "icon: :cog"
+    refute_includes trash_bin_view, 'text: "Trash settings"'
     assert_includes trash_bin_view,
-                    "edit_recording_trash_settings_path(@scope_recording, recording_studio_trashable_back_link_params)"
+                    "href: edit_recording_trash_settings_path(@scope_recording, recording_studio_trashable_back_link_params)"
     assert_includes trash_bin_view, "form_with url: recording_trash_bin_path(@scope_recording),"
     assert_includes trash_bin_view, "FlatPack::SearchInput::Component"
     assert_includes trash_bin_view, "@search_query"
     refute_includes trash_bin_view, 'label: "Search trashed items"'
     assert_includes trash_bin_view, 'placeholder: "Search trash"'
     assert_includes trash_bin_view, 'id: "trash-bin-search"'
-    assert_includes trash_bin_view, 'data-controller="recording-studio-trashable--live-search"'
+    assert_includes trash_bin_view, 'controller: "recording-studio-trashable--live-search"'
     assert_includes trash_bin_view, 'recording_studio_trashable__live_search_target: "form"'
     assert_includes trash_bin_view,
                     'action: "input->recording-studio-trashable--live-search#queueSubmit ' \
@@ -52,7 +54,8 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, "recording_studio_trashable__live_search_delay_value: 250"
     assert_includes trash_bin_view, 'data-recording-studio-trashable--live-search-target="skeleton"'
     assert_includes trash_bin_view, "hidden data-recording-studio-trashable--live-search-target=\"skeleton\""
-    assert_includes trash_bin_view, "FlatPack::Card::Component"
+    refute_includes trash_bin_view, "FlatPack::Card::Component"
+    assert_includes trash_bin_view, "FlatPack::Grid::Component"
     assert_includes trash_bin_view, "FlatPack::Skeleton::Component"
     assert_includes trash_bin_view, 'turbo_frame_tag "trash-bin-results"'
     assert_includes trash_bin_view, "turbo:before-fetch-request->recording-studio-trashable--live-search#showLoading"
@@ -72,9 +75,10 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, 'title: "Type"'
     assert_includes trash_bin_view, 'title: "Trashed"'
     assert_includes trash_bin_view, 'title: "Action"'
-    assert_includes trash_bin_view, "time_ago_in_words(recording.trashed_at)"
-    assert_includes trash_bin_view, "FlatPack::Popover::Component"
-    assert_includes trash_bin_view, "l(recording.trashed_at, format: :long)"
+    assert_includes trash_bin_view, "FlatPack::Timestamp::Component"
+    assert_includes trash_bin_view, "timestamp: recording.trashed_at"
+    refute_includes trash_bin_view, "button_tag("
+    refute_includes trash_bin_view, "FlatPack::Popover::Component"
     assert_includes trash_bin_view, "recording_studio_trashable_action_authorized?(:restore"
     assert_includes trash_bin_view, "recording_studio_trashable_action_authorized?(:purge"
     assert_includes trash_bin_view, "restore_recording_path(recording)"
@@ -238,7 +242,9 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, 'title: "Docs"'
     assert_includes source, "demo_doc_links"
     assert_includes source, "text: \"Trash can\""
-    assert_includes source, "text: \"Trash settings\""
+    assert_includes source, "text: \"Settings\""
+    assert_includes source, "icon: :cog"
+    refute_includes source, "text: \"Trash settings\""
     assert_includes source, "text: \"Purge\""
     assert_includes source, "main_app.purge_due_recordings_path"
     assert_includes source, "back_path: main_app.root_path"
