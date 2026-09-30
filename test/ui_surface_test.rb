@@ -242,6 +242,12 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, 'title: "Docs"'
     assert_includes source, "demo_doc_links"
     assert_includes source, "text: \"Trash can\""
+    assert_includes source, "href: recording_studio_trashable.recording_trash_bin_path("
+    assert_includes source, "href: main_app.destroy_user_session_path"
+    assert_includes source, "href: link.fetch(:url)"
+    refute_includes source, "url: recording_studio_trashable.recording_trash_bin_path("
+    refute_includes source, "url: main_app.destroy_user_session_path"
+    refute_includes source, "url: link.fetch(:url)"
     assert_includes source, "text: \"Settings\""
     assert_includes source, "icon: :cog"
     refute_includes source, "text: \"Trash settings\""
@@ -291,6 +297,8 @@ class UiSurfaceTest < Minitest::Test
     assert_includes lookup_source, ".not_trashed"
     assert_includes lookup_source, "RecordingStudio::Recording.with_trashed"
     assert_includes lookup_source, ".recording_studio_trashable_trash_roots"
+    assert_includes trashable_initializer_source,
+                    'config.retention_purge_actor_resolver = -> { User.find_by!(email: "system@example.com") }'
     assert_includes trashable_initializer_source, "Rails.application.config.to_prepare do"
     assert_includes trashable_initializer_source, "RecordingStudio::Recording.class_eval do"
     assert_includes trashable_initializer_source, "default_scope { where(trashed_at: nil) }"
