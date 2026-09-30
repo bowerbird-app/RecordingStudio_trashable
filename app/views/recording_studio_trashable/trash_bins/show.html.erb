@@ -8,7 +8,6 @@
 <div class="flex flex-col gap-6" data-controller="recording-studio-trashable--live-search">
   <%= render FlatPack::PageTitle::Component.new(
     title: "Trash",
-    subtitle: "Recently trashed roots",
     variant: :h1
   ) %>
 
@@ -57,7 +56,7 @@
                           } do %>
         <% if @trashed_recordings.empty? %>
           <%= render FlatPack::Alert::Component.new(
-            description: @search_query.present? ? "No trash roots match your search." : "No trash roots.",
+            description: @search_query.present? ? "Nothing in the trash matches your search." : "Nothing in the trash.",
             style: :info
           ) %>
         <% else %>

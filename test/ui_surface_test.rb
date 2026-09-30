@@ -31,7 +31,7 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, "recording_studio_trashable_back_link_params"
     assert_includes trash_bin_view, "hidden_field_tag :back_path"
     assert_includes trash_bin_view, 'title: "Trash"'
-    assert_includes trash_bin_view, 'subtitle: "Recently trashed roots"'
+    refute_includes trash_bin_view, 'subtitle: "Recently trashed roots"'
     assert_includes trash_bin_view, "recording_studio_trashable_retention_settings_enabled?"
     assert_includes trash_bin_view, "recording_studio_trashable_page_authorized?(:settings"
     assert_includes trash_bin_view, 'text: "Trash settings"'
@@ -65,7 +65,9 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, "hidden_field_tag :back_path, recording_studio_trashable_back_path"
     refute_includes trash_bin_view, 'FlatPack::Button::Component.new(text: "Search"'
     refute_includes trash_bin_view, 'text: "Clear"'
-    assert_includes trash_bin_view, "No trash roots match your search."
+    assert_includes trash_bin_view, "Nothing in the trash matches your search."
+    assert_includes trash_bin_view, "Nothing in the trash."
+    refute_includes trash_bin_view, "No trash roots."
     assert_includes trash_bin_view, "title: \"Name\""
     assert_includes trash_bin_view, 'title: "Type"'
     assert_includes trash_bin_view, 'title: "Trashed"'
