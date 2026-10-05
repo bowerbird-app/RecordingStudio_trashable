@@ -6,7 +6,7 @@ This branch wraps Trashable enablement around RecordingStudio 4.2's `include_for
 
 ### Dependency changes
 
-- `recording_studio` is pinned to tag `v4.2.0` in the root and dummy app Gemfiles.
+- `recording_studio` is pinned to tag `v4.2.2` in the root and dummy app Gemfiles.
 - The gemspec now requires `recording_studio ~> 4.2`.
 - The gem version is `0.4.0`.
 

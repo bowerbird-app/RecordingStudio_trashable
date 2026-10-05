@@ -1,6 +1,6 @@
 # Recording Studio Trashable notes
 
-This addon requires RecordingStudio `~> 4.2` (tested with `4.2.0`). Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
+This addon requires RecordingStudio `~> 4.2` (pinned to tag `v4.2.2`). Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
 
 ## Capability registration
 
