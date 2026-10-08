@@ -28,8 +28,8 @@ class RecordingStudioTrashableTest < Minitest::Test
 
     root_gemfile = File.read(File.expand_path("../Gemfile", __dir__))
     dummy_gemfile = File.read(File.expand_path("dummy/Gemfile", __dir__))
-    assert_includes root_gemfile, 'tag: "v4.2.2"'
-    assert_includes dummy_gemfile, 'tag: "v4.2.2"'
+    assert_includes root_gemfile, 'tag: "v4.3.0"'
+    assert_includes dummy_gemfile, 'tag: "v4.3.0"'
   end
 
   def test_version_matches_latest_changelog_release
