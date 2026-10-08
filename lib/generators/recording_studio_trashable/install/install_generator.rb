@@ -47,6 +47,8 @@ module RecordingStudioTrashable
           bundled_engine_source_line,
           '@source "../../vendor/bundle/**/flatpack/app/components/**/*.{rb,erb}";',
           '@source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";',
+          '@source "../../../../../../usr/local/lib/ruby/gems/**/bundler/gems/flatpack-*/app/components/**/*.rb";',
+          '@source "../../../../../../usr/local/lib/ruby/gems/**/bundler/gems/flatpack-*/app/components/**/*.erb";',
           '@source "../../vendor/bundle/**/flat_pack/app/components/**/*.{rb,erb}";',
           '@source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flat_pack-*/app/components/**/*.{rb,erb}";'
         ]

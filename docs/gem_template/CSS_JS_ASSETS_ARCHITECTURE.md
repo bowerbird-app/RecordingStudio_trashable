@@ -255,12 +255,15 @@ The file `test/dummy/app/assets/tailwind/application.css` configures Tailwind:
 
 ```css
 @import "tailwindcss";
+@import "../builds/tailwind/gem_sources.css";
 
 /* Include the engine's views in the Tailwind build */
 @source "../../../../../app/views/**/*.erb";
 ```
 
 > **Note:** The relative path `../../../../../app/views/**/*.erb` points from the dummy app up to the engine's `app/views` folder so Tailwind can detect classes used in engine templates. Host applications will use the gem path instead.
+
+Flatpack utilities live in the installed gem, not in dummy views. The dummy also `@source`s `vendor/bundle`, `/usr/local/bundle`, and `/usr/local/lib/ruby/gems` git-gem paths, and `rake tailwindcss:gem_sources` writes absolute Bundler paths into `app/assets/builds/tailwind/gem_sources.css` before `tailwindcss:build` / `watch`. If buttons and tables look like plain HTML, the scan path missed the installed Flatpack gem — add that `@source` and rebuild.
 
 ------------------------------------------------------------
 5.3 Auto-Rebuild in Development

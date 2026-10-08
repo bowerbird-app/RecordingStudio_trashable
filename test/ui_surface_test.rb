@@ -154,6 +154,7 @@ class UiSurfaceTest < Minitest::Test
     dummy_layout_source = File.read(dummy_default_layout_view)
     assert_includes dummy_layout_source, "dummy_language_selector"
     assert_includes dummy_layout_source, "dummy_document_attributes"
+    assert_includes dummy_layout_source, 'stylesheet_link_tag "flat_pack/application"'
     refute File.exist?(File.expand_path("dummy/app/views/layouts/flat_pack_sidebar.html.erb", __dir__))
     refute File.exist?(File.expand_path("dummy/app/views/layouts/flat_pack/_sidebar.html.erb", __dir__))
   end
@@ -201,7 +202,7 @@ class UiSurfaceTest < Minitest::Test
     assert_includes layout, 'stylesheet_link_tag "tailwind.css"'
     assert_includes layout, 'stylesheet_link_tag "flat_pack/variables"'
     assert_includes layout, 'stylesheet_link_tag "flat_pack/rich_text"'
-    refute_includes layout, 'stylesheet_link_tag "flat_pack/application"'
+    assert_includes layout, 'stylesheet_link_tag "flat_pack/application"'
     assert_operator layout.index('stylesheet_link_tag "tailwind.css"'), :<,
                     layout.index('stylesheet_link_tag "flat_pack/variables"')
     assert_includes importmap, 'pin "@hotwired/turbo-rails", to: "turbo.min.js"'
@@ -211,8 +212,13 @@ class UiSurfaceTest < Minitest::Test
     assert_includes css, "vendor/bundle/**/flat_pack/app/components/**/*.{rb,erb}"
     assert_includes css, "flat_pack-*/app/components/**/*.{rb,erb}"
     assert_includes css, "RecordingStudio-*/app/views/**/*.erb"
+    assert_includes css, "usr/local/lib/ruby/gems/**/bundler/gems/flatpack-*/app/components/**/*.rb"
+    assert_includes css, "../builds/tailwind/gem_sources.css"
     refute_includes css, "@theme {"
     refute_includes css, "--color-fp-primary"
+    rake = File.read(File.expand_path("dummy/lib/tasks/tailwind_gem_sources.rake", __dir__))
+    assert_includes rake, "Gem.loaded_specs"
+    assert_includes rake, '"flat_pack"'
   end
 
   def test_engine_registers_live_search_assets

@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Dummy pins FlatPack `v0.1.209`.
 - Dummy `<html>` sets `lang` (and `dir` when Internationalization is loaded).
+- Dummy Tailwind scans the installed Flatpack gem (including `/usr/local/lib/ruby/gems`) and writes Bundler `@source` paths before `tailwindcss:build`, so component utilities compile. Dummy layouts also load `flat_pack/application` for kit CSS (`.fp-button`, select, table) after tokens.
 
 ### Upgrade Notes
 - Install Trashable `0.5.0`. No migration.

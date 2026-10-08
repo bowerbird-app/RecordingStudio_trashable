@@ -11,12 +11,15 @@
     <link rel="apple-touch-icon" href="/icon.png">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-    <%# Load Tailwind utilities first. Do not link flat_pack/application — its relative
-        @imports are not rewritten by Propshaft and break styles. %>
+    <%# Tailwind first, then tokens, then Flatpack kit CSS. Load variables and
+        rich_text ourselves: Propshaft does not rewrite the relative @imports
+        inside flat_pack/application, but that file still owns .fp-button and
+        select/table kit rules. %>
     <%= stylesheet_link_tag "application.css", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "tailwind.css", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "flat_pack/variables", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "flat_pack/rich_text", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "flat_pack/application", "data-turbo-track": "reload" %>
     <% if lookup_context.exists?("recording_studio/default_layout_head", [], true) %>
       <%= render "recording_studio/default_layout_head" %>
     <% end %>
