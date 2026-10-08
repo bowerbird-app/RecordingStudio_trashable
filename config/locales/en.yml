@@ -1,0 +1,61 @@
+en:
+  recording_studio:
+    trashable:
+      trash:
+        title: "Trash"
+        close: "Close"
+        settings: "Settings"
+        search_placeholder: "Search trash"
+        empty: "Nothing in the trash."
+        empty_search: "Nothing in the trash matches your search."
+        restore: "Restore"
+        purge: "Purge"
+        columns:
+          name: "Name"
+          type: "Type"
+          trashed: "Trashed"
+          action: "Action"
+      confirms:
+        restore: "Restore %{name}?"
+        purge: "Permanently delete %{name}?"
+      flashes:
+        trashed: "%{name} moved to trash"
+        restored: "%{name} restored"
+        purged: "%{name} permanently deleted"
+        settings_updated: "Trash settings updated."
+        unauthorized: "You are not authorized to manage trash here."
+        retention_managed: "Retention settings are managed by the application."
+      errors:
+        not_authorized: "Not authorized to %{action} %{type}"
+        purge_not_trashed: "Purging requires all targeted recordings to already be trashed"
+        purge_after_days_invalid: "must be a positive whole number"
+        could_not_save_retention: "Could not save retention settings"
+      actions:
+        trash: "trash"
+        restore: "restore"
+        purge: "purge"
+      retention:
+        title: "Retention period"
+        subtitle: "Number of days to keep trashed items."
+        label: "Retention period"
+        save: "Save"
+        close: "Close"
+        keep_until_purged: "Keep until manually purged"
+        days:
+          one: "%{count} day"
+          other: "%{count} days"
+        no_automatic_purge: "No automatic purge window"
+        due_now: "Due now"
+        purges: "Purges %{date}"
+      summary:
+        purged:
+          one: "Purged %{count} recording."
+          other: "Purged %{count} recordings."
+        none_purged: "No recordings were purged."
+        dry_run_purged:
+          one: "Dry run: %{count} recording would be purged."
+          other: "Dry run: %{count} recordings would be purged."
+        dry_run_none: "Dry run: no recordings would be purged."
+        skipped:
+          one: "Skipped %{count} recording."
+          other: "Skipped %{count} recordings."

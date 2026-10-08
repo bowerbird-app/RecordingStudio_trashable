@@ -33,6 +33,11 @@ Metrics/MethodLength:
     - 'test/**/*'
     - 'lib/generators/**/*'
 
+Metrics/BlockLength:
+  Exclude:
+    - 'test/**/*'
+    - 'lib/generators/**/*'
+
 Metrics/AbcSize:
   Exclude:
     - 'test/**/*'

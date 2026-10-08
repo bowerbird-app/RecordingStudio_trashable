@@ -5,7 +5,10 @@ require "rake/testtask"
 
 Rake::TestTask.new(:test) do |t|
   t.libs << "test"
-  t.test_files = FileList["test/**/*_test.rb"].exclude("test/rename_verification_test.rb")
+  t.test_files = FileList["test/**/*_test.rb"].exclude(
+    "test/dummy/**/*_test.rb",
+    "test/rename_verification_test.rb"
+  )
   t.verbose = false
 end
 
@@ -21,9 +24,26 @@ namespace :test do
   end
 end
 
-namespace :app do
-  desc "Run all tests for the gem"
-  task test: :test
+namespace :dummy do
+  desc "Run the dummy Rails app test suite"
+  task :test do
+    dummy_root = File.expand_path("test/dummy", __dir__)
+    dummy_gemfile = File.join(dummy_root, "Gemfile")
+    dummy_env = {
+      "BUNDLE_GEMFILE" => dummy_gemfile,
+      "RAILS_ENV" => "test"
+    }
+
+    Dir.chdir(dummy_root) do
+      Bundler.with_original_env do
+        sh(dummy_env, "bin/rails tailwindcss:build")
+        sh(dummy_env, "bin/rails test")
+      end
+    end
+  end
 end
+
+desc "Run the root gem tests and the dummy Rails app suite"
+task "app:test" => [:test, "dummy:test"]
 
 task default: :test

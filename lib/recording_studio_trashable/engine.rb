@@ -1,10 +1,17 @@
 # frozen_string_literal: true
 
 require "recording_studio_trashable/subtree_query"
+require_relative "../../app/helpers/recording_studio_trashable/copy_helper"
 
 module RecordingStudioTrashable
   class Engine < ::Rails::Engine
     isolate_namespace RecordingStudioTrashable
+
+    initializer "recording_studio_trashable.view_helpers" do
+      ActiveSupport.on_load(:action_view) do
+        include RecordingStudioTrashable::CopyHelper
+      end
+    end
 
     initializer "recording_studio_trashable.importmap", before: "importmap" do |app|
       next unless app.config.respond_to?(:importmap)

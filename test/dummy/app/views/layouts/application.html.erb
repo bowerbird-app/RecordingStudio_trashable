@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html <%= tag.attributes(dummy_document_attributes) %>>
   <head>
     <title><%= content_for(:title) || "Trashable Demo" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -28,6 +28,9 @@
     <%= render "layouts/icon_sprite" %>
 
     <div class="h-screen overflow-y-auto overscroll-y-contain">
+      <div class="flex justify-end p-4">
+        <%= dummy_language_selector %>
+      </div>
       <main class="mx-auto flex min-h-full w-full max-w-6xl items-center justify-center p-6">
         <div class="w-full">
           <% flash.each do |type, message| %>

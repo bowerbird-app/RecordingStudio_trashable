@@ -1,0 +1,161 @@
+# Dummy-only host translations. The engine ships English defaults; other
+# languages belong to the host. This file covers every engine
+# recording_studio.trashable key plus dummy chrome and Flatpack kit copy.
+fr:
+  date:
+    formats:
+      default: "%d/%m/%Y"
+      long: "%d %B %Y"
+      short: "%d %b"
+    abbr_month_names:
+      - ~
+      - janv.
+      - févr.
+      - mars
+      - avr.
+      - mai
+      - juin
+      - juil.
+      - août
+      - sept.
+      - oct.
+      - nov.
+      - déc.
+    month_names:
+      - ~
+      - janvier
+      - février
+      - mars
+      - avril
+      - mai
+      - juin
+      - juillet
+      - août
+      - septembre
+      - octobre
+      - novembre
+      - décembre
+  recording_studio:
+    internationalization:
+      selector:
+        label: Langue
+        submit: Changer de langue
+    trashable:
+      trash:
+        title: "Corbeille"
+        close: "Fermer"
+        settings: "Réglages"
+        search_placeholder: "Rechercher dans la corbeille"
+        empty: "Rien dans la corbeille."
+        empty_search: "Rien dans la corbeille ne correspond à votre recherche."
+        restore: "Restaurer"
+        purge: "Supprimer"
+        columns:
+          name: "Nom"
+          type: "Type"
+          trashed: "Mis à la corbeille"
+          action: "Action"
+      confirms:
+        restore: "Restaurer %{name} ?"
+        purge: "Supprimer définitivement %{name} ?"
+      flashes:
+        trashed: "%{name} a été mis à la corbeille"
+        restored: "%{name} a été restauré"
+        purged: "%{name} a été définitivement supprimé"
+        settings_updated: "Réglages de la corbeille enregistrés."
+        unauthorized: "Vous n’êtes pas autorisé à gérer la corbeille ici."
+        retention_managed: "Les durées de conservation sont gérées par l’application."
+      errors:
+        not_authorized: "Vous n’êtes pas autorisé à %{action} %{type}"
+        purge_not_trashed: "La suppression définitive exige que tous les éléments ciblés soient déjà dans la corbeille"
+        purge_after_days_invalid: "doit être un nombre entier positif"
+        could_not_save_retention: "Impossible d’enregistrer les durées de conservation"
+      actions:
+        trash: "jeter"
+        restore: "restaurer"
+        purge: "supprimer définitivement"
+      retention:
+        title: "Durée de conservation"
+        subtitle: "Nombre de jours à conserver les éléments mis à la corbeille."
+        label: "Durée de conservation"
+        save: "Enregistrer"
+        close: "Fermer"
+        keep_until_purged: "Conserver jusqu’à suppression manuelle"
+        days:
+          one: "%{count} jour"
+          other: "%{count} jours"
+        no_automatic_purge: "Pas de suppression automatique"
+        due_now: "À supprimer maintenant"
+        purges: "Suppression le %{date}"
+      summary:
+        purged:
+          one: "%{count} élément a été supprimé définitivement."
+          other: "%{count} éléments ont été supprimés définitivement."
+        none_purged: "Aucun élément n’a été supprimé."
+        dry_run_purged:
+          one: "Essai : %{count} élément serait supprimé définitivement."
+          other: "Essai : %{count} éléments seraient supprimés définitivement."
+        dry_run_none: "Essai : aucun élément ne serait supprimé."
+        skipped:
+          one: "%{count} élément ignoré."
+          other: "%{count} éléments ignorés."
+  dummy:
+    nav:
+      sign_out: "Se déconnecter"
+  flatpack:
+    timestamp:
+      fallback: "-"
+      in: Dans %{distance}
+      ago: "il y a %{distance}"
+      just_now: À l’instant
+      a_min_ago: il y a 1 min
+      minutes_ago: "il y a %{count} minutes"
+      hours_ago: "il y a %{count} heures"
+      yesterday: Hier
+      days_ago: "il y a %{count} jours"
+      weeks_ago: "il y a %{count} semaines"
+      months_ago: "il y a %{count} mois"
+      short_a_min_ago: il y a 1 min
+      short_min_ago: "il y a %{count} min"
+      short_hr_ago: "il y a %{count} h"
+      short_yesterday: il y a 1 j
+      short_d_ago: "il y a %{count} j"
+      short_wk_ago: "il y a %{count} sem"
+      short_mo_ago: "il y a %{count} mois"
+    page_nav:
+      back: Retour
+      close: Fermer
+      previous: Page précédente
+      label: Navigation de page
+    search:
+      placeholder: Rechercher…
+      no_results: Aucun résultat
+      clear: Effacer la recherche
+      searching: Recherche…
+      result_fallback: Résultat
+    search_input:
+      clear: Effacer la recherche
+    select:
+      placeholder: Choisir
+      search: Rechercher…
+      remove: Retirer %{label}
+      type_to_search: Tapez au moins %{count} caractères
+      searching: Recherche…
+      empty: Aucune option
+    common:
+      close: Fermer
+      search: Rechercher
+      previous: Préc.
+      next: Suiv.
+      back: Retour
+      save: Enregistrer
+    modal:
+      close: Fermer
+    alert:
+      dismiss: Fermer
+    button:
+      loading: Chargement
+    pagination:
+      previous: Précédent
+      next: Suivant
+      more: Plus

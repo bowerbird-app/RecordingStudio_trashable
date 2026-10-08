@@ -11,6 +11,7 @@ This Rails app exists to validate Recording Studio Trashable inside a realistic 
 - Mounted workspace and project scoped trash bins
 - Restore, purge, and retention settings flows through the addon engine
 - Recording Studio core default layout with docs pages for Setup, Configuration, Adding to a recordable, and Methods
+- English and French via Recording Studio Internationalization. The language selector sits in PageNav. The engine ships English only.
 
 ## Quick Start
 
