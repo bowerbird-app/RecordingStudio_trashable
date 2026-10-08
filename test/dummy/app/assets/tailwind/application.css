@@ -1,12 +1,26 @@
 @import "tailwindcss";
+@import "../builds/tailwind/gem_sources.css";
 
-/* Include dummy app views for Tailwind CSS */
+/* Dummy views and helpers. Compact language-selector classes live on the helper. */
 @source "../../views/**/*.erb";
+@source "../../helpers/**/*.rb";
 
-/* Include RecordingStudio engine views for Tailwind CSS, including default_layout */
+/* Include this engine's views in the Tailwind build */
+@source "../../../../../app/views/**/*.erb";
+
+/*
+ * Flatpack / Recording Studio templates live in installed gems. Dummy vendor
+ * bundle is test/dummy/vendor/bundle. CI often uses /usr/local/bundle. This
+ * cloud image installs git gems under /usr/local/lib/ruby/gems. Scan all three
+ * so component utilities compile. rake tailwindcss:gem_sources also writes
+ * absolute Bundler paths into gem_sources.css before build/watch.
+ */
+
+/* RecordingStudio engine views, including default_layout */
 @source "../../vendor/bundle/**/recording_studio*/app/views/**/*.erb";
 @source "../../vendor/bundle/**/bundler/gems/RecordingStudio-*/app/views/**/*.erb";
 @source "../../../../../../usr/local/bundle/**/bundler/gems/RecordingStudio-*/app/views/**/*.erb";
+@source "../../../../../../usr/local/lib/ruby/gems/**/bundler/gems/RecordingStudio-*/app/views/**/*.erb";
 @source "../../../../../../home/**/.bundle/**/bundler/gems/RecordingStudio-*/app/views/**/*.erb";
 @source "../../../../../../home/**/.local/share/mise/**/bundler/gems/RecordingStudio-*/app/views/**/*.erb";
 
@@ -16,11 +30,12 @@
 @source "../../vendor/bundle/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/flat_pack-*/app/components/**/*.{rb,erb}";
+@source "../../../../../../usr/local/lib/ruby/gems/**/bundler/gems/flatpack-*/app/components/**/*.rb";
+@source "../../../../../../usr/local/lib/ruby/gems/**/bundler/gems/flatpack-*/app/components/**/*.erb";
+@source "../../../../../../usr/local/lib/ruby/gems/**/bundler/gems/flat_pack-*/app/components/**/*.rb";
+@source "../../../../../../usr/local/lib/ruby/gems/**/bundler/gems/flat_pack-*/app/components/**/*.erb";
 @source "../../../../../../home/**/.local/share/mise/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../home/**/.local/share/mise/**/bundler/gems/flat_pack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../home/**/.bundle/**/gems/flatpack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../home/**/.bundle/**/gems/flat_pack-*/app/components/**/*.{rb,erb}";
 @source "../../../../../../home/**/.bundle/**/bundler/gems/flatpack-*/app/components/**/*.{rb,erb}";
-
-/* Include this engine's views in the Tailwind build */
-@source "../../../../../app/views/**/*.erb";

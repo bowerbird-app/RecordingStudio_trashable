@@ -7,7 +7,14 @@ require "minitest/autorun"
 require "rails"
 require "active_support/core_ext/time"
 require "active_support/core_ext/integer/time"
+require "i18n"
 require "recording_studio_trashable"
+
+locale_file = File.expand_path("../config/locales/en.yml", __dir__)
+I18n.load_path << locale_file unless I18n.load_path.include?(locale_file)
+I18n.backend.load_translations
+I18n.available_locales = Array(I18n.available_locales) | %i[en]
+I18n.default_locale = :en
 
 class Object
   def stub(method_name, replacement, *stub_args, **stub_kwargs)

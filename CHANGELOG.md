@@ -7,8 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-08
+
+### Added
+- Customer-facing trash, restore, purge, retention, and flash copy uses Rails I18n under `recording_studio.trashable.*`. The gem ships English only in `config/locales/en.yml`.
+- Restore and purge ask for confirmation before they run.
+- Dummy demos English and French via Recording Studio Internationalization (dummy Gemfile only) with a language selector in PageNav.
+
 ### Changed
-- Dummy and development bundles pin RecordingStudio `v4.2.2`
+- Dummy pins FlatPack `v0.1.209`.
+- Dummy `<html>` sets `lang` (and `dir` when Internationalization is loaded).
+- Dummy Tailwind scans the installed Flatpack gem (including `/usr/local/lib/ruby/gems`) and writes Bundler `@source` paths before `tailwindcss:build`, so component utilities compile. Dummy layouts also load `flat_pack/application` for kit CSS (`.fp-button`, select, table) after tokens.
+
+### Upgrade Notes
+- Install Trashable `0.5.0`. No migration.
+- Copy `recording_studio.trashable.*` into host locale files for other languages.
+- Do not add `RecordingStudio_Internationalization` as a dependency of this gem. It is optional on the host.
+- Helper arguments and host I18n overrides still win over locale defaults. Recording names and type names stay data and are not translated.
+- Restore and purge forms now confirm in the current locale. Hosts that override the trash bin view can keep or replace that prompt.
+
+## [0.4.5] - 2026-10-06
+
+### Changed
+- Dummy credentials use the shared Recording Studio development master key.
+
+## [0.4.4] - 2026-10-05
+
+### Changed
+- Dummy and development bundles pin RecordingStudio `v4.2.2`.
+
+## [0.4.3] - 2026-10-02
+
+### Changed
+- Dummy FlatPack pin moved from `v0.1.133` to `v0.1.198`.
 
 ## [0.4.2] - 2026-09-30
 
@@ -95,7 +126,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.5...v0.5.0
+[0.4.5]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.4...v0.4.5
+[0.4.4]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.3...v0.4.4
+[0.4.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.3.0...v0.4.0

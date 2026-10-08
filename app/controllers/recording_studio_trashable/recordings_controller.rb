@@ -10,7 +10,7 @@ module RecordingStudioTrashable
       update_recording!(
         :trash,
         :recording_studio_trashable_trash!,
-        success_message: -> { "#{recording_studio_trashable_recording_label(@recording)} moved to trash" }
+        success_message: -> { Copy.t("flashes.trashed", name: recording_studio_trashable_recording_label(@recording)) }
       )
     end
 
@@ -18,7 +18,7 @@ module RecordingStudioTrashable
       update_recording!(
         :restore,
         :recording_studio_trashable_restore!,
-        success_message: -> { "#{recording_studio_trashable_recording_label(@recording)} restored" }
+        success_message: -> { Copy.t("flashes.restored", name: recording_studio_trashable_recording_label(@recording)) }
       )
     end
 
@@ -26,7 +26,7 @@ module RecordingStudioTrashable
       update_recording!(
         :purge,
         :recording_studio_trashable_purge!,
-        success_message: -> { "#{recording_studio_trashable_recording_label(@recording)} permanently deleted" }
+        success_message: -> { Copy.t("flashes.purged", name: recording_studio_trashable_recording_label(@recording)) }
       )
     end
 

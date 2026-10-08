@@ -1,8 +1,8 @@
 <% recording_studio_page_nav(
-  title: "Trash",
+  title: trashable_t("trash.title"),
   page_nav_back_url: recording_studio_trashable_back_path,
   page_nav_anchor_url: recording_studio_trashable_back_path,
-  page_nav_anchor_label: "Close"
+  page_nav_anchor_label: trashable_t("trash.close")
 ) %>
 
 <%= render FlatPack::Grid::Component.new(
@@ -10,12 +10,12 @@
   gap: :lg,
   data: { controller: "recording-studio-trashable--live-search" }
 ) do %>
-  <%= render FlatPack::PageTitle::Component.new(title: "Trash", variant: :h1) do |page_title| %>
+  <%= render FlatPack::PageTitle::Component.new(title: trashable_t("trash.title"), variant: :h1) do |page_title| %>
     <% if recording_studio_trashable_retention_settings_enabled? &&
           recording_studio_trashable_page_authorized?(:settings, recording: @scope_recording) %>
       <% page_title.slot do %>
         <%= render FlatPack::Button::Component.new(
-          text: "Settings",
+          text: trashable_t("trash.settings"),
           icon: :cog,
           style: :secondary,
           href: edit_recording_trash_settings_path(@scope_recording, recording_studio_trashable_back_link_params)
@@ -37,7 +37,7 @@
       <%= render FlatPack::SearchInput::Component.new(
         name: :q,
         value: @search_query,
-        placeholder: "Search trash",
+        placeholder: trashable_t("trash.search_placeholder"),
         id: "trash-bin-search"
       ) %>
     <% end %>
@@ -57,7 +57,7 @@
                         } do %>
       <% if @trashed_recordings.empty? %>
         <%= render FlatPack::Alert::Component.new(
-          description: @search_query.present? ? "Nothing in the trash matches your search." : "Nothing in the trash.",
+          description: @search_query.present? ? trashable_t("trash.empty_search") : trashable_t("trash.empty"),
           style: :info
         ) %>
       <% else %>
@@ -65,10 +65,10 @@
           data: @trashed_recordings,
           tbody_data: { pagination_content: true }
         ) do |table| %>
-          <% table.column(title: "Name", html: ->(recording) { recording_studio_trashable_recording_label(recording) }) %>
-          <% table.column(title: "Type", html: ->(recording) { recording.recordable_type }) %>
+          <% table.column(title: trashable_t("trash.columns.name"), html: ->(recording) { recording_studio_trashable_recording_label(recording) }) %>
+          <% table.column(title: trashable_t("trash.columns.type"), html: ->(recording) { recording.recordable_type }) %>
           <% table.column(
-               title: "Trashed",
+               title: trashable_t("trash.columns.trashed"),
                html: lambda { |recording|
                  render FlatPack::Timestamp::Component.new(
                    timestamp: recording.trashed_at,
@@ -77,20 +77,21 @@
                }
              ) %>
           <% table.column(
-               title: "Action",
+               title: trashable_t("trash.columns.action"),
                html: lambda { |recording|
                  actions = []
+                 label = recording_studio_trashable_recording_label(recording)
 
                  if recording_studio_trashable_action_authorized?(:restore, recording)
                    actions << form_with(
                      url: restore_recording_path(recording),
                      method: :patch,
-                     data: { turbo: false },
-                     html: { class: "shrink-0" }
+                     data: { turbo: false, confirm: trashable_t("confirms.restore", name: label) },
+                     html: recording_studio_trashable_confirm_form_html("confirms.restore", name: label)
                    ) do
                      safe_join([
                        hidden_field_tag(:back_path, recording_studio_trashable_back_path),
-                       render(FlatPack::Button::Component.new(text: "Restore", style: :secondary, type: "submit"))
+                       render(FlatPack::Button::Component.new(text: trashable_t("trash.restore"), style: :secondary, type: "submit"))
                      ])
                    end
                  end
@@ -99,12 +100,12 @@
                    actions << form_with(
                      url: purge_recording_path(recording),
                      method: :delete,
-                     data: { turbo: false },
-                     html: { class: "shrink-0" }
+                     data: { turbo: false, confirm: trashable_t("confirms.purge", name: label) },
+                     html: recording_studio_trashable_confirm_form_html("confirms.purge", name: label)
                    ) do
                      safe_join([
                        hidden_field_tag(:back_path, recording_studio_trashable_back_path),
-                       render(FlatPack::Button::Component.new(text: "Purge", style: :danger, type: "submit"))
+                       render(FlatPack::Button::Component.new(text: trashable_t("trash.purge"), style: :danger, type: "submit"))
                      ])
                    end
                  end

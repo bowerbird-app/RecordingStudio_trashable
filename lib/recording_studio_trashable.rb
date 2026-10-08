@@ -10,6 +10,7 @@ require "pagy"
 require "pagy/backend"
 require "pagy/frontend"
 require "recording_studio_trashable/version"
+require "recording_studio_trashable/copy"
 require "recording_studio_trashable/hooks"
 require "recording_studio_trashable/configuration"
 require "recording_studio_trashable/authorization"
@@ -119,21 +120,21 @@ module RecordingStudioTrashable
 
       return message if skipped_count.zero?
 
-      "#{message} Skipped #{count_label(skipped_count, 'recording')}."
+      "#{message} #{Copy.t('summary.skipped', count: skipped_count)}"
     end
 
     def base_purge_summary_message(purge_count, dry_run: false)
       return dry_run_purge_summary_message(purge_count) if dry_run
 
-      return "Purged #{count_label(purge_count, 'recording')}." if purge_count.positive?
+      return Copy.t("summary.purged", count: purge_count) if purge_count.positive?
 
-      "No recordings were purged."
+      Copy.t("summary.none_purged")
     end
 
     def dry_run_purge_summary_message(purge_count)
-      return "Dry run: no recordings would be purged." unless purge_count.positive?
+      return Copy.t("summary.dry_run_none") unless purge_count.positive?
 
-      "Dry run: #{count_label(purge_count, 'recording')} would be purged."
+      Copy.t("summary.dry_run_purged", count: purge_count)
     end
 
     def root_scope_recordings
@@ -200,10 +201,6 @@ module RecordingStudioTrashable
       return recording_or_type.recordable_type if recording_or_type.respond_to?(:recordable_type)
 
       recording_or_type.class.name
-    end
-
-    def count_label(count, noun)
-      "#{count} #{noun.pluralize(count)}"
     end
   end
 end

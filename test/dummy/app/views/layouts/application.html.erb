@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html <%= tag.attributes(dummy_document_attributes) %>>
   <head>
     <title><%= content_for(:title) || "Trashable Demo" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -15,12 +15,15 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Load Tailwind utilities first. Do not link flat_pack/application — its relative
-        @imports are not rewritten by Propshaft and break sign-in styles. %>
+    <%# Tailwind first, then tokens, then Flatpack kit CSS. Load variables and
+        rich_text ourselves: Propshaft does not rewrite the relative @imports
+        inside flat_pack/application, but that file still owns .fp-button and
+        select/table kit rules. %>
     <%= stylesheet_link_tag "application.css", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "tailwind.css", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "flat_pack/variables", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "flat_pack/rich_text", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "flat_pack/application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
@@ -28,6 +31,9 @@
     <%= render "layouts/icon_sprite" %>
 
     <div class="h-screen overflow-y-auto overscroll-y-contain">
+      <div class="flex justify-end p-4">
+        <%= dummy_language_selector %>
+      </div>
       <main class="mx-auto flex min-h-full w-full max-w-6xl items-center justify-center p-6">
         <div class="w-full">
           <% flash.each do |type, message| %>

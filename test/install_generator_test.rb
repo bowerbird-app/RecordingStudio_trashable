@@ -67,6 +67,7 @@ class InstallGeneratorTest < Minitest::Test
       assert_includes css, "recording_studio_trashable/app/views/**/*.erb"
       assert_includes css, "flatpack/app/components/**/*.{rb,erb}"
       assert_includes css, "flat_pack/app/components/**/*.{rb,erb}"
+      assert_includes css, "usr/local/lib/ruby/gems/**/bundler/gems/flatpack-*/app/components/**/*.rb"
     end
   end
 end

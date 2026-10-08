@@ -281,6 +281,28 @@ Preview the rake task without deleting anything:
 bundle exec rake recording_studio_trashable:purge_due DRY_RUN=true
 ```
 
+## Internationalization
+
+The gem ships **English only** in `config/locales/en.yml`. Keys nest under `recording_studio.trashable.*`:
+
+```ruby
+t("recording_studio.trashable.trash.title")
+t("recording_studio.trashable.flashes.restored", name: page_title)
+t("recording_studio.trashable.confirms.purge", name: page_title)
+```
+
+Hosts own other languages. Copy `recording_studio.trashable.*` into `config/locales/<locale>.yml` and list that locale in `config.i18n.available_locales`. Do not add `RecordingStudio_Internationalization` as a dependency of this gem — it is optional on the host (the dummy uses it to switch English/French).
+
+Helper arguments and host translations still win. `Copy.value` and `Copy.defaulted` keep an explicit string when the host passed one, and follow the locale when the host left the English default.
+
+Stored names stay data: recording titles, type names, and other database content are not translated.
+
+The engine has no layout of its own. Mounted screens use Recording Studio core's default layout. Hosts should set `<html lang>` on their layout (the dummy override does this, plus `dir` when Internationalization is loaded).
+
+Engine demo/docs pages (`/recording_studio_trashable`), generator CLI text, unknown-filter `ArgumentError`s, and other developer errors stay English.
+
+Add [Recording Studio Internationalization](https://github.com/bowerbird-app/RecordingStudio_Internationalization) on the host when you want a language selector.
+
 ## Dummy app showcase
 
 Dummy credentials (`test/dummy/config/credentials.yml.enc`) are encrypted with the shared RecordingStudio_* development master key. Set `RAILS_MASTER_KEY` or put that key in `test/dummy/config/master.key` (gitignored). Keep the encrypted file; do not generate a per-repo dummy key.
@@ -294,6 +316,8 @@ The dummy app demonstrates:
 - trash, restore, purge, and retention settings flows
 - Recording Studio core default layout (back/close PageNav) for dummy and mounted screens
 - docs pages for Setup, Configuration, Adding to a recordable, and Methods, linked from the home hub
+- English and French, switched with Recording Studio Internationalization (dummy only). The language selector sits in PageNav, left of Sign out. French keys live in `test/dummy/config/locales/fr.yml`. The engine does not ship French.
+- Dummy Tailwind scans installed Flatpack components (including `/usr/local/lib/ruby/gems`) so Flatpack utilities compile. Run `bin/rails tailwindcss:build` from `test/dummy` after gem updates.
 
 ## Core follow-up assumptions
 

@@ -20,7 +20,8 @@ module RecordingStudioTrashable
                   :recording_studio_trashable_retention_settings_enabled?,
                   :recording_studio_trashable_host_root_path,
                   :recording_studio_trashable_back_path,
-                  :recording_studio_trashable_back_link_params
+                  :recording_studio_trashable_back_link_params,
+                  :recording_studio_trashable_confirm_form_html
 
     private
 
@@ -40,14 +41,14 @@ module RecordingStudioTrashable
       return if recording_studio_trashable_page_authorized?(action, recording: recording)
 
       redirect_back fallback_location: root_path,
-                    alert: "You are not authorized to manage trash here."
+                    alert: Copy.t("flashes.unauthorized")
     end
 
     def authorize_recording_action!(action, recording:)
       return if recording_studio_trashable_action_authorized?(action, recording)
 
       redirect_back fallback_location: root_path,
-                    alert: "You are not authorized to manage trash here."
+                    alert: Copy.t("flashes.unauthorized")
     end
 
     def recording_studio_trashable_action_authorized?(action, recording)
@@ -85,12 +86,12 @@ module RecordingStudioTrashable
         recording: recording,
         scope_recording: scope_recording
       )
-      return "No automatic purge window" if purge_at.blank?
+      return Copy.t("retention.no_automatic_purge") if purge_at.blank?
 
       if RecordingStudioTrashable::RetentionPolicy.due?(recording: recording, scope_recording: scope_recording)
-        "Due now"
+        Copy.t("retention.due_now")
       else
-        "Purges #{helpers.l(purge_at, format: :long)}"
+        Copy.t("retention.purges", date: helpers.l(purge_at, format: :long))
       end
     end
 
@@ -110,6 +111,13 @@ module RecordingStudioTrashable
 
     def recording_studio_trashable_back_link_params(fallback: recording_studio_trashable_host_root_path)
       { back_path: recording_studio_trashable_back_path(fallback: fallback) }
+    end
+
+    def recording_studio_trashable_confirm_form_html(key, name:)
+      {
+        class: "shrink-0",
+        onsubmit: "return confirm(#{Copy.t(key, name: name).to_json});"
+      }
     end
   end
 end

@@ -196,15 +196,15 @@ class AuthorizationTest < Minitest::Test
     assert_includes source, "return if performed?"
     assert_includes(
       source,
-      "success_message: -> { \"\#{recording_studio_trashable_recording_label(@recording)} moved to trash\" }"
+      'success_message: -> { Copy.t("flashes.trashed", name: recording_studio_trashable_recording_label(@recording)) }'
     )
     assert_includes(
       source,
-      "success_message: -> { \"\#{recording_studio_trashable_recording_label(@recording)} restored\" }"
+      'success_message: -> { Copy.t("flashes.restored", name: recording_studio_trashable_recording_label(@recording)) }'
     )
     assert_includes(
       source,
-      "success_message: -> { \"\#{recording_studio_trashable_recording_label(@recording)} permanently deleted\" }"
+      'success_message: -> { Copy.t("flashes.purged", name: recording_studio_trashable_recording_label(@recording)) }'
     )
     assert_includes(
       source,

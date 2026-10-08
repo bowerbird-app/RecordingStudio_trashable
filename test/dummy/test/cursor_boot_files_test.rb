@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require "test_helper"
 require "json"
-require_relative "../../test_helper"
 
 class CursorBootFilesTest < Minitest::Test
   def test_cloud_agent_hooks_point_at_tracked_scripts_and_dummy_terminals

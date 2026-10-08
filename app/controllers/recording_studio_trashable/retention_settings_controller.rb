@@ -25,7 +25,7 @@ module RecordingStudioTrashable
 
       unless recording_studio_trashable_retention_settings_enabled?
         redirect_to recording_trash_bin_path(@scope_recording, recording_studio_trashable_back_link_params),
-                    alert: "Retention settings are managed by the application."
+                    alert: Copy.t("flashes.retention_managed")
         return
       end
 
@@ -38,7 +38,7 @@ module RecordingStudioTrashable
 
     def save_retention_setting(purge_after_days)
       @retention_setting.assign_attributes(purge_after_days: purge_after_days)
-      return redirect_to_trash_bin("Trash settings updated.") if @retention_setting.save
+      return redirect_to_trash_bin(Copy.t("flashes.settings_updated")) if @retention_setting.save
 
       render :edit, status: :unprocessable_entity
     end
@@ -54,7 +54,7 @@ module RecordingStudioTrashable
       raw_days = retention_setting_params[:purge_after_days]
       RecordingStudioTrashable::RetentionPolicy.normalize_purge_after_days(raw_days)
     rescue ArgumentError, TypeError
-      @retention_setting.errors.add(:purge_after_days, "must be a positive whole number")
+      @retention_setting.errors.add(:purge_after_days, Copy.t("errors.purge_after_days_invalid"))
       render :edit, status: :unprocessable_entity
       :invalid
     end
