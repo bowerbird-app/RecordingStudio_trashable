@@ -54,28 +54,28 @@ class TrashMetricsTest < ActionDispatch::IntegrationTest
   end
 
   test "staff can_view and api_authorize grant site context" do
-    with_admin_access(authorized: true) do
-      grant = Grant.new(@user)
-      api_context = ApiContext.new(grant, nil, nil, nil, {}, :operations)
-      definition = RecordingStudioMetrics.find("trash.in_trash")
+    access = RecordingStudioTrashable::Api::Access
+    original = access.method(:can_view?)
+    grant = Grant.new(@user)
+    api_context = ApiContext.new(grant, nil, nil, nil, {}, :operations)
+    definition = RecordingStudioMetrics.find("trash.in_trash")
 
-      assert RecordingStudioTrashable::Api::Access.can_view?(api_context)
-      context = RecordingStudioMetrics::Api.context_from_api(api_context, definition: definition)
-      assert context
-      assert_equal :site, context.scope
-      assert context.site_authorized?
-    end
+    access.define_singleton_method(:can_view?) { |_context| true }
+    context = RecordingStudioMetrics::Api.context_from_api(api_context, definition: definition)
+    assert context
+    assert_equal :site, context.scope
+    assert context.site_authorized?
+  ensure
+    access.define_singleton_method(:can_view?) { |context| original.call(context) }
   end
 
   test "non-admin is denied by can_view and api_authorize" do
-    with_admin_access(authorized: false) do
-      grant = Grant.new(@member)
-      api_context = ApiContext.new(grant, nil, nil, nil, {}, :operations)
-      definition = RecordingStudioMetrics.find("trash.in_trash")
+    grant = Grant.new(@member)
+    api_context = ApiContext.new(grant, nil, nil, nil, {}, :operations)
+    definition = RecordingStudioMetrics.find("trash.in_trash")
 
-      refute RecordingStudioTrashable::Api::Access.can_view?(api_context)
-      assert_nil RecordingStudioMetrics::Api.context_from_api(api_context, definition: definition)
-    end
+    refute RecordingStudioTrashable::Api::Access.can_view?(api_context)
+    assert_nil RecordingStudioMetrics::Api.context_from_api(api_context, definition: definition)
   end
 
   private
@@ -148,45 +148,5 @@ class TrashMetricsTest < ActionDispatch::IntegrationTest
 
   def site_context
     RecordingStudioMetrics::Context.new(actor: @user, scope: :site, site_authorized: true)
-  end
-
-  def with_admin_access(authorized:)
-    admin = Module.new do
-      def self.configuration
-        @configuration
-      end
-    end
-    admin.instance_variable_set(
-      :@configuration,
-      Struct.new(:access_recording_resolver).new(->(_context) { @workspace_recording })
-    )
-    accessible = Module.new do
-      def self.authorized?(**)
-        @authorized
-      end
-    end
-    accessible.instance_variable_set(:@authorized, authorized)
-
-    swap_const(:RecordingStudioAdmin, admin)
-    swap_const(:RecordingStudioAccessible, accessible)
-    yield
-  ensure
-    restore_const(:RecordingStudioAdmin)
-    restore_const(:RecordingStudioAccessible)
-  end
-
-  def swap_const(name, replacement)
-    @original_consts ||= {}
-    @original_consts[name] = Object.const_defined?(name, false) ? Object.const_get(name, false) : :__missing__
-    Object.send(:remove_const, name) if Object.const_defined?(name, false)
-    Object.const_set(name, replacement)
-  end
-
-  def restore_const(name)
-    return unless @original_consts&.key?(name)
-
-    Object.send(:remove_const, name) if Object.const_defined?(name, false)
-    original = @original_consts.delete(name)
-    Object.const_set(name, original) unless original == :__missing__
   end
 end
