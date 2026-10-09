@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-09
+
+Site-wide trash metrics register with Recording Studio Metrics for the operations API.
+
+### Added
+- `RecordingStudioTrashable::Metrics.register!` registers a `:trash` resource
+  (`blast_radius: :site`) with RecordingStudioMetrics. Metrics:
+  `trash.in_trash` (current in-trash total), `trash.in_trash_by_type`
+  (current trash grouped by `recordable_type`), and `trash.trashed_over_time`
+  (by `trashed_at`). Each is exposed on `:operations` only. `api_authorize`
+  uses `RecordingStudioTrashable::Api::Access.can_view?` (AdminRoot `:view`).
+- These counts use existing `RecordingStudio::Recording` rows where
+  `trashed_at` is present. Purged items vanish, so the numbers are current
+  trash and trashed-over-time of still-existing items only. No new tables
+  and no extra event logging.
+- Runtime dependency `recording_studio_metrics` `~> 0.2` (GitHub tag `v0.2.0`).
+
+### Upgrade Notes
+- Install Trashable `0.7.0`. No migration.
+- Add `recording_studio_metrics` at tag `v0.2.0`.
+- This gem does not call `RecordingStudioMetrics::Api.register!`. The host
+  registers Metrics endpoints once:
+
+```ruby
+RecordingStudioMetrics::Api.register!(api: :operations)
+```
+
 ## [0.6.0] - 2026-10-09
 
 ### Added
@@ -136,7 +163,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.5...v0.5.0
 [0.4.5]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.4...v0.4.5
