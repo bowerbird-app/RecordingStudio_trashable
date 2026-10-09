@@ -96,6 +96,8 @@ class CustomerI18nTest < ActionDispatch::IntegrationTest
   end
 
   test "copy overrides still win over French locale" do
+    # Load YAML first. store_translations before init is wiped on first lookup.
+    I18n.t("recording_studio.trashable.trash.title", locale: :fr)
     I18n.backend.store_translations(:fr, override_title)
     sign_in @user
     switch_to_french
