@@ -43,6 +43,10 @@ module RecordingStudioTrashable
       RecordingStudioTrashable::Hooks.run(:after_initialize, self)
     end
 
+    initializer "recording_studio_trashable.metrics" do
+      config.to_prepare { RecordingStudioTrashable::Metrics.register! }
+    end
+
     class << self
       private
 

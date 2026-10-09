@@ -18,6 +18,7 @@ require "recording_studio_trashable/retention_policy"
 require "recording_studio_trashable/retention_purger"
 require "recording_studio_trashable/retention_purge_job"
 require "recording_studio_trashable/engine"
+require "recording_studio_trashable/metrics"
 require "recording_studio/trashable/capabilities/trashable"
 
 module RecordingStudioTrashable

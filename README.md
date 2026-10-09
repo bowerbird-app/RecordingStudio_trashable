@@ -368,3 +368,28 @@ already usable. If `RAILS_MASTER_KEY` is set, it writes gitignored
 always runs last. `.cursor/start.sh` starts PostgreSQL on each boot. Rebuild
 with Draft off to load a new pack. See
 [Cursor skills in Cloud Agents](docs/cursor-skills.md).
+
+## Operations API metrics
+
+Trashable registers a site-wide `:trash` resource with RecordingStudioMetrics.
+The host exposes those metrics on the operations API:
+
+```ruby
+RecordingStudioMetrics::Api.register!(api: :operations)
+```
+
+This gem only calls `RecordingStudioTrashable::Metrics.register!` (idempotent
+on reload). It does not register Metrics API routes.
+
+| Identifier | Meaning |
+| --- | --- |
+| `trash.in_trash` | Count of `RecordingStudio::Recording` rows with `trashed_at` set |
+| `trash.in_trash_by_type` | That same current trash, grouped by `recordable_type` |
+| `trash.trashed_over_time` | Current trash bucketed by `trashed_at` |
+
+Purged items are deleted, so these are current-trash totals and
+trashed-over-time of still-existing items only. There is no extra event log.
+
+`api_authorize` is `RecordingStudioTrashable::Api::Access.can_view?`: AdminRoot
+`:view` through RecordingStudioAccessible. Add `recording_studio_metrics` at
+tag `v0.2.0` (`~> 0.2`).
