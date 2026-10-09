@@ -1,14 +1,14 @@
 <% recording_studio_page_nav(
-  title: "Overview",
+  title: trashable_t("home.title"),
   page_nav_back_url: recording_studio_trashable_back_path,
   page_nav_anchor_url: recording_studio_trashable_host_root_path,
-  page_nav_anchor_label: "Close"
+  page_nav_anchor_label: trashable_t("home.close")
 ) %>
 
 <div class="flex flex-col gap-8">
   <section id="capabilities" aria-labelledby="capabilities-title" class="flex flex-col gap-4">
     <%= render FlatPack::SectionTitle::Component.new(
-      title: "Capabilities",
+      title: trashable_t("home.capabilities.title"),
       anchor_link: true,
       anchor_id: "capabilities"
     ) %>
@@ -16,19 +16,19 @@
     <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(
-          title: "What this addon owns",
-          subtitle: "Mounted screens and trash actions that stay out of Recording Studio core.",
+          title: trashable_t("home.capabilities.owns_title"),
+          subtitle: trashable_t("home.capabilities.owns_subtitle"),
           variant: :h3
         ) %>
       <% end %>
 
       <% card.body do %>
         <ul class="flex flex-col gap-3 leading-relaxed">
-          <li><code>recording_studio_trashable_trash!</code> for soft delete.</li>
-          <li><code>recording_studio_trashable_restore!</code> for bringing an item back.</li>
-          <li><code>recording_studio_trashable_purge!</code> for permanent delete.</li>
-          <li>Explicit query helpers instead of another default scope.</li>
-          <li>Keep-for settings stored on each workspace or folder you pick.</li>
+          <li><code>recording_studio_trashable_trash!</code> <%= trashable_t("home.capabilities.trash") %></li>
+          <li><code>recording_studio_trashable_restore!</code> <%= trashable_t("home.capabilities.restore") %></li>
+          <li><code>recording_studio_trashable_purge!</code> <%= trashable_t("home.capabilities.purge") %></li>
+          <li><%= trashable_t("home.capabilities.query_helpers") %></li>
+          <li><%= trashable_t("home.capabilities.keep_for") %></li>
         </ul>
       <% end %>
     <% end %>
@@ -36,7 +36,7 @@
 
   <section id="authorization" aria-labelledby="authorization-title" class="flex flex-col gap-4">
     <%= render FlatPack::SectionTitle::Component.new(
-      title: "Authorization",
+      title: trashable_t("home.authorization.title"),
       anchor_link: true,
       anchor_id: "authorization"
     ) %>
@@ -44,8 +44,8 @@
     <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(
-          title: "Default authorization",
-          subtitle: "Built-in Accessible checks can be kept, turned off, or replaced.",
+          title: trashable_t("home.authorization.default_title"),
+          subtitle: trashable_t("home.authorization.default_subtitle"),
           variant: :h3
         ) %>
       <% end %>

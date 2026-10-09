@@ -40,6 +40,11 @@ class CustomerI18nTest < ActionDispatch::IntegrationTest
     assert_select "html[lang='en']"
     assert_includes response.body, "Trash"
     assert_includes response.body, "Search trash"
+    assert_includes response.body, "Settings"
+    assert_includes response.body, "Name"
+    assert_includes response.body, "Type"
+    assert_includes response.body, "Trashed"
+    assert_includes response.body, "Action"
     assert_includes response.body, "Restore"
     assert_includes response.body, "Purge"
     assert_includes response.body, "English Demo Page"
@@ -58,6 +63,40 @@ class CustomerI18nTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "Nothing in the trash."
     refute_includes response.body, "Rien dans la corbeille."
+  end
+
+  test "engine overview page stays English by default" do
+    sign_in @user
+    get "/recording_studio_trashable"
+
+    assert_response :success
+    assert_includes response.body, "Overview"
+    assert_includes response.body, "Capabilities"
+    assert_includes response.body, "What this addon owns"
+    assert_includes response.body, "Mounted screens and trash actions that stay out of Recording Studio core."
+    assert_includes response.body, "for soft delete."
+    assert_includes response.body, "for bringing an item back."
+    assert_includes response.body, "for permanent delete."
+    assert_includes response.body, "Explicit query helpers instead of another default scope."
+    assert_includes response.body, "Keep-for settings stored on each workspace or folder you pick."
+    assert_includes response.body, "Authorization"
+    assert_includes response.body, "Default authorization"
+    assert_includes response.body, "Built-in Accessible checks can be kept, turned off, or replaced."
+    assert_includes response.body, "recording_studio_trashable_trash!"
+    refute_includes response.body, "Aperçu"
+    refute_includes response.body, "Capacités"
+  end
+
+  test "retention settings page stays English by default" do
+    sign_in @user
+    get "/recording_studio_trashable/recordings/#{@workspace_recording.id}/trash_settings/edit"
+
+    assert_response :success
+    assert_includes response.body, "Retention period"
+    assert_includes response.body, "Number of days to keep trashed items."
+    assert_includes response.body, "Keep until manually purged"
+    assert_includes response.body, "Save"
+    refute_includes response.body, "Durée de conservation"
   end
 
   test "dummy French locale renders trash copy while stored names stay English" do

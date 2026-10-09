@@ -1,6 +1,22 @@
 en:
   recording_studio:
     trashable:
+      home:
+        title: "Overview"
+        close: "Close"
+        capabilities:
+          title: "Capabilities"
+          owns_title: "What this addon owns"
+          owns_subtitle: "Mounted screens and trash actions that stay out of Recording Studio core."
+          trash: "for soft delete."
+          restore: "for bringing an item back."
+          purge: "for permanent delete."
+          query_helpers: "Explicit query helpers instead of another default scope."
+          keep_for: "Keep-for settings stored on each workspace or folder you pick."
+        authorization:
+          title: "Authorization"
+          default_title: "Default authorization"
+          default_subtitle: "Built-in Accessible checks can be kept, turned off, or replaced."
       trash:
         title: "Trash"
         close: "Close"

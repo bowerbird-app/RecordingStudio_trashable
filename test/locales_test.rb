@@ -12,6 +12,12 @@ class LocalesTest < Minitest::Test
     assert_equal ["en.yml"], files.sort
   end
 
+  def test_rails_i18n_load_path_includes_the_gem_english_locale_file
+    locale_path = File.join(engine_locales_dir, "en.yml")
+
+    assert_includes I18n.load_path.map { |path| File.expand_path(path) }, File.expand_path(locale_path)
+  end
+
   def test_dummy_french_covers_every_engine_english_key
     english = flatten_keys(locale_tree(File.join(engine_locales_dir, "en.yml"), "en"))
     french = flatten_keys(locale_tree(File.join(dummy_locales_dir, "fr.yml"), "fr"))
@@ -22,6 +28,31 @@ class LocalesTest < Minitest::Test
 
   def test_english_default_copy_is_unchanged
     I18n.with_locale(:en) do
+      assert_equal "Overview", Copy.t("home.title")
+      assert_equal "Close", Copy.t("home.close")
+      assert_equal "Capabilities", Copy.t("home.capabilities.title")
+      assert_equal "What this addon owns", Copy.t("home.capabilities.owns_title")
+      assert_equal(
+        "Mounted screens and trash actions that stay out of Recording Studio core.",
+        Copy.t("home.capabilities.owns_subtitle")
+      )
+      assert_equal "for soft delete.", Copy.t("home.capabilities.trash")
+      assert_equal "for bringing an item back.", Copy.t("home.capabilities.restore")
+      assert_equal "for permanent delete.", Copy.t("home.capabilities.purge")
+      assert_equal(
+        "Explicit query helpers instead of another default scope.",
+        Copy.t("home.capabilities.query_helpers")
+      )
+      assert_equal(
+        "Keep-for settings stored on each workspace or folder you pick.",
+        Copy.t("home.capabilities.keep_for")
+      )
+      assert_equal "Authorization", Copy.t("home.authorization.title")
+      assert_equal "Default authorization", Copy.t("home.authorization.default_title")
+      assert_equal(
+        "Built-in Accessible checks can be kept, turned off, or replaced.",
+        Copy.t("home.authorization.default_subtitle")
+      )
       assert_equal "Trash", Copy.t("trash.title")
       assert_equal "Close", Copy.t("trash.close")
       assert_equal "Settings", Copy.t("trash.settings")
@@ -56,6 +87,26 @@ class LocalesTest < Minitest::Test
       assert_equal "Purged 1 recording.", Copy.t("summary.purged", count: 1)
       assert_equal "Purged 2 recordings.", Copy.t("summary.purged", count: 2)
       assert_equal "No recordings were purged.", Copy.t("summary.none_purged")
+    end
+  end
+
+  def test_nested_home_keys_resolve_through_i18n_without_missing_translations
+    I18n.with_locale(:en) do
+      %w[
+        home.title
+        home.close
+        home.capabilities.title
+        home.capabilities.owns_title
+        home.authorization.title
+        trash.title
+        retention.title
+      ].each do |key|
+        full_key = "recording_studio.trashable.#{key}"
+        translation = I18n.t(full_key, default: nil)
+
+        refute_nil translation, "#{full_key} should resolve"
+        assert_equal translation, I18n.t(full_key, raise: true)
+      end
     end
   end
 
