@@ -41,6 +41,22 @@ fr:
         label: Langue
         submit: Changer de langue
     trashable:
+      home:
+        title: "Aperçu"
+        close: "Fermer"
+        capabilities:
+          title: "Capacités"
+          owns_title: "Ce que cet addon gère"
+          owns_subtitle: "Écrans montés et actions de corbeille qui restent hors du cœur de Recording Studio."
+          trash: "pour une suppression douce."
+          restore: "pour ramener un élément."
+          purge: "pour une suppression définitive."
+          query_helpers: "Des aides de requête explicites plutôt qu’un autre scope par défaut."
+          keep_for: "Des durées de conservation stockées sur chaque espace ou dossier que vous choisissez."
+        authorization:
+          title: "Autorisation"
+          default_title: "Autorisation par défaut"
+          default_subtitle: "Les contrôles Accessible intégrés peuvent être conservés, désactivés ou remplacés."
       trash:
         title: "Corbeille"
         close: "Fermer"

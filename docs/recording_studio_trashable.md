@@ -45,4 +45,4 @@ Manual purge and retention-driven purge both require targeted recordings to alre
 
 ## Translating
 
-The gem ships English in `config/locales/en.yml` under `recording_studio.trashable.*`. Hosts copy those keys into their own locale files. Recording names and type names stay untranslated. Restore and purge confirmations, the trash bin, retention settings, flashes, and user-facing service errors follow the current locale. Engine demo/docs pages stay English.
+The gem ships English in `config/locales/en.yml` under `recording_studio.trashable.*`. Hosts copy those keys into their own locale files. Recording names and type names stay untranslated. Restore and purge confirmations, the trash bin, retention settings, the engine overview page, flashes, and user-facing service errors follow the current locale. Method names shown as code on the overview page stay untranslated.

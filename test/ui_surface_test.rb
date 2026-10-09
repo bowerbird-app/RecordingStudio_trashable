@@ -11,6 +11,20 @@ class UiSurfaceTest < Minitest::Test
     assert_includes home_view, "recording_studio_page_nav("
     assert_includes home_view, "page_nav_back_url: recording_studio_trashable_back_path"
     assert_includes home_view, "page_nav_anchor_url: recording_studio_trashable_host_root_path"
+    assert_includes home_view, 'trashable_t("home.title")'
+    assert_includes home_view, 'trashable_t("home.close")'
+    assert_includes home_view, 'trashable_t("home.capabilities.title")'
+    assert_includes home_view, 'trashable_t("home.capabilities.owns_title")'
+    assert_includes home_view, 'trashable_t("home.capabilities.owns_subtitle")'
+    assert_includes home_view, 'trashable_t("home.capabilities.trash")'
+    assert_includes home_view, 'trashable_t("home.authorization.title")'
+    assert_includes home_view, 'trashable_t("home.authorization.default_title")'
+    assert_includes home_view, 'trashable_t("home.authorization.default_subtitle")'
+    assert_includes home_view, "<code>recording_studio_trashable_trash!</code>"
+    assert_includes home_view, "<code>recording_studio_trashable_restore!</code>"
+    assert_includes home_view, "<code>recording_studio_trashable_purge!</code>"
+    refute_includes home_view, 'title: "Overview"'
+    refute_includes home_view, 'title: "Capabilities"'
     refute_includes home_view, "FlatPack::PageNav::Component"
     refute_includes home_view, 'aria-label="Breadcrumb"'
     refute_includes home_view, "Addon pages"

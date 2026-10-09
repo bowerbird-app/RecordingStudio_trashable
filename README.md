@@ -299,7 +299,7 @@ Stored names stay data: recording titles, type names, and other database content
 
 The engine has no layout of its own. Mounted screens use Recording Studio core's default layout. Hosts should set `<html lang>` on their layout (the dummy override does this, plus `dir` when Internationalization is loaded).
 
-Engine demo/docs pages (`/recording_studio_trashable`), generator CLI text, unknown-filter `ArgumentError`s, and other developer errors stay English.
+The engine overview page (`/recording_studio_trashable`) follows the locale under `recording_studio.trashable.home.*`. Method names shown as code on that page, generator CLI text, unknown-filter `ArgumentError`s, and other developer errors stay English.
 
 Add [Recording Studio Internationalization](https://github.com/bowerbird-app/RecordingStudio_Internationalization) on the host when you want a language selector.
 

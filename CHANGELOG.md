@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-09
+
+### Added
+- Engine overview page (`/recording_studio_trashable`) static interface copy uses Rails I18n under `recording_studio.trashable.home.*`. English only in `config/locales/en.yml`.
+
+### Upgrade Notes
+- Install Trashable `0.6.0`. No migration.
+- No host code change is required for English. To translate or override the overview page, add keys under `recording_studio.trashable.home` in the host's locale files.
+- Method names in the overview list (`recording_studio_trashable_trash!` and friends) stay as code tokens and are not translated.
+
 ## [0.5.0] - 2026-10-08
 
 ### Added
@@ -126,7 +136,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.5...v0.5.0
 [0.4.5]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.3...v0.4.4
