@@ -20,7 +20,11 @@ class MetricsTest < Minitest::Test
   end
 
   def test_register_defines_operations_trash_metrics
-    RecordingStudio.const_set(:Recording, Class.new) unless defined?(RecordingStudio::Recording)
+    created_recording = false
+    unless defined?(RecordingStudio::Recording)
+      RecordingStudio.const_set(:Recording, Class.new)
+      created_recording = true
+    end
     RecordingStudioMetrics.registry.reset!
     RecordingStudioTrashable::Metrics.register!
 
@@ -35,6 +39,8 @@ class MetricsTest < Minitest::Test
 
     assert_equal :recordable_type, RecordingStudioMetrics.find("trash.in_trash_by_type").field
     assert_equal :trashed_at, RecordingStudioMetrics.find("trash.trashed_over_time").field
+  ensure
+    RecordingStudio.send(:remove_const, :Recording) if created_recording && defined?(RecordingStudio::Recording)
   end
 
   def test_access_can_view_is_false_without_actor_or_admin_root
