@@ -44,6 +44,9 @@ class TrashableHostLocaleOverrideTest < ActionDispatch::IntegrationTest
 
     assert_response :redirect
     assert_equal HOST_RETENTION_MANAGED, flash[:alert]
+    follow_redirect!
+    assert_response :success
+    assert_includes response.body, HOST_RETENTION_MANAGED
   ensure
     RecordingStudioTrashable.configuration.allow_user_retention_settings = previous_allow
   end
