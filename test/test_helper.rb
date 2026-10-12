@@ -8,13 +8,19 @@ require "rails"
 require "active_support/core_ext/time"
 require "active_support/core_ext/integer/time"
 require "i18n"
+require "yaml"
 require "recording_studio_trashable"
 
-locale_file = File.expand_path("../config/locales/en.yml", __dir__)
-I18n.load_path << locale_file unless I18n.load_path.include?(locale_file)
-I18n.backend.load_translations
+# Do not append gem locales to I18n.load_path here. Rails engines already put
+# config/locales on the load path when the dummy boots; an explicit append can
+# re-order files so gem English overrides the host. Unit tests (no Rails app)
+# seed the backend from en.yml without touching the load path.
 I18n.available_locales = Array(I18n.available_locales) | %i[en]
 I18n.default_locale = :en
+Dir[File.expand_path("../config/locales/*.yml", __dir__)].each do |path|
+  tree = YAML.safe_load_file(path, aliases: true).fetch("en")
+  I18n.backend.store_translations(:en, tree)
+end
 
 class Object
   def stub(method_name, replacement, *stub_args, **stub_kwargs)

@@ -83,6 +83,11 @@ class CustomerI18nTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Default authorization"
     assert_includes response.body, "Built-in Accessible checks can be kept, turned off, or replaced."
     assert_includes response.body, "recording_studio_trashable_trash!"
+    assert_includes response.body, "<dt class=\"font-medium\">trash</dt>"
+    assert_includes response.body, "<dt class=\"font-medium\">restore</dt>"
+    assert_includes response.body, "<dt class=\"font-medium\">purge</dt>"
+    assert_includes response.body, "<dt class=\"font-medium\">settings</dt>"
+    assert_includes response.body, "<dt class=\"font-medium\">trash_bin</dt>"
     refute_includes response.body, "Aperçu"
     refute_includes response.body, "Capacités"
   end

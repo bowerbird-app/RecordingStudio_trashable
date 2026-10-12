@@ -41,14 +41,14 @@ module RecordingStudioTrashable
       return if recording_studio_trashable_page_authorized?(action, recording: recording)
 
       redirect_back fallback_location: root_path,
-                    alert: Copy.t("flashes.unauthorized")
+                    alert: Copy.t("flashes.unauthorized", default: "You are not authorized to manage trash here.")
     end
 
     def authorize_recording_action!(action, recording:)
       return if recording_studio_trashable_action_authorized?(action, recording)
 
       redirect_back fallback_location: root_path,
-                    alert: Copy.t("flashes.unauthorized")
+                    alert: Copy.t("flashes.unauthorized", default: "You are not authorized to manage trash here.")
     end
 
     def recording_studio_trashable_action_authorized?(action, recording)
@@ -86,12 +86,12 @@ module RecordingStudioTrashable
         recording: recording,
         scope_recording: scope_recording
       )
-      return Copy.t("retention.no_automatic_purge") if purge_at.blank?
+      return Copy.t("retention.no_automatic_purge", default: "No automatic purge window") if purge_at.blank?
 
       if RecordingStudioTrashable::RetentionPolicy.due?(recording: recording, scope_recording: scope_recording)
-        Copy.t("retention.due_now")
+        Copy.t("retention.due_now", default: "Due now")
       else
-        Copy.t("retention.purges", date: helpers.l(purge_at, format: :long))
+        Copy.t("retention.purges", date: helpers.l(purge_at, format: :long), default: "Purges %{date}")
       end
     end
 
@@ -114,9 +114,14 @@ module RecordingStudioTrashable
     end
 
     def recording_studio_trashable_confirm_form_html(key, name:)
+      english = case key.to_s
+                when "confirms.restore" then "Restore %{name}?"
+                when "confirms.purge" then "Permanently delete %{name}?"
+                else key.to_s
+                end
       {
         class: "shrink-0",
-        onsubmit: "return confirm(#{Copy.t(key, name: name).to_json});"
+        onsubmit: "return confirm(#{Copy.t(key, name: name, default: english).to_json});"
       }
     end
   end

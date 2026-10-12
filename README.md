@@ -283,15 +283,15 @@ bundle exec rake recording_studio_trashable:purge_due DRY_RUN=true
 
 ## Internationalization
 
-The gem ships **English only** in `config/locales/en.yml`. Keys nest under `recording_studio.trashable.*`:
+The gem ships **English only** in `config/locales/en.yml`. Keys nest under `recording_studio.trashable.*`. Every `Copy.t` / `trashable_t` call passes an English `default:` so a host locale without a fallback never shows "translation missing":
 
 ```ruby
-t("recording_studio.trashable.trash.title")
-t("recording_studio.trashable.flashes.restored", name: page_title)
-t("recording_studio.trashable.confirms.purge", name: page_title)
+t("recording_studio.trashable.trash.title", default: "Trash")
+t("recording_studio.trashable.flashes.restored", name: page_title, default: "%{name} restored")
+t("recording_studio.trashable.confirms.purge", name: page_title, default: "Permanently delete %{name}?")
 ```
 
-Hosts own other languages. Copy `recording_studio.trashable.*` into `config/locales/<locale>.yml` and list that locale in `config.i18n.available_locales`. Do not add `RecordingStudio_Internationalization` as a dependency of this gem — it is optional on the host (the dummy uses it to switch English/French).
+Hosts own other languages. Copy `recording_studio.trashable.*` into `config/locales/<locale>.yml` and list that locale in `config.i18n.available_locales`. Do not add `RecordingStudio_Internationalization` as a dependency of this gem — it is optional on the host (the dummy uses it to switch English/French). Hosts override by defining the same nested keys in their own `config/locales`.
 
 Helper arguments and host translations still win. `Copy.value` and `Copy.defaulted` keep an explicit string when the host passed one, and follow the locale when the host left the English default.
 
@@ -299,7 +299,7 @@ Stored names stay data: recording titles, type names, and other database content
 
 The engine has no layout of its own. Mounted screens use Recording Studio core's default layout. Hosts should set `<html lang>` on their layout (the dummy override does this, plus `dir` when Internationalization is loaded).
 
-The engine overview page (`/recording_studio_trashable`) follows the locale under `recording_studio.trashable.home.*`. Method names shown as code on that page, generator CLI text, unknown-filter `ArgumentError`s, and other developer errors stay English.
+The engine overview page (`/recording_studio_trashable`) follows the locale under `recording_studio.trashable.home.*`. Authorization action labels on that page use `Copy.action_name` (`recording_studio.trashable.actions.*`). Method names shown as code on that page, Metrics DSL titles (captured at registration), generator CLI text, unknown-filter `ArgumentError`s, and other developer errors stay English.
 
 Add [Recording Studio Internationalization](https://github.com/bowerbird-app/RecordingStudio_Internationalization) on the host when you want a language selector.
 

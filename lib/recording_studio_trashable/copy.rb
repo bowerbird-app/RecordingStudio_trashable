@@ -38,6 +38,8 @@ module RecordingStudioTrashable
       value
     end
 
+    # English action tokens match main's overview <dt> and authorize-error
+    # wording. Unknown actions fall back to the raw token (byte-identical).
     def action_name(action)
       name = action.to_s
       t("actions.#{name}", default: name)

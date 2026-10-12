@@ -6,16 +6,49 @@ require "yaml"
 class LocalesTest < Minitest::Test
   Copy = RecordingStudioTrashable::Copy
 
+  def setup
+    @previous_load_path = I18n.load_path.dup
+    @previous_backend = I18n.backend
+    @previous_locale = I18n.locale
+    I18n.backend = I18n::Backend::Simple.new
+    I18n.backend.load_translations(*Dir[File.join(engine_locales_dir, "*.yml")])
+    I18n.locale = :en
+  end
+
+  def teardown
+    I18n.backend = @previous_backend
+    I18n.locale = @previous_locale
+    assert_equal @previous_load_path, I18n.load_path,
+                 "locales tests must not mutate I18n.load_path"
+  end
+
   def test_engine_ships_only_english_locale_files
     files = Dir[File.join(engine_locales_dir, "*")].map { |path| File.basename(path) }
 
     assert_equal ["en.yml"], files.sort
   end
 
+  # Wave 2: unit tests no longer append gem locales to I18n.load_path (Marshal).
+  # Assert the engine exposes the English locale path instead.
   def test_rails_i18n_load_path_includes_the_gem_english_locale_file
-    locale_path = File.join(engine_locales_dir, "en.yml")
+    locale_path = File.expand_path(File.join(engine_locales_dir, "en.yml"))
+    existent = RecordingStudioTrashable::Engine.paths["config/locales"].existent.map { |path| File.expand_path(path) }
 
-    assert_includes I18n.load_path.map { |path| File.expand_path(path) }, File.expand_path(locale_path)
+    assert_includes existent, locale_path
+  end
+
+  def test_lib_sources_do_not_append_i18n_load_path
+    lib_root = File.expand_path("../lib", __dir__)
+    ruby_files = Dir[File.join(lib_root, "**", "*.rb")]
+
+    refute_empty ruby_files, "expected lib/**/*.rb files to scan"
+
+    ruby_files.each do |path|
+      source = File.read(path)
+
+      refute_includes source, "i18n.load_path", "#{path} must not touch i18n.load_path"
+      refute_includes source, "I18n.load_path", "#{path} must not touch I18n.load_path"
+    end
   end
 
   def test_dummy_french_covers_every_engine_english_key
@@ -87,6 +120,11 @@ class LocalesTest < Minitest::Test
       assert_equal "Purged 1 recording.", Copy.t("summary.purged", count: 1)
       assert_equal "Purged 2 recordings.", Copy.t("summary.purged", count: 2)
       assert_equal "No recordings were purged.", Copy.t("summary.none_purged")
+      assert_equal "trash", Copy.t("actions.trash")
+      assert_equal "restore", Copy.t("actions.restore")
+      assert_equal "purge", Copy.t("actions.purge")
+      assert_equal "settings", Copy.t("actions.settings")
+      assert_equal "trash_bin", Copy.t("actions.trash_bin")
     end
   end
 
@@ -106,6 +144,22 @@ class LocalesTest < Minitest::Test
 
         refute_nil translation, "#{full_key} should resolve"
         assert_equal translation, I18n.t(full_key, raise: true)
+      end
+    end
+  end
+
+  def test_yes_no_on_off_locale_keys_resolve_without_default
+    yes_no_keys = collect_yes_no_on_off_keys(
+      locale_tree(File.join(engine_locales_dir, "en.yml"), "en")
+    )
+
+    I18n.with_locale(:en) do
+      yes_no_keys.each do |key|
+        full_key = "recording_studio.trashable.#{key}"
+        translation = I18n.t(full_key)
+
+        refute_equal "translation missing: en.#{full_key}", translation
+        refute_includes translation.to_s, "translation missing"
       end
     end
   end
@@ -173,8 +227,25 @@ class LocalesTest < Minitest::Test
     I18n.with_locale(:en) do
       assert_equal "trash", Copy.action_name(:trash)
       assert_equal "restore", Copy.action_name("restore")
+      assert_equal "purge", Copy.action_name(:purge)
+      assert_equal "settings", Copy.action_name(:settings)
+      assert_equal "trash_bin", Copy.action_name(:trash_bin)
       assert_equal "archive", Copy.action_name(:archive)
     end
+  end
+
+  def test_action_name_honors_host_locale_override
+    I18n.backend.store_translations(
+      :en,
+      recording_studio: { trashable: { actions: { trash: "HOST trash" } } }
+    )
+
+    assert_equal "HOST trash", Copy.action_name(:trash)
+  ensure
+    I18n.backend.store_translations(
+      :en,
+      recording_studio: { trashable: { actions: { trash: "trash" } } }
+    )
   end
 
   def test_copy_helper_delegates_and_sets_document_lang
@@ -190,6 +261,19 @@ class LocalesTest < Minitest::Test
     I18n.backend.store_translations(:en, { date: { formats: { long: "%B %d, %Y" } } })
 
     assert_equal "January 03, 2026", Copy.l(Date.new(2026, 1, 3), format: :long)
+  end
+
+  def test_copy_t_default_english_wins_when_key_missing_in_locale
+    I18n.with_locale(:en) do
+      assert_equal(
+        "must be a positive whole number",
+        Copy.t("errors.purge_after_days_invalid", default: "must be a positive whole number")
+      )
+      assert_equal(
+        "Fallback label",
+        Copy.t("errors.missing_wave2_key", default: "Fallback label")
+      )
+    end
   end
 
   private
@@ -211,6 +295,19 @@ class LocalesTest < Minitest::Test
     hash.flat_map do |key, value|
       path = prefix + [key.to_s]
       value.is_a?(Hash) ? flatten_keys(value, path) : [path.join(".")]
+    end
+  end
+
+  def collect_yes_no_on_off_keys(hash, prefix = [])
+    hash.flat_map do |key, value|
+      path = prefix + [key.to_s]
+      if value.is_a?(Hash)
+        collect_yes_no_on_off_keys(value, path)
+      elsif %w[yes no on off true false null].include?(key.to_s)
+        [path.join(".")]
+      else
+        []
+      end
     end
   end
 

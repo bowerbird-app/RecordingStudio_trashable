@@ -128,7 +128,8 @@ module RecordingStudio
             raise ArgumentError, RecordingStudioTrashable::Copy.t(
               "errors.not_authorized",
               action: RecordingStudioTrashable::Copy.action_name(action),
-              type: recordable_type
+              type: recordable_type,
+              default: "Not authorized to %{action} %{type}"
             )
           end
 
@@ -149,7 +150,10 @@ module RecordingStudio
             return if invalid_targets.empty?
 
             raise RecordingStudioTrashable::PurgeTargetsNotTrashedError,
-                  RecordingStudioTrashable::Copy.t("errors.purge_not_trashed")
+                  RecordingStudioTrashable::Copy.t(
+                    "errors.purge_not_trashed",
+                    default: "Purging requires all targeted recordings to already be trashed"
+                  )
           end
 
           def recording_studio_trashable_with_locked_targets(mode: :all)
