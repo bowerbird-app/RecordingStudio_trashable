@@ -91,7 +91,9 @@ module RecordingStudioTrashable
       if RecordingStudioTrashable::RetentionPolicy.due?(recording: recording, scope_recording: scope_recording)
         Copy.t("retention.due_now", default: "Due now")
       else
+        # rubocop:disable Style/FormatStringToken -- I18n interpolation, not Ruby format
         Copy.t("retention.purges", date: helpers.l(purge_at, format: :long), default: "Purges %{date}")
+        # rubocop:enable Style/FormatStringToken
       end
     end
 
@@ -114,11 +116,13 @@ module RecordingStudioTrashable
     end
 
     def recording_studio_trashable_confirm_form_html(key, name:)
+      # rubocop:disable Style/FormatStringToken -- I18n interpolation, not Ruby format
       english = case key.to_s
                 when "confirms.restore" then "Restore %{name}?"
                 when "confirms.purge" then "Permanently delete %{name}?"
                 else key.to_s
                 end
+      # rubocop:enable Style/FormatStringToken
       {
         class: "shrink-0",
         onsubmit: "return confirm(#{Copy.t(key, name: name, default: english).to_json});"
