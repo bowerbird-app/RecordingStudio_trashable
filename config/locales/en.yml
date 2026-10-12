@@ -50,6 +50,8 @@ en:
         trash: "trash"
         restore: "restore"
         purge: "purge"
+        settings: "settings"
+        trash_bin: "trash_bin"
       retention:
         title: "Retention period"
         subtitle: "Number of days to keep trashed items."

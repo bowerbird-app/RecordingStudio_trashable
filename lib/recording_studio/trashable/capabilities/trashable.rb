@@ -125,11 +125,14 @@ module RecordingStudio
             resolved_actor = recording_studio_trashable_actor(actor)
             return if RecordingStudioTrashable.authorized?(action: action, actor: resolved_actor, recording: self)
 
+            # rubocop:disable Style/FormatStringToken -- I18n interpolation, not Ruby format
             raise ArgumentError, RecordingStudioTrashable::Copy.t(
               "errors.not_authorized",
               action: RecordingStudioTrashable::Copy.action_name(action),
-              type: recordable_type
+              type: recordable_type,
+              default: "Not authorized to %{action} %{type}"
             )
+            # rubocop:enable Style/FormatStringToken
           end
 
           def recording_studio_trashable_actor(explicit_actor)
@@ -149,7 +152,10 @@ module RecordingStudio
             return if invalid_targets.empty?
 
             raise RecordingStudioTrashable::PurgeTargetsNotTrashedError,
-                  RecordingStudioTrashable::Copy.t("errors.purge_not_trashed")
+                  RecordingStudioTrashable::Copy.t(
+                    "errors.purge_not_trashed",
+                    default: "Purging requires all targeted recordings to already be trashed"
+                  )
           end
 
           def recording_studio_trashable_with_locked_targets(mode: :all)

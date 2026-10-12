@@ -1,0 +1,15 @@
+# Test-only host override fixture (not under config/locales). Loaded last via
+# I18n.backend.load_translations in host-override integration tests so
+# last-file-wins can be asserted without mutating I18n.load_path.
+en:
+  recording_studio:
+    trashable:
+      flashes:
+        retention_managed: "HOST Retention settings are managed by the application."
+        settings_updated: "HOST Trash settings updated."
+      errors:
+        purge_after_days_invalid: "HOST must be a positive whole number"
+      trash:
+        empty: "HOST Nothing in the trash."
+      actions:
+        trash: "HOST trash"

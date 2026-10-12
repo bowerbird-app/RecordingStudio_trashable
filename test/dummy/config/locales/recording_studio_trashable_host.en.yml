@@ -1,0 +1,8 @@
+# Host override for a rarely shown Trashable flash key (retention managed alert).
+# Kept out of the default happy-path UI so other dummy tests still see gem English.
+# Loaded by Rails from config/locales — do not append this path in tests.
+en:
+  recording_studio:
+    trashable:
+      flashes:
+        retention_managed: "HOST Retention settings are managed by the application."

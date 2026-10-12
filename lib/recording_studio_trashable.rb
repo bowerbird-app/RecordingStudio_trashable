@@ -121,21 +121,53 @@ module RecordingStudioTrashable
 
       return message if skipped_count.zero?
 
-      "#{message} #{Copy.t('summary.skipped', count: skipped_count)}"
+      # rubocop:disable Style/FormatStringToken -- I18n interpolation, not Ruby format
+      skipped = Copy.t(
+        "summary.skipped",
+        count: skipped_count,
+        default: { one: "Skipped %{count} recording.", other: "Skipped %{count} recordings." }
+      )
+      # rubocop:enable Style/FormatStringToken
+      "#{message} #{skipped}"
     end
 
     def base_purge_summary_message(purge_count, dry_run: false)
       return dry_run_purge_summary_message(purge_count) if dry_run
 
-      return Copy.t("summary.purged", count: purge_count) if purge_count.positive?
+      if purge_count.positive?
+        # rubocop:disable Style/FormatStringToken -- I18n interpolation, not Ruby format
+        return Copy.t(
+          "summary.purged",
+          count: purge_count,
+          default: { one: "Purged %{count} recording.", other: "Purged %{count} recordings." }
+        )
+        # rubocop:enable Style/FormatStringToken
+      end
 
-      Copy.t("summary.none_purged")
+      Copy.t("summary.none_purged", default: "No recordings were purged.")
     end
 
     def dry_run_purge_summary_message(purge_count)
-      return Copy.t("summary.dry_run_none") unless purge_count.positive?
+      return dry_run_none_message unless purge_count.positive?
 
-      Copy.t("summary.dry_run_purged", count: purge_count)
+      dry_run_purged_message(purge_count)
+    end
+
+    def dry_run_none_message
+      Copy.t("summary.dry_run_none", default: "Dry run: no recordings would be purged.")
+    end
+
+    def dry_run_purged_message(purge_count)
+      # rubocop:disable Style/FormatStringToken -- I18n interpolation, not Ruby format
+      Copy.t(
+        "summary.dry_run_purged",
+        count: purge_count,
+        default: {
+          one: "Dry run: %{count} recording would be purged.",
+          other: "Dry run: %{count} recordings would be purged."
+        }
+      )
+      # rubocop:enable Style/FormatStringToken
     end
 
     def root_scope_recordings

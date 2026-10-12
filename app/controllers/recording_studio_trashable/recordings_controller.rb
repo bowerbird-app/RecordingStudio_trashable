@@ -10,7 +10,7 @@ module RecordingStudioTrashable
       update_recording!(
         :trash,
         :recording_studio_trashable_trash!,
-        success_message: -> { Copy.t("flashes.trashed", name: recording_studio_trashable_recording_label(@recording)) }
+        success_message: -> { lifecycle_flash("flashes.trashed", "%{name} moved to trash") } # rubocop:disable Style/FormatStringToken
       )
     end
 
@@ -18,7 +18,7 @@ module RecordingStudioTrashable
       update_recording!(
         :restore,
         :recording_studio_trashable_restore!,
-        success_message: -> { Copy.t("flashes.restored", name: recording_studio_trashable_recording_label(@recording)) }
+        success_message: -> { lifecycle_flash("flashes.restored", "%{name} restored") } # rubocop:disable Style/FormatStringToken
       )
     end
 
@@ -26,11 +26,15 @@ module RecordingStudioTrashable
       update_recording!(
         :purge,
         :recording_studio_trashable_purge!,
-        success_message: -> { Copy.t("flashes.purged", name: recording_studio_trashable_recording_label(@recording)) }
+        success_message: -> { lifecycle_flash("flashes.purged", "%{name} permanently deleted") } # rubocop:disable Style/FormatStringToken
       )
     end
 
     private
+
+    def lifecycle_flash(key, english)
+      Copy.t(key, name: recording_studio_trashable_recording_label(@recording), default: english)
+    end
 
     def update_recording!(action, method_name, success_message:)
       @recording = find_recording!(params[:id])

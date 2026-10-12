@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-12
+
+### Added
+
+- English Rails I18n keys for non-view copy under `recording_studio.trashable` (controller flashes, retention validation messages, purge summary strings, and overview authorization action labels) already resolve through `Copy.t` with English `default:` so a host locale without a fallback never shows "translation missing".
+- Overview authorization `<dt>` labels render via `Copy.action_name` (keys under `recording_studio.trashable.actions.*`, including `settings` and `trash_bin`). English output stays byte-identical to main's raw action tokens.
+- Host English override coverage: test-only fixture `test/dummy/test/locales/trashable_host_override.en.yml` loaded via `I18n.backend.load_translations` (no `I18n.load_path` mutation) plus a real-page assert.
+- Always-loaded boot-order guard `test/dummy/config/locales/recording_studio_trashable_host.en.yml` for the rarely shown `flashes.retention_managed` key, with a render assert on the retention-managed redirect.
+- Locale regression: every `lib/**/*.rb` file must not mention `i18n.load_path` / `I18n.load_path`.
+- Render-level asserts for overview action names, empty trash, retention settings, restore flash, and settings-updated flash.
+
+### Changed
+
+- Controller flashes, confirm prompts, retention labels, authorize/purge errors, and purge summary messages pass English `default:` on every `Copy.t` call.
+- Retention `errors.add(:purge_after_days, ...)` keeps the former English String as the error type (ActiveModel 8.1 ignores `message:` for Strings). In non-English locales, `errors.details` carries the translated string for that former String type.
+
+### Upgrade Notes
+
+- Bump to `0.8.0`. No migration.
+- English hosts need no change. Copy `recording_studio.trashable.actions.settings`, `actions.trash_bin`, and any newly defaulted flash/error keys into host locale files when translating.
+- Hosts override by defining the same nested keys in their own `config/locales`.
+- Metrics DSL titles and descriptions stay English (captured at registration).
+- Generator CLI text, unknown-filter `ArgumentError`s, icon/style tokens, and stored recording names stay untranslated.
+
 ## [0.7.0] - 2026-10-09
 
 Site-wide trash metrics register with Recording Studio Metrics for the operations API.
@@ -163,7 +187,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.4.5...v0.5.0

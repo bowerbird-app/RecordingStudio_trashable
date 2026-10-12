@@ -194,18 +194,16 @@ class AuthorizationTest < Minitest::Test
 
     assert_includes source, "authorize_recording_action!(action, recording: @recording)"
     assert_includes source, "return if performed?"
-    assert_includes(
-      source,
-      'success_message: -> { Copy.t("flashes.trashed", name: recording_studio_trashable_recording_label(@recording)) }'
-    )
-    assert_includes(
-      source,
-      'success_message: -> { Copy.t("flashes.restored", name: recording_studio_trashable_recording_label(@recording)) }'
-    )
-    assert_includes(
-      source,
-      'success_message: -> { Copy.t("flashes.purged", name: recording_studio_trashable_recording_label(@recording)) }'
-    )
+    assert_includes source, "lifecycle_flash("
+    assert_includes source, '"flashes.trashed"'
+    assert_includes source, '"flashes.restored"'
+    assert_includes source, '"flashes.purged"'
+    # rubocop:disable Style/FormatStringToken -- asserts I18n %{name} defaults byte-identical to main
+    assert_includes source, '"%{name} moved to trash"'
+    assert_includes source, '"%{name} restored"'
+    assert_includes source, '"%{name} permanently deleted"'
+    # rubocop:enable Style/FormatStringToken
+    assert_includes source, "recording_studio_trashable_recording_label(@recording)"
     assert_includes(
       source,
       "resolved_success_message = success_message.respond_to?(:call) ? " \

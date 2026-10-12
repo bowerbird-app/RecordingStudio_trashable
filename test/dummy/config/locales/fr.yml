@@ -90,6 +90,8 @@ fr:
         trash: "jeter"
         restore: "restaurer"
         purge: "supprimer définitivement"
+        settings: "réglages"
+        trash_bin: "corbeille"
       retention:
         title: "Durée de conservation"
         subtitle: "Nombre de jours à conserver les éléments mis à la corbeille."
