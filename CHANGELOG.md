@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-13
+
+### Added
+
+- Sibling-facing trash ownership helpers on every `RecordingStudio::Recording` (via `RecordingScopes`, not only Trashable-enabled recordables):
+  - predicates `recording_studio_trashable_trashed?` and `recording_studio_trashable_kept?`
+  - SQL fragments `recording_studio_trashable_kept_sql(table)` and `recording_studio_trashable_trashed_sql(table)` for joins and recursive CTEs
+  - `RecordingStudioTrashable.void_recording!` / `recording_studio_trashable_void!` for single-row soft-void through `update!` (no cascade, capability, auth, events, or `trash_root`)
+- README mapping of raw `trashed_at` call sites in accessible, api, Embeddable, admin, Oauth, presskits, and support to these APIs (kept/active scope remains `recording_studio_trashable_active`; user-facing subtree trash remains `recording_studio_trashable_trash!`).
+
+### Upgrade Notes
+
+- Bump to `0.9.0`. No migration.
+- Existing Trashable callers are unchanged. Sibling gems can migrate off raw `trashed_at` reads/writes using the README mapping; Oauth void must use `void_recording!`, not `recording_studio_trashable_trash!`.
+
 ## [0.8.0] - 2026-10-12
 
 ### Added

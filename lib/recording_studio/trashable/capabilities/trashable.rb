@@ -28,6 +28,35 @@ module RecordingStudioTrashable
         recording_studio_trashable_trash_roots.reorder(trashed_at: :desc, updated_at: :desc)
       }
     end
+
+    class_methods do
+      # SQL fragment for joins, recursive CTEs, and other raw SQL that cannot use
+      # `recording_studio_trashable_active`. Pass a table or alias such as "child".
+      def recording_studio_trashable_kept_sql(table = table_name)
+        "#{table}.trashed_at IS NULL"
+      end
+
+      def recording_studio_trashable_trashed_sql(table = table_name)
+        "#{table}.trashed_at IS NOT NULL"
+      end
+    end
+
+    # True when this recording row is soft-trashed. Available on every Recording
+    # once the gem is installed (not only on capability-enabled recordables).
+    def recording_studio_trashable_trashed?
+      trashed_at.present?
+    end
+
+    def recording_studio_trashable_kept?
+      !recording_studio_trashable_trashed?
+    end
+
+    # Soft-void this recording row only: sets `trashed_at` through `update!` with
+    # no cascade, capability check, authorization, event log, or `trash_root`.
+    # Use `recording_studio_trashable_trash!` for user-facing subtree trash.
+    def recording_studio_trashable_void!(time: Time.current)
+      RecordingStudioTrashable.void_recording!(self, time: time)
+    end
   end
 end
 

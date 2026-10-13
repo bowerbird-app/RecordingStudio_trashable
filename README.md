@@ -13,6 +13,7 @@ It extracts trash behavior from RecordingStudio core into addon-owned APIs witho
   - `recording_studio_trashable_trash!`
   - `recording_studio_trashable_restore!`
   - `recording_studio_trashable_purge!`
+- sibling ownership helpers on every Recording (kept/active scope, `trashed?` / `kept?` predicates, SQL fragments, and `void_recording!` for single-row soft-void)
 - subtree trash bins with restore, purge, and retention settings UI
 - optional RecordingStudioAccessible authorization integration
 - addon-owned migrations for `trashed_at`, `trash_root`, and retention settings
@@ -147,11 +148,56 @@ RecordingStudio::Recording.recording_studio_trashable_trash_roots
 RecordingStudio::Recording.recording_studio_trashable_trash_bin
 ```
 
+Predicates and SQL fragments for sibling gems (available on every `RecordingStudio::Recording` once this gem is installed, not only on Trashable-enabled recordables):
+
+```ruby
+recording.recording_studio_trashable_trashed?
+recording.recording_studio_trashable_kept?
+
+# ActiveRecord: prefer the kept/active scope
+RecordingStudio::Recording.recording_studio_trashable_active.where(...)
+
+# Raw SQL joins / recursive CTEs that cannot use the scope
+RecordingStudio::Recording.recording_studio_trashable_kept_sql("child")
+# => "child.trashed_at IS NULL"
+RecordingStudio::Recording.recording_studio_trashable_trashed_sql
+# => "recording_studio_recordings.trashed_at IS NOT NULL"
+```
+
+Writes:
+
+```ruby
+# User-facing subtree trash (capability + auth + events + trash_root)
+recording.recording_studio_trashable_trash!(actor: Current.actor)
+
+# System soft-void of a single row (no cascade, capability, auth, or trash_root)
+RecordingStudioTrashable.void_recording!(recording, time: Time.current)
+recording.recording_studio_trashable_void!(time: Time.current)
+```
+
 If your host app prefers a safer default, add a host-owned `default_scope { where(trashed_at: nil) }` and alias `recording_studio_trashable_active` to an app-facing scope such as `not_trashed`. The addon scopes that need trashed rows already call `unscope(where: :trashed_at)` so they can opt out deliberately.
 
 `recording_studio_trashable_trash_roots` returns only explicitly trashed subtree roots.
 
 `recording_studio_trashable_trash_bin` orders those trash roots by `trashed_at DESC` so cascade-trashed descendants do not flood the trash UI.
+
+### Sibling gem `trashed_at` mapping
+
+Trashable owns `trashed_at` reads and writes for sibling gems. Replace raw column access with the APIs above. Existing host and Trashable callers keep the same behavior; these helpers are additive.
+
+| Sibling call site | Replace with |
+| --- | --- |
+| **accessible** `audience_query` / `authorization_class_methods` / `direct_access_query` / `access_grant_integrity` `scope.where(trashed_at: nil)` | `scope.merge(RecordingStudio::Recording.recording_studio_trashable_active)` or `RecordingStudio::Recording.recording_studio_trashable_active` when starting from `Recording` |
+| **accessible** `access_record_lifecycle` / `dependent_access` `recording.trashed_at.nil?` | `recording.recording_studio_trashable_kept?` |
+| **api** `api_access_token` / `api_credential` / `token_authentication_base` `recording.trashed_at.nil?` / `.present?` | `recording.recording_studio_trashable_kept?` / `recording.recording_studio_trashable_trashed?` |
+| **api** `access_management_policy` / `integration` `.where(..., trashed_at: nil)` | chain `.recording_studio_trashable_active` (or `merge` that scope) instead of a `trashed_at:` hash key |
+| **api** `accessible_recording_scope` `WHERE child.trashed_at IS NULL` | `WHERE #{RecordingStudio::Recording.recording_studio_trashable_kept_sql("child")}` |
+| **Embeddable** `embed.rb` / `recording_methods.rb` `.where(..., trashed_at: nil)` | `.recording_studio_trashable_active.where(...)` |
+| **admin** `section_recording_resolver` / admin_root `find_by(..., trashed_at: nil)` | `RecordingStudio::Recording.recording_studio_trashable_active.find_by(...)` |
+| **Oauth** `void_oauth_authorization` `access_recording.update_columns(trashed_at: time, ...)` | `RecordingStudioTrashable.void_recording!(access_recording, time: time)` (or `access_recording.recording_studio_trashable_void!(time: time)`). Do not use `recording_studio_trashable_trash!` here: that path cascades, authorizes, logs, and sets `trash_root`. |
+| **Oauth** `integration` / `create_oauth_authorization` / `oauth_authorization` `trashed_at.nil?` / `.present?` / `.where(..., trashed_at: nil)` | `recording_studio_trashable_kept?` / `recording_studio_trashable_trashed?` / `recording_studio_trashable_active` |
+| **presskits** `facts_section` `child.trashed_at.present?` | `child.recording_studio_trashable_trashed?` |
+| **support** `support_section` join `AND #{table}.trashed_at IS NULL` | `AND #{RecordingStudio::Recording.recording_studio_trashable_kept_sql(table)}` |
 
 ## Events and action names
 
