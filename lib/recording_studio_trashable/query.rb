@@ -38,3 +38,10 @@ module RecordingStudioTrashable
 end
 
 RecordingStudioTrashable.install_query_helpers!
+
+# RecordingStudio::Recording is Zeitwerk-autoloaded by the Recording Studio
+# engine, so it is usually undefined at Bundler/require time. Re-run after each
+# code reload so sibling query-only hosts keep the scopes installed.
+if defined?(ActiveSupport::Reloader)
+  ActiveSupport::Reloader.to_prepare { RecordingStudioTrashable.install_query_helpers! }
+end
