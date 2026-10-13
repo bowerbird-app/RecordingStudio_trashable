@@ -227,7 +227,12 @@ class QueryEntryPointTest < Minitest::Test
     assert_includes source, "ActiveSupport::Reloader.to_prepare"
     assert_includes source, "unless defined?(RecordingStudioTrashable::Engine)"
     assert_match(
-      /ActiveSupport::Reloader\.to_prepare\s+do\s*\n\s*RecordingStudioTrashable\.install_query_helpers!\s+unless\s+defined\?\(RecordingStudioTrashable::Engine\)\s*\n\s*end/m,
+      /
+        ActiveSupport::Reloader\.to_prepare\s+do\s*\n
+        \s*RecordingStudioTrashable\.install_query_helpers!\s+
+        unless\s+defined\?\(RecordingStudioTrashable::Engine\)\s*\n
+        \s*end
+      /mx,
       source
     )
   end
