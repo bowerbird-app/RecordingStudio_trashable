@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Sibling-facing trash ownership helpers on every `RecordingStudio::Recording` (via `RecordingScopes`, not only Trashable-enabled recordables):
   - predicates `recording_studio_trashable_trashed?` and `recording_studio_trashable_kept?`
-  - SQL fragments `recording_studio_trashable_kept_sql(table)` and `recording_studio_trashable_trashed_sql(table)` for joins and recursive CTEs (identifiers validated and quoted; `nil` rejected)
+  - SQL fragments `recording_studio_trashable_kept_sql(table)` and `recording_studio_trashable_trashed_sql(table)` for joins and recursive CTEs (identifiers validated and quoted per part; schema-qualified names with exactly one dot allowed; `nil` rejected)
   - `RecordingStudioTrashable.void_recording!` / `recording_studio_trashable_void!` for single-row soft-void through `update_columns(trashed_at:, updated_at:)` so validations and callbacks do not run (required for Oauth Access grant voids; no cascade, capability, auth, events, or `trash_root`)
 - README mapping of raw `trashed_at` call sites in accessible, api, Embeddable, admin, Oauth, presskits, and support to these APIs, including `~> 0.9` dependency guidance, column-existence conditionals, `merge` caveat, `unscoped.recording_studio_trashable_active` for admin/Oauth lookups, and Embeddable partial-index unqualified `trashed_at IS NULL` guidance.
 

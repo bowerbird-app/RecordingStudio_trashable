@@ -33,10 +33,11 @@ module RecordingStudioTrashable
 
     class_methods do
       # SQL fragment for joins, recursive CTEs, and other raw SQL that cannot use
-      # `recording_studio_trashable_active`. Pass a table or alias such as "child".
-      # Rejects nil. Quotes identifiers. For partial-index WHERE clauses already on
-      # `recording_studio_recordings`, keep the unqualified `trashed_at IS NULL`
-      # literal instead of calling this helper.
+      # `recording_studio_trashable_active`. Pass a table/alias such as "child", or a
+      # schema-qualified name with exactly one dot (e.g. "public.recording_studio_recordings").
+      # Rejects nil. Quotes each identifier part separately. For partial-index WHERE
+      # clauses already on `recording_studio_recordings`, keep the unqualified
+      # `trashed_at IS NULL` literal instead of calling this helper.
       def recording_studio_trashable_kept_sql(table = table_name)
         "#{recording_studio_trashable_qualify_trashed_at(table)} IS NULL"
       end
@@ -48,12 +49,18 @@ module RecordingStudioTrashable
       private
 
       def recording_studio_trashable_qualify_trashed_at(table)
+        parts = recording_studio_trashable_sql_identifier_parts(table)
+        qualified_table = parts.map { |part| connection.quote_table_name(part) }.join(".")
+        "#{qualified_table}.#{connection.quote_column_name('trashed_at')}"
+      end
+
+      def recording_studio_trashable_sql_identifier_parts(table)
         raise ArgumentError, "table is required" if table.nil?
 
-        table_name_str = table.to_s
-        raise ArgumentError, "invalid table #{table.inspect}" unless table_name_str.match?(SQL_IDENTIFIER)
+        parts = table.to_s.split(".", -1)
+        return parts if parts.size.between?(1, 2) && parts.all? { |part| part.match?(SQL_IDENTIFIER) }
 
-        "#{connection.quote_table_name(table_name_str)}.#{connection.quote_column_name('trashed_at')}"
+        raise ArgumentError, "invalid table #{table.inspect}"
       end
     end
 

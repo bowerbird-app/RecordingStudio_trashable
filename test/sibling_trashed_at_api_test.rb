@@ -64,6 +64,13 @@ class SiblingTrashedAtApiTest < Minitest::Test
                  ScopedRecording.recording_studio_trashable_trashed_sql("child")
   end
 
+  def test_sql_helpers_quote_schema_qualified_identifiers_with_one_dot
+    assert_equal '"public"."recording_studio_recordings"."trashed_at" IS NULL',
+                 ScopedRecording.recording_studio_trashable_kept_sql("public.recording_studio_recordings")
+    assert_equal '"public"."recording_studio_recordings"."trashed_at" IS NOT NULL',
+                 ScopedRecording.recording_studio_trashable_trashed_sql("public.recording_studio_recordings")
+  end
+
   def test_sql_helpers_reject_nil_and_invalid_identifiers
     error = assert_raises(ArgumentError) { ScopedRecording.recording_studio_trashable_kept_sql(nil) }
     assert_equal "table is required", error.message
@@ -72,6 +79,16 @@ class SiblingTrashedAtApiTest < Minitest::Test
     assert_equal "table is required", error.message
 
     error = assert_raises(ArgumentError) { ScopedRecording.recording_studio_trashable_kept_sql("child; drop") }
+    assert_includes error.message, "invalid table"
+
+    error = assert_raises(ArgumentError) do
+      ScopedRecording.recording_studio_trashable_kept_sql("a.b.c")
+    end
+    assert_includes error.message, "invalid table"
+
+    error = assert_raises(ArgumentError) do
+      ScopedRecording.recording_studio_trashable_kept_sql("public.bad-name")
+    end
     assert_includes error.message, "invalid table"
   end
 
@@ -155,5 +172,12 @@ class SiblingTrashedAtApiTest < Minitest::Test
     assert_includes readme, "unscoped.recording_studio_trashable_active"
     assert_includes readme, "drops earlier"
     assert_includes readme, "unqualified `trashed_at IS NULL`"
+    assert_includes readme, "lowercase"
+    assert_includes readme, "case-sensitive"
+    assert_includes readme, "api_access_clients_query"
+    assert_includes readme, "quote_order"
+    assert_includes readme, "quote_images_controller"
+    assert_includes readme, "pages/lookups"
+    assert_includes readme, "**(conditional)** | When Trashable is loaded: `RecordingStudioTrashable.void_recording!"
   end
 end
