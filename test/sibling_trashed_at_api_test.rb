@@ -27,7 +27,7 @@ class SiblingTrashedAtApiTest < Minitest::Test
     def update!(attributes)
       self.updated_with = attributes
       self.trashed_at = attributes[:trashed_at] if attributes.key?(:trashed_at)
-      true
+      self
     end
   end
 
