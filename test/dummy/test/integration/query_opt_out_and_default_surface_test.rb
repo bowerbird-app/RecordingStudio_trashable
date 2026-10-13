@@ -39,4 +39,19 @@ class QueryOptOutAndDefaultSurfaceTest < ActionDispatch::IntegrationTest
                  RecordingStudio::Recording.recording_studio_trashable_kept_sql
     assert_includes RecordingStudio::Recording.included_modules, RecordingStudioTrashable::RecordingScopes
   end
+
+  test "full engine Recording ancestor order matches main" do
+    ancestry = RecordingStudio::Recording.ancestors.map(&:name)
+    scopes = "RecordingStudioTrashable::RecordingScopes"
+    methods = "RecordingStudio::Trashable::Capabilities::Trashable::RecordingMethods"
+    scopes_index = ancestry.index(scopes)
+    methods_index = ancestry.index(methods)
+
+    refute_nil scopes_index, "expected #{scopes} in Recording ancestors"
+    refute_nil methods_index, "expected #{methods} in Recording ancestors"
+    # Main/v0.9.0: apply_capabilities then include scopes => Recording, RecordingScopes, RecordingMethods
+    assert_operator scopes_index, :<, methods_index,
+                    "expected RecordingScopes before RecordingMethods, got #{ancestry.first(6).inspect}"
+  end
 end
+

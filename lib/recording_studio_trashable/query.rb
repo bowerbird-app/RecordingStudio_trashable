@@ -42,6 +42,11 @@ RecordingStudioTrashable.install_query_helpers!
 # RecordingStudio::Recording is Zeitwerk-autoloaded by the Recording Studio
 # engine, so it is usually undefined at Bundler/require time. Re-run after each
 # code reload so sibling query-only hosts keep the scopes installed.
+# Skip when the full Trashable engine is loaded: its to_prepare already calls
+# install_recording_capabilities! (apply_capabilities then install_query_helpers!),
+# and registering this hook first would flip Recording ancestor order.
 if defined?(ActiveSupport::Reloader)
-  ActiveSupport::Reloader.to_prepare { RecordingStudioTrashable.install_query_helpers! }
+  ActiveSupport::Reloader.to_prepare do
+    RecordingStudioTrashable.install_query_helpers! unless defined?(RecordingStudioTrashable::Engine)
+  end
 end
