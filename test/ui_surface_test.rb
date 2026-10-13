@@ -699,7 +699,9 @@ class UiSurfaceTest < Minitest::Test
     assert_includes readme, "### Sibling gem `trashed_at` mapping"
     assert_includes readme, "RecordingStudioTrashable.void_recording!"
     assert_includes readme, "update_columns"
-    assert_includes readme, 'gem "recording_studio_trashable", "~> 0.9"'
+    assert_includes readme, 'spec.add_dependency "recording_studio_trashable", "~> 0.10"'
+    assert_includes readme, 'require "recording_studio_trashable/query"'
+    assert_includes readme, "### Sibling gem query-only opt-out"
     assert_includes notes, "## Host app query defaults"
     assert_includes notes, "default_scope { where(trashed_at: nil) }"
     assert_includes notes, "scope :not_trashed"

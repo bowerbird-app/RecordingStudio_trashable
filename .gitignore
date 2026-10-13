@@ -53,3 +53,7 @@ pkg/
 
 # Rename script state
 .rename_state.yml
+
+# Minimal query-host fixture runtime
+test/query_host/log/
+test/query_host/tmp/

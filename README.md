@@ -14,6 +14,7 @@ It extracts trash behavior from RecordingStudio core into addon-owned APIs witho
   - `recording_studio_trashable_restore!`
   - `recording_studio_trashable_purge!`
 - sibling ownership helpers on every Recording (kept/active scope, `trashed?` / `kept?` predicates, quoted SQL fragments, and `void_recording!` soft-void via `update_columns`)
+- lightweight `require "recording_studio_trashable/query"` for sibling gems that need those helpers without the engine, importmap, capability, CopyHelper, or metrics
 - subtree trash bins with restore, purge, and retention settings UI
 - optional RecordingStudioAccessible authorization integration
 - addon-owned migrations for `trashed_at`, `trash_root`, and retention settings
@@ -184,11 +185,36 @@ If your host app prefers a safer default, add a host-owned `default_scope { wher
 
 `recording_studio_trashable_trash_bin` orders those trash roots by `trashed_at DESC` so cascade-trashed descendants do not flood the trash UI.
 
+### Sibling gem query-only opt-out
+
+Sibling gems that only need kept/trashed scopes, predicates, SQL fragments, or `void_recording!` should load the query entry point instead of the full engine. That path does not register importmap/asset paths, the `:trashable` capability, CopyHelper, trash metrics, or require `flat_pack` / `recording_studio_metrics` at runtime.
+
+In the sibling gemspec:
+
+```ruby
+spec.add_dependency "recording_studio_trashable", "~> 0.10"
+```
+
+In the sibling library (not the host Gemfile auto-require):
+
+```ruby
+require "recording_studio_trashable/query"
+
+RecordingStudio::Recording.recording_studio_trashable_kept_sql("child")
+# => "\"child\".\"trashed_at\" IS NULL"
+
+recording.recording_studio_trashable_kept?
+RecordingStudio::Recording.recording_studio_trashable_active
+RecordingStudioTrashable.void_recording!(recording, time: Time.current)
+```
+
+If the sibling ships as a Bundler Gemfile entry that would otherwise auto-require the gem name, pin `require: false` and keep the explicit `require "recording_studio_trashable/query"` line above. Hosts and products that want the full trash UI keep `require "recording_studio_trashable"` (the default); that path stays unchanged.
+
 ### Sibling gem `trashed_at` mapping
 
 Trashable owns `trashed_at` reads and writes for sibling gems. Replace raw column access with the APIs above. Existing host and Trashable callers keep the same behavior; these helpers are additive.
 
-**Dependencies:** `accessible`, `api`, `Embeddable`, `admin`, and `Oauth` should add `gem "recording_studio_trashable", "~> 0.9"` (or the host's equivalent git tag pin) before calling these helpers. Keep each gem's existing column-existence / `respond_to?(:trashed_at)` guards so hosts without Trashable still boot; only call Trashable helpers when the column (and gem) is present. Mapping rows below that are conditional are marked **(conditional)**.
+**Dependencies:** `accessible`, `api`, `Embeddable`, `admin`, `Oauth`, `support`, and `presskits` should add `recording_studio_trashable`, `"~> 0.10"` (or the host's equivalent git tag pin) and `require "recording_studio_trashable/query"` when they only need the helpers. Keep each gem's existing column-existence / `respond_to?(:trashed_at)` guards so hosts without Trashable still boot; only call Trashable helpers when the column (and gem) is present. Mapping rows below that are conditional are marked **(conditional)**.
 
 **`merge` caveat:** `scope.merge(RecordingStudio::Recording.recording_studio_trashable_active)` drops earlier `trashed_at` conditions on that scope because the active scope unscopes `trashed_at` first. Prefer chaining `.recording_studio_trashable_active` when you start from `Recording`, or merge only when replacing prior trash filters is intended.
 

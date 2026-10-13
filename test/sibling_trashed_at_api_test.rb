@@ -116,7 +116,7 @@ class SiblingTrashedAtApiTest < Minitest::Test
   end
 
   def test_void_recording_source_pins_update_columns_not_update_bang
-    source = File.read(File.expand_path("../lib/recording_studio_trashable.rb", __dir__))
+    source = File.read(File.expand_path("../lib/recording_studio_trashable/query.rb", __dir__))
     method_source = source[/def void_recording!\(.*?\n    end/m]
 
     refute_nil method_source
@@ -153,7 +153,8 @@ class SiblingTrashedAtApiTest < Minitest::Test
     readme = File.read(File.expand_path("../README.md", __dir__))
 
     assert_includes readme, "### Sibling gem `trashed_at` mapping"
-    assert_includes readme, 'gem "recording_studio_trashable", "~> 0.9"'
+    assert_includes readme, 'spec.add_dependency "recording_studio_trashable", "~> 0.10"'
+    assert_includes readme, 'require "recording_studio_trashable/query"'
     assert_includes readme, "column-existence"
     assert_includes readme, "recording_studio_trashable_active"
     assert_includes readme, "recording_studio_trashable_kept?"

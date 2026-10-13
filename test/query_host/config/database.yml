@@ -1,0 +1,19 @@
+# Minimal host used only by test/query_entry_point_test.rb (query-only boot).
+# Prefer DATABASE_URL (CI) when present; otherwise match the dummy app defaults.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  host: <%= ENV.fetch("DB_HOST") { "localhost" } %>
+  port: <%= ENV.fetch("DB_PORT") { 5432 } %>
+  username: <%= ENV.fetch("DB_USER") { "postgres" } %>
+  password: <%= ENV.fetch("DB_PASSWORD") { "postgres" } %>
+  database: <%= ENV.fetch("DB_NAME") { "app_test" } %>
+  <% if ENV["DATABASE_URL"].to_s.strip != "" %>
+  url: <%= ENV["DATABASE_URL"] %>
+  <% end %>
+
+development:
+  <<: *default
+
+test:
+  <<: *default
