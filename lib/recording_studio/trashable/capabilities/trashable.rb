@@ -29,15 +29,31 @@ module RecordingStudioTrashable
       }
     end
 
+    SQL_IDENTIFIER = /\A[A-Za-z_][A-Za-z0-9_]*\z/
+
     class_methods do
       # SQL fragment for joins, recursive CTEs, and other raw SQL that cannot use
       # `recording_studio_trashable_active`. Pass a table or alias such as "child".
+      # Rejects nil. Quotes identifiers. For partial-index WHERE clauses already on
+      # `recording_studio_recordings`, keep the unqualified `trashed_at IS NULL`
+      # literal instead of calling this helper.
       def recording_studio_trashable_kept_sql(table = table_name)
-        "#{table}.trashed_at IS NULL"
+        "#{recording_studio_trashable_qualify_trashed_at(table)} IS NULL"
       end
 
       def recording_studio_trashable_trashed_sql(table = table_name)
-        "#{table}.trashed_at IS NOT NULL"
+        "#{recording_studio_trashable_qualify_trashed_at(table)} IS NOT NULL"
+      end
+
+      private
+
+      def recording_studio_trashable_qualify_trashed_at(table)
+        raise ArgumentError, "table is required" if table.nil?
+
+        table_name_str = table.to_s
+        raise ArgumentError, "invalid table #{table.inspect}" unless table_name_str.match?(SQL_IDENTIFIER)
+
+        "#{connection.quote_table_name(table_name_str)}.#{connection.quote_column_name('trashed_at')}"
       end
     end
 
@@ -51,9 +67,10 @@ module RecordingStudioTrashable
       !recording_studio_trashable_trashed?
     end
 
-    # Soft-void this recording row only: sets `trashed_at` through `update!` with
-    # no cascade, capability check, authorization, event log, or `trash_root`.
-    # Use `recording_studio_trashable_trash!` for user-facing subtree trash.
+    # Soft-void this recording row only: sets `trashed_at` through
+    # `update_columns` with no cascade, capability check, authorization, event
+    # log, or `trash_root`. Use `recording_studio_trashable_trash!` for
+    # user-facing subtree trash.
     def recording_studio_trashable_void!(time: Time.current)
       RecordingStudioTrashable.void_recording!(self, time: time)
     end

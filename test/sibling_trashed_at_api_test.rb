@@ -3,10 +3,24 @@
 require "test_helper"
 
 class SiblingTrashedAtApiTest < Minitest::Test
+  class FakeConnection
+    def quote_table_name(name)
+      %("#{name}")
+    end
+
+    def quote_column_name(name)
+      %("#{name}")
+    end
+  end
+
   class ScopedRecording
     class << self
       def table_name
         "recording_studio_recordings"
+      end
+
+      def connection
+        @connection ||= FakeConnection.new
       end
 
       def scope(name, body)
@@ -18,28 +32,47 @@ class SiblingTrashedAtApiTest < Minitest::Test
 
     include RecordingStudioTrashable::RecordingScopes
 
-    attr_accessor :trashed_at, :updated_with
+    attr_accessor :trashed_at, :updated_at, :updated_with, :update_bang_called
 
-    def initialize(trashed_at: nil)
+    def initialize(trashed_at: nil, updated_at: nil)
       @trashed_at = trashed_at
+      @updated_at = updated_at
+      @update_bang_called = false
     end
 
-    def update!(attributes)
+    def update!(*)
+      @update_bang_called = true
+      raise "update! must not be called"
+    end
+
+    def update_columns(attributes)
       self.updated_with = attributes
       self.trashed_at = attributes[:trashed_at] if attributes.key?(:trashed_at)
+      self.updated_at = attributes[:updated_at] if attributes.key?(:updated_at)
       self
     end
   end
 
-  def test_kept_and_trashed_sql_fragments_qualify_table_or_alias
-    assert_equal "recording_studio_recordings.trashed_at IS NULL",
+  def test_kept_and_trashed_sql_fragments_quote_table_or_alias
+    assert_equal '"recording_studio_recordings"."trashed_at" IS NULL',
                  ScopedRecording.recording_studio_trashable_kept_sql
-    assert_equal "child.trashed_at IS NULL",
+    assert_equal '"child"."trashed_at" IS NULL',
                  ScopedRecording.recording_studio_trashable_kept_sql("child")
-    assert_equal "recording_studio_recordings.trashed_at IS NOT NULL",
+    assert_equal '"recording_studio_recordings"."trashed_at" IS NOT NULL',
                  ScopedRecording.recording_studio_trashable_trashed_sql
-    assert_equal "child.trashed_at IS NOT NULL",
+    assert_equal '"child"."trashed_at" IS NOT NULL',
                  ScopedRecording.recording_studio_trashable_trashed_sql("child")
+  end
+
+  def test_sql_helpers_reject_nil_and_invalid_identifiers
+    error = assert_raises(ArgumentError) { ScopedRecording.recording_studio_trashable_kept_sql(nil) }
+    assert_equal "table is required", error.message
+
+    error = assert_raises(ArgumentError) { ScopedRecording.recording_studio_trashable_trashed_sql(nil) }
+    assert_equal "table is required", error.message
+
+    error = assert_raises(ArgumentError) { ScopedRecording.recording_studio_trashable_kept_sql("child; drop") }
+    assert_includes error.message, "invalid table"
   end
 
   def test_trashed_and_kept_predicates
@@ -52,15 +85,26 @@ class SiblingTrashedAtApiTest < Minitest::Test
     refute trashed.recording_studio_trashable_kept?
   end
 
-  def test_void_recording_sets_trashed_at_through_update_without_trash_root
-    recording = ScopedRecording.new(trashed_at: nil)
+  def test_void_recording_uses_update_columns_with_trashed_at_and_updated_at
+    recording = ScopedRecording.new(trashed_at: nil, updated_at: Time.utc(2026, 1, 1))
     time = Time.utc(2026, 10, 13, 15, 30, 0)
 
     result = RecordingStudioTrashable.void_recording!(recording, time: time)
 
     assert_same recording, result
     assert_equal time, recording.trashed_at
-    assert_equal({ trashed_at: time }, recording.updated_with)
+    assert_equal time, recording.updated_at
+    assert_equal({ trashed_at: time, updated_at: time }, recording.updated_with)
+    refute recording.update_bang_called
+  end
+
+  def test_void_recording_source_pins_update_columns_not_update_bang
+    source = File.read(File.expand_path("../lib/recording_studio_trashable.rb", __dir__))
+    method_source = source[/def void_recording!\(.*?\n    end/m]
+
+    refute_nil method_source
+    assert_includes method_source, "update_columns(trashed_at: time, updated_at: time)"
+    refute_includes method_source, "update!("
   end
 
   def test_void_recording_is_idempotent_when_already_trashed
@@ -85,22 +129,31 @@ class SiblingTrashedAtApiTest < Minitest::Test
     recording.recording_studio_trashable_void!(time: time)
 
     assert_equal time, recording.trashed_at
-    assert_equal({ trashed_at: time }, recording.updated_with)
+    assert_equal({ trashed_at: time, updated_at: time }, recording.updated_with)
   end
 
   def test_readme_maps_sibling_call_sites_to_trashable_api
     readme = File.read(File.expand_path("../README.md", __dir__))
 
     assert_includes readme, "### Sibling gem `trashed_at` mapping"
+    assert_includes readme, 'gem "recording_studio_trashable", "~> 0.9"'
+    assert_includes readme, "column-existence"
     assert_includes readme, "recording_studio_trashable_active"
     assert_includes readme, "recording_studio_trashable_kept?"
     assert_includes readme, "recording_studio_trashable_trashed?"
     assert_includes readme, "recording_studio_trashable_kept_sql"
     assert_includes readme, "RecordingStudioTrashable.void_recording!"
+    assert_includes readme, "update_columns"
     assert_includes readme, "void_oauth_authorization"
     assert_includes readme, "accessible_recording_scope"
     assert_includes readme, "support_section"
     assert_includes readme, "facts_section"
+    assert_includes readme, "quote_section"
+    assert_includes readme, "credits.rb"
     assert_includes readme, "section_recording_resolver"
+    assert_includes readme, "oauth_clients_controller"
+    assert_includes readme, "unscoped.recording_studio_trashable_active"
+    assert_includes readme, "drops earlier"
+    assert_includes readme, "unqualified `trashed_at IS NULL`"
   end
 end

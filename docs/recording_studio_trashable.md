@@ -34,8 +34,9 @@ Use `with_trashed` in setup code, trash-bin screens, restore flows, or admin/deb
 Sibling gems should not read or write `trashed_at` directly. Prefer
 `recording_studio_trashable_active`, `recording_studio_trashable_kept?` /
 `recording_studio_trashable_trashed?`, `recording_studio_trashable_kept_sql`,
-`recording_studio_trashable_trash!`, and `RecordingStudioTrashable.void_recording!`.
-See the README sibling mapping table for call-site replacements.
+`recording_studio_trashable_trash!`, and `RecordingStudioTrashable.void_recording!`
+(`update_columns`). See the README sibling mapping table for call-site
+replacements, `~> 0.9` dependency notes, and column-existence conditionals.
 
 ## Retention persistence
 
