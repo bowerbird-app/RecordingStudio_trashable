@@ -13,6 +13,7 @@ It extracts trash behavior from RecordingStudio core into addon-owned APIs witho
   - `recording_studio_trashable_trash!`
   - `recording_studio_trashable_restore!`
   - `recording_studio_trashable_purge!`
+- sibling ownership helpers on every Recording (kept/active scope, `trashed?` / `kept?` predicates, quoted SQL fragments, and `void_recording!` soft-void via `update_columns`)
 - subtree trash bins with restore, purge, and retention settings UI
 - optional RecordingStudioAccessible authorization integration
 - addon-owned migrations for `trashed_at`, `trash_root`, and retention settings
@@ -147,11 +148,71 @@ RecordingStudio::Recording.recording_studio_trashable_trash_roots
 RecordingStudio::Recording.recording_studio_trashable_trash_bin
 ```
 
+Predicates and SQL fragments for sibling gems (available on every `RecordingStudio::Recording` once this gem is installed, not only on Trashable-enabled recordables):
+
+```ruby
+recording.recording_studio_trashable_trashed?
+recording.recording_studio_trashable_kept?
+
+# ActiveRecord: prefer the kept/active scope
+RecordingStudio::Recording.recording_studio_trashable_active.where(...)
+
+# Raw SQL joins / recursive CTEs that cannot use the scope
+RecordingStudio::Recording.recording_studio_trashable_kept_sql("child")
+# => "\"child\".\"trashed_at\" IS NULL"
+RecordingStudio::Recording.recording_studio_trashable_trashed_sql
+# => "\"recording_studio_recordings\".\"trashed_at\" IS NOT NULL"
+```
+
+`kept_sql` / `trashed_sql` reject `nil`, validate the identifier (one segment, or schema-qualified with exactly one dot such as `public.recording_studio_recordings`), and quote each part separately plus the column name. Pass **lowercase** names: quoted identifiers are case-sensitive. Sibling tests that assert exact SQL strings must expect the quotes (for example `"child"."trashed_at" IS NULL`). For partial-index `WHERE` clauses already on `recording_studio_recordings` (unqualified `trashed_at IS NULL`), keep that unqualified literal — do not call the helper with `nil`.
+
+Writes:
+
+```ruby
+# User-facing subtree trash (capability + auth + events + trash_root)
+recording.recording_studio_trashable_trash!(actor: Current.actor)
+
+# System soft-void of a single row via update_columns (no validations, callbacks,
+# cascade, capability, auth, or trash_root). Matches Oauth Access grant voids.
+RecordingStudioTrashable.void_recording!(recording, time: Time.current)
+recording.recording_studio_trashable_void!(time: Time.current)
+```
+
 If your host app prefers a safer default, add a host-owned `default_scope { where(trashed_at: nil) }` and alias `recording_studio_trashable_active` to an app-facing scope such as `not_trashed`. The addon scopes that need trashed rows already call `unscope(where: :trashed_at)` so they can opt out deliberately.
 
 `recording_studio_trashable_trash_roots` returns only explicitly trashed subtree roots.
 
 `recording_studio_trashable_trash_bin` orders those trash roots by `trashed_at DESC` so cascade-trashed descendants do not flood the trash UI.
+
+### Sibling gem `trashed_at` mapping
+
+Trashable owns `trashed_at` reads and writes for sibling gems. Replace raw column access with the APIs above. Existing host and Trashable callers keep the same behavior; these helpers are additive.
+
+**Dependencies:** `accessible`, `api`, `Embeddable`, `admin`, and `Oauth` should add `gem "recording_studio_trashable", "~> 0.9"` (or the host's equivalent git tag pin) before calling these helpers. Keep each gem's existing column-existence / `respond_to?(:trashed_at)` guards so hosts without Trashable still boot; only call Trashable helpers when the column (and gem) is present. Mapping rows below that are conditional are marked **(conditional)**.
+
+**`merge` caveat:** `scope.merge(RecordingStudio::Recording.recording_studio_trashable_active)` drops earlier `trashed_at` conditions on that scope because the active scope unscopes `trashed_at` first. Prefer chaining `.recording_studio_trashable_active` when you start from `Recording`, or merge only when replacing prior trash filters is intended.
+
+| Sibling call site | Replace with |
+| --- | --- |
+| **accessible** `audience_query` / `authorization_class_methods` / `direct_access_query` / `access_grant_integrity` `scope.where(trashed_at: nil)` **(conditional)** | Keep the column-existence check; inside it use `scope.merge(RecordingStudio::Recording.recording_studio_trashable_active)` or start from `RecordingStudio::Recording.recording_studio_trashable_active`. Remember the `merge` caveat above. |
+| **accessible** `access_record_lifecycle` / `dependent_access` `recording.trashed_at.nil?` **(conditional)** | Keep `respond_to?(:trashed_at)` (or equivalent); then `recording.recording_studio_trashable_kept?` |
+| **api** `api_access_token` / `api_credential` / `token_authentication_base` `recording.trashed_at.nil?` / `.present?` **(conditional)** | `recording.recording_studio_trashable_kept?` / `recording.recording_studio_trashable_trashed?` when Trashable is loaded |
+| **api** `access_management_policy` / `integration` `.where(..., trashed_at: nil)` **(conditional)** | chain `.recording_studio_trashable_active` (or `merge` that scope; see caveat) instead of a `trashed_at:` hash key |
+| **api** `accessible_recording_scope` `WHERE child.trashed_at IS NULL` **(conditional)** | `WHERE #{RecordingStudio::Recording.recording_studio_trashable_kept_sql("child")}` |
+| **api** `admin/queries/api_access_clients_query.rb` L134 / L244 `.where(..., trashed_at: nil)` **(conditional)** | chain / merge `recording_studio_trashable_active` (see `merge` caveat); prefer `unscoped.recording_studio_trashable_active` when starting from `unscoped` |
+| **api** `admin/queries/api_access_clients_query.rb` L163 `#{recordings_table}.trashed_at IS NULL` **(conditional)** | `#{RecordingStudio::Recording.recording_studio_trashable_kept_sql(recordings_table)}` (pass lowercase; schema-qualified names with one dot are OK) |
+| **api** `admin/queries/api_access_clients_query.rb` L173 / L226 `WHERE child.trashed_at IS NULL` **(conditional)** | `WHERE #{RecordingStudio::Recording.recording_studio_trashable_kept_sql("child")}` |
+| **Embeddable** `embed.rb` / `recording_methods.rb` `.where(..., trashed_at: nil)` **(conditional)** | `.recording_studio_trashable_active.where(...)` when Trashable is present |
+| **Embeddable** migration partial index `... AND trashed_at IS NULL` (unqualified) | Keep the unqualified `trashed_at IS NULL` literal in the index `WHERE` (table is already `recording_studio_recordings`). Do not pass `nil` to `kept_sql`. |
+| **admin** `section_recording_resolver.rb` `unscoped.find_by(..., trashed_at: nil)` **(conditional)** | `RecordingStudio::Recording.unscoped.recording_studio_trashable_active.find_by(...)` |
+| **admin** admin_root `find_by(..., trashed_at: nil)` **(conditional)** | `RecordingStudio::Recording.unscoped.recording_studio_trashable_active.find_by(...)` when a default scope may hide rows |
+| **Oauth** `void_oauth_authorization` `access_recording.update_columns(trashed_at: time, updated_at: time)` **(conditional)** | When Trashable is loaded: `RecordingStudioTrashable.void_recording!(access_recording, time: time)` (or `access_recording.recording_studio_trashable_void!(time: time)`). Uses the same `update_columns` write. Do not use `recording_studio_trashable_trash!`. |
+| **Oauth** `admin/oauth_clients_controller.rb` `unscoped.find_by(..., trashed_at: nil)` **(conditional)** | `RecordingStudio::Recording.unscoped.recording_studio_trashable_active.find_by(...)` |
+| **Oauth** `integration` / `create_oauth_authorization` / `oauth_authorization` `trashed_at.nil?` / `.present?` / `.where(..., trashed_at: nil)` **(conditional)** | `recording_studio_trashable_kept?` / `recording_studio_trashable_trashed?` / `recording_studio_trashable_active` |
+| **presskits** `facts_section.rb` / `quote_section` components / `credits.rb` `child.trashed_at.present?` / `trashed_at.nil?` / `{ trashed_at: nil, ... }` | `recording_studio_trashable_trashed?` / `recording_studio_trashable_kept?` / scope with `recording_studio_trashable_active` (credits `live_credits` already uses the active scope) |
+| **presskits** `quote_order.rb` / `metrics.rb` / `quotes_controller.rb` / `quote_images_controller.rb` `{ trashed_at: nil, ... }` / `.where(..., trashed_at: nil)` | drop the `trashed_at:` hash key and chain / merge `recording_studio_trashable_active` |
+| **support** `support_section` join `AND #{table}.trashed_at IS NULL` | `AND #{RecordingStudio::Recording.recording_studio_trashable_kept_sql(table)}` |
+| **support** hash filters in `api/lookup.rb` / `pages/lookups.rb` / `pages/counts.rb` / `sections.rb` / `sections/lookups.rb` / `admin/queries.rb` `{ trashed_at: nil, ... }` / `.where(trashed_at: nil)` | drop the `trashed_at:` key and chain / merge `recording_studio_trashable_active` |
 
 ## Events and action names
 

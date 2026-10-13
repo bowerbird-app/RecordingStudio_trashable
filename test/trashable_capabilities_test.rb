@@ -169,6 +169,9 @@ class TrashableCapabilitiesTest < Minitest::Test
     assert_includes source, "scope :recording_studio_trashable_trash_roots"
     assert_includes source, "scope :recording_studio_trashable_filter"
     assert_includes source, "scope :recording_studio_trashable_trash_bin"
+    assert_includes source, "def recording_studio_trashable_kept_sql"
+    assert_includes source, "def recording_studio_trashable_trashed?"
+    assert_includes source, "def recording_studio_trashable_void!"
   end
 
   def test_filter_scope_dispatches_to_named_scopes_and_rejects_unknown_filters

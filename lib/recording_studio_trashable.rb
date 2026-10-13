@@ -72,6 +72,19 @@ module RecordingStudioTrashable
       RetentionSetting.find_or_initialize_by(recording: recording)
     end
 
+    # Soft-void a single recording row without cascade, capability, auth, or
+    # trash-bin root marking. Writes through `update_columns` so validations and
+    # callbacks do not run (required for Oauth Access grant voids). Prefer
+    # `recording_studio_trashable_trash!` when the recordable has Trashable
+    # enabled and the caller wants subtree trash + events.
+    def void_recording!(recording, time: Time.current)
+      raise ArgumentError, "recording is required" if recording.nil?
+      return recording if recording.recording_studio_trashable_trashed?
+
+      recording.update_columns(trashed_at: time, updated_at: time)
+      recording
+    end
+
     def capability_options_for(recording_or_type)
       type_name = capability_type_name(recording_or_type)
 

@@ -31,6 +31,13 @@ end
 
 Use `with_trashed` in setup code, trash-bin screens, restore flows, or admin/debug tooling when you intentionally need trashed rows.
 
+Sibling gems should not read or write `trashed_at` directly. Prefer
+`recording_studio_trashable_active`, `recording_studio_trashable_kept?` /
+`recording_studio_trashable_trashed?`, `recording_studio_trashable_kept_sql`,
+`recording_studio_trashable_trash!`, and `RecordingStudioTrashable.void_recording!`
+(`update_columns`). See the README sibling mapping table for call-site
+replacements, `~> 0.9` dependency notes, and column-existence conditionals.
+
 ## Retention persistence
 
 Retention settings are intentionally addon-owned so future scheduled purge jobs can evolve without reintroducing addon state into RecordingStudio core.
