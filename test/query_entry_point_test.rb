@@ -7,7 +7,7 @@ require "rbconfig"
 class QueryEntryPointTest < Minitest::Test
   ROOT = File.expand_path("..", __dir__)
   QUERY_HOST_ROOT = File.expand_path("query_host", __dir__)
-  DUMMY_GEMFILE = File.expand_path("dummy/Gemfile", __dir__)
+  ROOT_GEMFILE = File.expand_path("../Gemfile", __dir__)
 
   SIDE_EFFECT_PROBE = <<~'RUBY'
     # frozen_string_literal: true
@@ -110,7 +110,7 @@ class QueryEntryPointTest < Minitest::Test
   RUBY
 
   def test_query_require_loads_without_engine_side_effects
-    output, status = run_probe(SIDE_EFFECT_PROBE, gemfile: File.expand_path("Gemfile", ROOT))
+    output, status = run_probe(SIDE_EFFECT_PROBE, gemfile: ROOT_GEMFILE)
 
     assert_predicate status, :success?, output
     assert_equal "yes", probe_value(output, "scopes_module_loaded")
@@ -131,19 +131,7 @@ class QueryEntryPointTest < Minitest::Test
 
   def test_query_host_installs_scopes_on_recording_before_and_after_reload
     [0, 1].each do |eager_load|
-      output, status = run_probe(
-        QUERY_HOST_PROBE,
-        gemfile: DUMMY_GEMFILE,
-        env: {
-          "QUERY_HOST_ROOT" => QUERY_HOST_ROOT,
-          "EAGER_LOAD" => eager_load.to_s,
-          "DB_HOST" => ENV.fetch("DB_HOST", "localhost"),
-          "DB_PORT" => ENV.fetch("DB_PORT", "5432"),
-          "DB_USER" => ENV.fetch("DB_USER", "postgres"),
-          "DB_PASSWORD" => ENV.fetch("DB_PASSWORD", "postgres"),
-          "DB_NAME" => ENV.fetch("DB_NAME", "app_test")
-        }
-      )
+      output, status = run_query_host_probe(eager_load: eager_load)
 
       assert_predicate status, :success?, "eager_load=#{eager_load}\n#{output}"
       assert_equal "no", probe_value(output, "after_require_recording_defined"), output
@@ -244,6 +232,25 @@ class QueryEntryPointTest < Minitest::Test
       "RUBYOPT" => ""
     }.merge(env)
     Open3.capture2e(probe_env, RbConfig.ruby, "-e", script, chdir: ROOT)
+  end
+
+  # Same root Gemfile as the gem suite (includes `pg` for this host). Pass through
+  # DATABASE_URL when CI provides it so the host hits the migrated test DB.
+  def run_query_host_probe(eager_load:)
+    probe_env = {
+      "QUERY_HOST_ROOT" => QUERY_HOST_ROOT,
+      "EAGER_LOAD" => eager_load.to_s,
+      "RAILS_ENV" => "test",
+      "DB_HOST" => ENV.fetch("DB_HOST", "localhost"),
+      "DB_PORT" => ENV.fetch("DB_PORT", "5432"),
+      "DB_USER" => ENV.fetch("DB_USER", "postgres"),
+      "DB_PASSWORD" => ENV.fetch("DB_PASSWORD", "postgres"),
+      "DB_NAME" => ENV.fetch("DB_NAME", "app_test")
+    }
+    database_url = ENV.fetch("DATABASE_URL", nil)
+    probe_env["DATABASE_URL"] = database_url if database_url.to_s.strip != ""
+
+    run_probe(QUERY_HOST_PROBE, gemfile: ROOT_GEMFILE, env: probe_env)
   end
 
   def probe_value(output, key)
