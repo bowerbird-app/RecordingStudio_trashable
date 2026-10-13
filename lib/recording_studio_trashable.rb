@@ -4,12 +4,11 @@ module RecordingStudioTrashable
   class PurgeTargetsNotTrashedError < ArgumentError; end
 end
 
-require "recording_studio"
+require "recording_studio_trashable/query"
 require "flat_pack"
 require "pagy"
 require "pagy/backend"
 require "pagy/frontend"
-require "recording_studio_trashable/version"
 require "recording_studio_trashable/copy"
 require "recording_studio_trashable/hooks"
 require "recording_studio_trashable/configuration"
@@ -35,9 +34,7 @@ module RecordingStudioTrashable
       return unless defined?(RecordingStudio::Recording)
 
       RecordingStudio.apply_capabilities!
-      return if RecordingStudio::Recording.included_modules.include?(RecordingStudioTrashable::RecordingScopes)
-
-      RecordingStudio::Recording.include(RecordingStudioTrashable::RecordingScopes)
+      install_query_helpers!
     end
 
     def configuration
@@ -70,19 +67,6 @@ module RecordingStudioTrashable
 
     def retention_setting_for(recording)
       RetentionSetting.find_or_initialize_by(recording: recording)
-    end
-
-    # Soft-void a single recording row without cascade, capability, auth, or
-    # trash-bin root marking. Writes through `update_columns` so validations and
-    # callbacks do not run (required for Oauth Access grant voids). Prefer
-    # `recording_studio_trashable_trash!` when the recordable has Trashable
-    # enabled and the caller wants subtree trash + events.
-    def void_recording!(recording, time: Time.current)
-      raise ArgumentError, "recording is required" if recording.nil?
-      return recording if recording.recording_studio_trashable_trashed?
-
-      recording.update_columns(trashed_at: time, updated_at: time)
-      recording
     end
 
     def capability_options_for(recording_or_type)

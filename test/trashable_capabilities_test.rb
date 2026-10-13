@@ -161,7 +161,8 @@ class TrashableCapabilitiesTest < Minitest::Test
   end
 
   def test_query_scopes_are_explicit_and_namespaced
-    source = File.read(File.expand_path("../lib/recording_studio/trashable/capabilities/trashable.rb", __dir__))
+    source = File.read(File.expand_path("../lib/recording_studio_trashable/recording_scopes.rb", __dir__))
+    capability_source = File.read(File.expand_path("../lib/recording_studio/trashable/capabilities/trashable.rb", __dir__))
 
     assert_includes source, "scope :recording_studio_trashable_active"
     assert_includes source, "scope :recording_studio_trashable_trashed"
@@ -172,6 +173,8 @@ class TrashableCapabilitiesTest < Minitest::Test
     assert_includes source, "def recording_studio_trashable_kept_sql"
     assert_includes source, "def recording_studio_trashable_trashed?"
     assert_includes source, "def recording_studio_trashable_void!"
+    refute_includes capability_source, "scope :recording_studio_trashable_active"
+    refute_includes capability_source, "def recording_studio_trashable_kept_sql"
   end
 
   def test_filter_scope_dispatches_to_named_scopes_and_rejects_unknown_filters

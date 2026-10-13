@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-13
+
+### Added
+
+- Lightweight query entry point `require "recording_studio_trashable/query"` for sibling gems that need kept/trashed scopes, predicates, SQL fragments, and `void_recording!` without loading the Rails engine.
+- Query path installs `RecordingScopes` only. It does not add importmap/asset paths, register the `:trashable` capability, include CopyHelper, register trash metrics, or require `flat_pack` / `recording_studio_metrics` at runtime.
+- README section documenting sibling gemspec dependency (`~> 0.10`), `require: false` when needed, and the query require line plus helper calls.
+
+### Changed
+
+- `RecordingScopes` and `void_recording!` live under `lib/recording_studio_trashable/recording_scopes.rb` and `lib/recording_studio_trashable/query.rb`. The default `require "recording_studio_trashable"` still loads the query helpers first, then the engine, capability, CopyHelper, and metrics — behavior for full-engine hosts stays the same.
+
+### Upgrade Notes
+
+- Bump to `0.10.0`. No migration.
+- Full-engine users (`require "recording_studio_trashable"`) need no code changes. Importmap pins, modulepreloads, capability registration, Recording lifecycle methods, CopyHelper, and trash metrics stay as before.
+- Sibling gems that previously depended on Trashable only for SQL/scope helpers should switch to `require "recording_studio_trashable/query"` (and `require: false` on Gemfile entries that would auto-require the gem name) so they do not pull engine side effects when the host is not mounting Trashable UI.
+
 ## [0.9.0] - 2026-10-13
 
 ### Added
@@ -20,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Upgrade Notes
 
 - Bump to `0.9.0`. No migration.
-- Existing Trashable callers are unchanged. Sibling gems (`accessible`, `api`, `Embeddable`, `admin`, `Oauth`) should depend on `recording_studio_trashable ~> 0.9` and keep column-existence guards when migrating off raw `trashed_at`. Oauth void must use `void_recording!` (`update_columns`), not `recording_studio_trashable_trash!` and not `update!`.
+- Existing Trashable callers are unchanged. Sibling gems (`accessible`, `api`, `Embeddable`, `admin`, `Oauth`) should depend on `recording_studio_trashable` and keep column-existence guards when migrating off raw `trashed_at`. Prefer `~> 0.10` with `require "recording_studio_trashable/query"` when only helpers are needed. Oauth void must use `void_recording!` (`update_columns`), not `recording_studio_trashable_trash!` and not `update!`.
 
 ## [0.8.0] - 2026-10-12
 
