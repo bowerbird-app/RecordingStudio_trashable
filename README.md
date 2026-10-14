@@ -383,9 +383,11 @@ Copy.t("confirms.purge", name: page_title)
 RecordingStudio.t("recording_studio.trashable.trash.title")
 ```
 
+Only `recording_studio.trashable.*` keys go through `RecordingStudio.t` / `Copy.t`. Host or other-namespace keys (for example Flatpack) stay on `I18n.t` with the same defaults as main. A missing `_html` key with a non-interpolating caller `default:` stays unsafe like view `t`; an interpolating caller `default:` escapes args and returns `html_safe` (stricter than view `t`).
+
 Hosts own other languages. Copy `recording_studio.trashable.*` into `config/locales/<locale>.yml` and list that locale in `config.i18n.available_locales`. Do not add `RecordingStudio_Internationalization` as a dependency of this gem — it is optional on the host (the dummy uses it to switch English/French). Hosts override by defining the same nested keys in their own `config/locales`.
 
-Helper arguments and host translations still win. `Copy.value` and `Copy.defaulted` keep an explicit string when the host passed one, and follow the locale when the host left the English default. Do not hand-copy English `default:` strings that match `en.yml`.
+Helper arguments and host translations still win. `Copy.value` and `Copy.defaulted` keep an explicit string when the host passed one, and follow the locale when the host left the English default. Do not hand-copy English `default:` strings that match `en.yml`. Requires Recording Studio `~> 4.7`.
 
 
 Stored names stay data: recording titles, type names, and other database content are not translated.

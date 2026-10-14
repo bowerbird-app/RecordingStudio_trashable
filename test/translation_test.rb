@@ -293,12 +293,54 @@ class TranslationTest < Minitest::Test
     end
   end
 
-  def test_shipped_english_table_is_present_after_registration
+  # Unit suite registers en.yml in setup so fallback tests can run without a
+  # Rails app. Boot registration (initializer alone) is asserted in
+  # test/dummy/test/integration/english_fallback_test.rb — do not call
+  # register_shipped_english or the initializer block there.
+  def test_shipped_english_table_includes_trashable_keys_after_unit_registration
     table = RecordingStudio::Translation.shipped_english
     refute_empty table
     assert_equal "Trash", table.fetch("recording_studio.trashable.trash.title")
-    assert_includes RecordingStudio::Translation.send(:registered_shipped_english_paths),
-                    File.expand_path(EN_YML)
+  end
+
+  def test_production_recording_studio_t_is_only_used_for_trashable_copy
+    roots = [
+      File.expand_path("../app", __dir__),
+      File.expand_path("../lib", __dir__)
+    ]
+    offenders = []
+
+    roots.each do |root|
+      Dir[File.join(root, "**/*.{rb,erb}")].each do |path|
+        next if path.include?("/generators/")
+
+        source = File.read(path)
+        next unless source.include?("RecordingStudio.t(")
+
+        relative = path.delete_prefix("#{File.expand_path('..', __dir__)}/")
+        next if relative == "lib/recording_studio_trashable/copy.rb"
+
+        offenders << relative
+      end
+    end
+
+    assert_empty offenders, <<~MSG
+      RecordingStudio.t is only for recording_studio.trashable.* (via Copy.t).
+      Host or other-namespace keys must stay on I18n.t with main's defaults.
+      #{offenders.join("\n")}
+    MSG
+
+    copy_source = File.read(File.expand_path("../lib/recording_studio_trashable/copy.rb", __dir__))
+    assert_includes copy_source, 'PREFIX = "recording_studio.trashable"'
+    assert_match(/RecordingStudio\.t\("#\{PREFIX\}\.#\{key\}", \*\*\)/, copy_source)
+  end
+
+  def test_host_flatpack_nav_labels_stay_on_i18n_t
+    helper = File.read(File.expand_path("dummy/app/helpers/dummy_layout_helper.rb", __dir__))
+
+    assert_includes helper, 'I18n.t("flatpack.page_nav.back")'
+    assert_includes helper, 'I18n.t("flatpack.page_nav.close")'
+    refute_includes helper, "RecordingStudio.t("
   end
 
   def test_missing_registered_trashable_en_yml_contributes_empty_table_slice

@@ -41,7 +41,7 @@ PATH
     recording_studio_trashable (0.11.0)
       flat_pack (>= 0.1.74)
       rails (~> 8.1.0)
-      recording_studio (>= 4.7.0)
+      recording_studio (~> 4.7)
       recording_studio_metrics (~> 0.2)
 
 GEM

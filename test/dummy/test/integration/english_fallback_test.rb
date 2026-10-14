@@ -82,13 +82,19 @@ class EnglishFallbackTest < ActionDispatch::IntegrationTest
     I18n.reload!
   end
 
-  test "shipped english table includes trashable keys after boot" do
+  # Must fail on its own if the engine initializer does not register en.yml.
+  # Do not call register_shipped_english or run the initializer block here.
+  test "trashable en.yml path is registered with RecordingStudio::Translation" do
+    expected = File.expand_path(
+      RecordingStudioTrashable::Engine.root.join("config/locales/en.yml")
+    )
+    paths = RecordingStudio::Translation.send(:registered_shipped_english_paths)
+
+    assert_includes paths, expected
     table = RecordingStudio::Translation.shipped_english
     refute_nil RecordingStudio::Translation.instance_variable_get(:@shipped_english)
     assert_equal "Trash", table.fetch(TRASH_TITLE_KEY)
     assert_equal "Trash settings updated.", table.fetch(SETTINGS_KEY)
-    assert_includes RecordingStudioTrashable::Engine.initializers.map(&:name),
-                    "recording_studio_trashable.register_shipped_english"
   end
 
   test "shipped english table becomes a new object after rails reloader reload" do

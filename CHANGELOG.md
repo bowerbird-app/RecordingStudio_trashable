@@ -16,14 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Requires `recording_studio >= 4.7.0` (pinned to tag `v4.7.0`).
+- Requires `recording_studio ~> 4.7` (pinned to tag `v4.7.0`).
 - Removed hand-copied English `default:` strings from `Copy.t` / `trashable_t` call sites that matched `en.yml`. Unknown action tokens still pass `default: name` through `Copy.action_name`.
 
 ### Upgrade Notes
 
-- Bump to `0.11.0` and ensure the host uses Recording Studio `>= 4.7.0`.
+- Bump to `0.11.0` and ensure the host uses Recording Studio `~> 4.7`.
 - Fallback comes from the loaded English, host overrides included.
 - No migration or host code change is required for English hosts.
+- Only `recording_studio.trashable.*` keys go through `RecordingStudio.t` / `Copy.t`. Host or other-namespace keys stay on `I18n.t` with the same defaults as main.
 - A missing `_html` key with a non-interpolating caller `default:` stays unsafe like view `t`. An interpolating caller `default:` escapes args and returns `html_safe` (stricter than view `t`).
 - Prefer `Copy.t` / `RecordingStudio.t` for gem keys when adding new call sites; do not hand-copy English `default:` strings that match `en.yml`.
 
