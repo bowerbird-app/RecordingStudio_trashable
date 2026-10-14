@@ -34,7 +34,7 @@ class EnglishFallbackTest < ActionDispatch::IntegrationTest
       get "/recording_studio_trashable/recordings/#{@workspace_recording.id}/trash_bin"
 
       assert_response :success
-      assert_includes @response.body, "Trash"
+      assert_select "h1", text: "Trash"
       assert_includes @response.body, "Search trash"
       refute_match(/translation missing/i, @response.body)
       refute_includes @response.body, "Translation missing"
@@ -47,7 +47,7 @@ class EnglishFallbackTest < ActionDispatch::IntegrationTest
       get "/recording_studio_trashable/recordings/#{@workspace_recording.id}/trash_bin"
 
       assert_response :success
-      assert_includes @response.body, "Trash"
+      assert_select "h1", text: "Trash"
       assert_includes @response.body, "Nothing in the trash."
       assert_includes @response.body, "Search trash"
       refute_match(/translation missing/i, @response.body)
@@ -72,7 +72,7 @@ class EnglishFallbackTest < ActionDispatch::IntegrationTest
           get "/recording_studio_trashable/recordings/#{@workspace_recording.id}/trash_bin"
 
           assert_response :success
-          assert_includes @response.body, "Trash"
+          assert_select "h1", text: "Trash"
           refute_match(/translation missing/i, @response.body)
         end
       end
