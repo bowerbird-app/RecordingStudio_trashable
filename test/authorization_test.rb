@@ -198,12 +198,11 @@ class AuthorizationTest < Minitest::Test
     assert_includes source, '"flashes.trashed"'
     assert_includes source, '"flashes.restored"'
     assert_includes source, '"flashes.purged"'
-    # rubocop:disable Style/FormatStringToken -- asserts I18n %{name} defaults byte-identical to main
-    assert_includes source, '"%{name} moved to trash"'
-    assert_includes source, '"%{name} restored"'
-    assert_includes source, '"%{name} permanently deleted"'
-    # rubocop:enable Style/FormatStringToken
+    assert_includes source, "def lifecycle_flash(key)"
+    assert_includes source, "Copy.t(key, name: recording_studio_trashable_recording_label(@recording))"
+    refute_match(/lifecycle_flash\([^)]*default:/, source)
     assert_includes source, "recording_studio_trashable_recording_label(@recording)"
+
     assert_includes(
       source,
       "resolved_success_message = success_message.respond_to?(:call) ? " \

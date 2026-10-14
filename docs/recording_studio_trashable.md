@@ -1,6 +1,6 @@
 # Recording Studio Trashable notes
 
-This addon requires RecordingStudio `~> 4.2` (pinned to tag `v4.6.0`). Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
+This addon requires RecordingStudio `>= 4.7.0` (pinned to tag `v4.7.0`). Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
 
 ## Capability registration
 
@@ -54,4 +54,4 @@ Manual purge and retention-driven purge both require targeted recordings to alre
 
 ## Translating
 
-The gem ships English in `config/locales/en.yml` under `recording_studio.trashable.*`. Hosts copy those keys into their own locale files. Every lookup passes an English `default:` so a host locale without a fallback never shows "translation missing". Recording names and type names stay untranslated. Restore and purge confirmations, the trash bin, retention settings, the engine overview page (including authorization action labels via `Copy.action_name`), flashes, and user-facing service errors follow the current locale. Method names shown as code on the overview page stay untranslated. Metrics DSL titles stay English (captured at registration). Hosts override by defining the same nested keys in their own `config/locales`.
+The gem ships English in `config/locales/en.yml` under `recording_studio.trashable.*`. Hosts copy those keys into their own locale files. `Copy.t` / `trashable_t` call `RecordingStudio.t`; missing active-locale keys fall back to loaded `:en` (host overrides included), then caller `default:`, then the gem table registered with `RecordingStudio::Translation.register_shipped_english`. Recording names and type names stay untranslated. Restore and purge confirmations, the trash bin, retention settings, the engine overview page (including authorization action labels via `Copy.action_name`), flashes, and user-facing service errors follow the current locale. Method names shown as code on the overview page stay untranslated. Metrics DSL titles stay English (captured at registration). Hosts override by defining the same nested keys in their own `config/locales`.

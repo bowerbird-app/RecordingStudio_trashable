@@ -88,10 +88,7 @@ class RetentionValidationI18nTest < Minitest::Test
     errors = ActiveModel::Errors.new(RetentionSettingStub.new)
     errors.add(
       :purge_after_days,
-      RecordingStudioTrashable::Copy.t(
-        "errors.purge_after_days_invalid",
-        default: ENGLISH
-      )
+      RecordingStudioTrashable::Copy.t("errors.purge_after_days_invalid")
     )
     errors
   end
