@@ -242,7 +242,7 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Basic test suite with Minitest
 
 [Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.0...HEAD
-[0.11.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.10.0...v0.11.0
+[0.11.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.10.1...v0.11.0
 [0.10.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.7.0...v0.8.0
