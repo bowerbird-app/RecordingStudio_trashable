@@ -263,16 +263,17 @@ class LocalesTest < Minitest::Test
     assert_equal "January 03, 2026", Copy.l(Date.new(2026, 1, 3), format: :long)
   end
 
-  def test_copy_t_default_english_wins_when_key_missing_in_locale
+  def test_copy_t_falls_back_through_recording_studio_t_when_key_missing_in_locale
+    missing = "errors.missing_wave2_key_for_fallback"
+    full_key = "recording_studio.trashable.#{missing}"
+
     I18n.with_locale(:en) do
       assert_equal(
         "must be a positive whole number",
-        Copy.t("errors.purge_after_days_invalid", default: "must be a positive whole number")
+        Copy.t("errors.purge_after_days_invalid")
       )
-      assert_equal(
-        "Fallback label",
-        Copy.t("errors.missing_wave2_key", default: "Fallback label")
-      )
+      assert_equal "Fallback label", Copy.t(missing, default: "Fallback label")
+      assert_equal "Fallback label", RecordingStudio.t(full_key, default: "Fallback label")
     end
   end
 

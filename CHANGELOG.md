@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-14
+
+### Added
+
+- English fallback for shipped `recording_studio.trashable.*` keys when the active locale has no translation: `Copy.t` / `trashable_t` resolve through `RecordingStudio.t`, which uses the loaded `:en` translation (host English overrides included), then the caller's `default:`, then an eager-loaded, deep-frozen merge of this gem's `config/locales/en.yml` registered at boot via `RecordingStudio::Translation.register_shipped_english`.
+- Behavioral coverage for parity with `I18n.t`, fallback order, `_html` escaping, boot registration, Rails reloader reset, drift guard against hand-copied English `default:`s, and real-page deleted-key / boot host-override renders.
+
+### Changed
+
+- Requires `recording_studio ~> 4.7` (pinned to tag `v4.7.0`).
+- Removed hand-copied English `default:` strings from `Copy.t` / `trashable_t` call sites that matched `en.yml`. Unknown action tokens still pass `default: name` through `Copy.action_name`.
+
+### Upgrade Notes
+
+- Bump to `0.11.0` and ensure the host uses Recording Studio `~> 4.7`.
+- Fallback comes from the loaded English, host overrides included.
+- No migration or host code change is required for English hosts.
+- Only `recording_studio.trashable.*` keys go through `RecordingStudio.t` / `Copy.t`. Host or other-namespace keys stay on `I18n.t` with the same defaults as main.
+- A missing `_html` key with a non-interpolating caller `default:` stays unsafe like view `t`. An interpolating caller `default:` escapes args and returns `html_safe` (stricter than view `t`). A plain `default:` with no interpolation is returned as a plain (non-`html_safe`) String, so views will escape it.
+- Prefer `Copy.t` / `RecordingStudio.t` for gem keys when adding new call sites; do not hand-copy English `default:` strings that match `en.yml`.
+
 ## [0.10.0] - 2026-10-13
 
 ### Added
@@ -220,7 +241,10 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.10.1...v0.11.0
+[0.10.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.9.0...v0.10.0
+[0.9.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.5.0...v0.6.0

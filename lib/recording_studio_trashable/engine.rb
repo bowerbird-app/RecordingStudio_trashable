@@ -7,6 +7,13 @@ module RecordingStudioTrashable
   class Engine < ::Rails::Engine
     isolate_namespace RecordingStudioTrashable
 
+    initializer "recording_studio_trashable.register_shipped_english",
+                before: "recording_studio.load_shipped_english" do
+      RecordingStudio::Translation.register_shipped_english(
+        root.join("config/locales/en.yml")
+      )
+    end
+
     initializer "recording_studio_trashable.view_helpers" do
       ActiveSupport.on_load(:action_view) do
         include RecordingStudioTrashable::CopyHelper

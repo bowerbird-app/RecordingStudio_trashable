@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "erb"
 require "i18n"
 
 module RecordingStudioTrashable
@@ -10,12 +9,11 @@ module RecordingStudioTrashable
 
     module_function
 
-    def t(key, **options)
-      full_key = "#{PREFIX}.#{key}"
-      return I18n.t(full_key, **options) unless key.to_s.end_with?("_html")
-
-      escaped = options.transform_values { |value| value.is_a?(String) ? ERB::Util.html_escape(value) : value }
-      I18n.t(full_key, **escaped).to_s.html_safe
+    # Relative keys under recording_studio.trashable.* — English fallback comes
+    # from RecordingStudio.t (loaded :en, caller default:, then registered
+    # shipped English from this gem's config/locales/en.yml).
+    def t(key, **)
+      RecordingStudio.t("#{PREFIX}.#{key}", **)
     end
 
     def l(object, **)

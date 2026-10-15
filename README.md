@@ -370,17 +370,25 @@ bundle exec rake recording_studio_trashable:purge_due DRY_RUN=true
 
 ## Internationalization
 
-The gem ships **English only** in `config/locales/en.yml`. Keys nest under `recording_studio.trashable.*`. Every `Copy.t` / `trashable_t` call passes an English `default:` so a host locale without a fallback never shows "translation missing":
+The gem ships **English only** in `config/locales/en.yml`. Keys nest under `recording_studio.trashable.*`. Lookups go through `Copy.t` / `trashable_t`, which call `RecordingStudio.t`. When a shipped key is missing in the active locale, fallback order is:
+
+1. loaded `:en` (host English overrides included)
+2. caller `default:`
+3. this gem's `config/locales/en.yml`, registered at boot via `RecordingStudio::Translation.register_shipped_english`
 
 ```ruby
-t("recording_studio.trashable.trash.title", default: "Trash")
-t("recording_studio.trashable.flashes.restored", name: page_title, default: "%{name} restored")
-t("recording_studio.trashable.confirms.purge", name: page_title, default: "Permanently delete %{name}?")
+Copy.t("trash.title")
+Copy.t("flashes.restored", name: page_title)
+Copy.t("confirms.purge", name: page_title)
+RecordingStudio.t("recording_studio.trashable.trash.title")
 ```
+
+Only `recording_studio.trashable.*` keys go through `RecordingStudio.t` / `Copy.t`. Host or other-namespace keys (for example Flatpack) stay on `I18n.t` with the same defaults as main. A missing `_html` key with a non-interpolating caller `default:` stays unsafe like view `t`; an interpolating caller `default:` escapes args and returns `html_safe` (stricter than view `t`). A plain `default:` with no interpolation is returned as a plain (non-`html_safe`) String, so views will escape it.
 
 Hosts own other languages. Copy `recording_studio.trashable.*` into `config/locales/<locale>.yml` and list that locale in `config.i18n.available_locales`. Do not add `RecordingStudio_Internationalization` as a dependency of this gem — it is optional on the host (the dummy uses it to switch English/French). Hosts override by defining the same nested keys in their own `config/locales`.
 
-Helper arguments and host translations still win. `Copy.value` and `Copy.defaulted` keep an explicit string when the host passed one, and follow the locale when the host left the English default.
+Helper arguments and host translations still win. `Copy.value` and `Copy.defaulted` keep an explicit string when the host passed one, and follow the locale when the host left the English default. Do not hand-copy English `default:` strings that match `en.yml`. Requires Recording Studio `~> 4.7`.
+
 
 Stored names stay data: recording titles, type names, and other database content are not translated.
 
@@ -408,7 +416,7 @@ The dummy app demonstrates:
 
 ## Core follow-up assumptions
 
-Recording Studio 4 requires every configured recordable type to declare `recording_studio_recordable(...)`. Root creation must use root-declared recordables, and child recordings must be created under an allowed parent recording. This gem requires RecordingStudio `~> 4.2` (pinned to tag `v4.6.0`). Host opt-in is `include RecordingStudio::Capabilities::Trashable.to(**opts)`, a thin wrapper around `RecordingStudio::Capabilities.include_for(:trashable, **options)`. Installing this gem does not enable trash on any recordable type.
+Recording Studio 4 requires every configured recordable type to declare `recording_studio_recordable(...)`. Root creation must use root-declared recordables, and child recordings must be created under an allowed parent recording. This gem requires RecordingStudio `~> 4.7` (pinned to tag `v4.7.0`). Host opt-in is `include RecordingStudio::Capabilities::Trashable.to(**opts)`, a thin wrapper around `RecordingStudio::Capabilities.include_for(:trashable, **options)`. Installing this gem does not enable trash on any recordable type.
 
 This addon:
 
