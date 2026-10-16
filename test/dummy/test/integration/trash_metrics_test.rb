@@ -78,6 +78,28 @@ class TrashMetricsTest < ActionDispatch::IntegrationTest
     assert_nil RecordingStudioMetrics::Api.context_from_api(api_context, definition: definition)
   end
 
+  test "catalog metadata exposes a time window only on trashed_over_time" do
+    expected = {
+      "trash.in_trash" => { tool: "trash-in_trash", timeseries: false },
+      "trash.in_trash_by_type" => { tool: "trash-in_trash_by_type", timeseries: false },
+      "trash.trashed_over_time" => { tool: "trash-trashed_over_time", timeseries: true }
+    }
+
+    expected.each do |identifier, spec|
+      definition = RecordingStudioMetrics.find(identifier)
+      catalog = definition.catalog_metadata
+
+      assert definition, "missing #{identifier} (MCP tool #{spec[:tool]})"
+      assert_equal spec[:timeseries], catalog.fetch(:date_range).fetch(:supported)
+      if spec[:timeseries]
+        assert_equal :timeseries, definition.result_type
+        assert catalog.fetch(:supported_intervals).any?
+      else
+        refute_equal :timeseries, definition.result_type
+      end
+    end
+  end
+
   private
 
   def seed_recordings
