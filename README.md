@@ -467,24 +467,30 @@ with Draft off to load a new pack. See
 ## Operations API metrics
 
 Trashable registers a site-wide `:trash` resource with RecordingStudioMetrics.
-The host exposes those metrics on the operations API:
+The engine calls `RecordingStudioTrashable::Metrics.register!` on reload. That
+method calls `RecordingStudioMetrics.register` with
+`api_authorize` as `RecordingStudioTrashable::Api::Access.can_view?`
+(AdminRoot `:view` through RecordingStudioAccessible).
+
+This gem does not call `RecordingStudioMetrics::Api.register!`. The host
+registers Metrics endpoints once:
 
 ```ruby
 RecordingStudioMetrics::Api.register!(api: :operations)
 ```
 
-This gem only calls `RecordingStudioTrashable::Metrics.register!` (idempotent
-on reload). It does not register Metrics API routes.
+| Identifier | MCP tool | Meaning |
+| --- | --- | --- |
+| `trash.in_trash` | `trash-in_trash` | Count of `RecordingStudio::Recording` rows with `trashed_at` set |
+| `trash.in_trash_by_type` | `trash-in_trash_by_type` | That same current trash, grouped by `recordable_type` |
+| `trash.trashed_over_time` | `trash-trashed_over_time` | Current trash bucketed by `trashed_at` |
 
-| Identifier | Meaning |
-| --- | --- |
-| `trash.in_trash` | Count of `RecordingStudio::Recording` rows with `trashed_at` set |
-| `trash.in_trash_by_type` | That same current trash, grouped by `recordable_type` |
-| `trash.trashed_over_time` | Current trash bucketed by `trashed_at` |
+RecordingStudio MCP 0.17.0 makes one catalog tool per metric. The tool name is
+the identifier with its first dot replaced by a hyphen. `from`, `to`, and
+`interval` are arguments on `trash.trashed_over_time` only. Count and breakdown
+tools do not take a time window.
 
 Purged items are deleted, so these are current-trash totals and
 trashed-over-time of still-existing items only. There is no extra event log.
 
-`api_authorize` is `RecordingStudioTrashable::Api::Access.can_view?`: AdminRoot
-`:view` through RecordingStudioAccessible. Add `recording_studio_metrics` at
-tag `v0.2.0` (`~> 0.2`).
+Add `recording_studio_metrics` at tag `v0.3.1` (`>= 0.3.0, < 0.4`).

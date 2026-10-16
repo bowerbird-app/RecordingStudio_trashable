@@ -6,6 +6,16 @@ class MetricsTest < Minitest::Test
   Grant = Struct.new(:actor)
   Context = Struct.new(:access_grant)
 
+  def test_metrics_dependency_is_0_3
+    gemspec = File.read(File.expand_path("../recording_studio_trashable.gemspec", __dir__))
+    root_gemfile = File.read(File.expand_path("../Gemfile", __dir__))
+    dummy_gemfile = File.read(File.expand_path("dummy/Gemfile", __dir__))
+
+    assert_includes gemspec, 'spec.add_dependency "recording_studio_metrics", ">= 0.3.0", "< 0.4"'
+    assert_includes root_gemfile, 'tag: "v0.3.1"'
+    assert_includes dummy_gemfile, 'tag: "v0.3.1"'
+  end
+
   def test_engine_registers_metrics_on_reload
     engine = File.read(File.expand_path("../lib/recording_studio_trashable/engine.rb", __dir__))
 
@@ -27,6 +37,17 @@ class MetricsTest < Minitest::Test
     assert_includes source, "Current trash only"
     assert_includes source, "Purged items vanish"
     assert_includes source, "RecordingStudioTrashable::Api::Access.can_view?"
+    assert_includes source, "api_authorize:"
+  end
+
+  def test_readme_documents_mcp_tool_names_and_timeseries_window
+    readme = File.read(File.expand_path("../README.md", __dir__))
+
+    assert_includes readme, "`trash-in_trash`"
+    assert_includes readme, "`trash-in_trash_by_type`"
+    assert_includes readme, "`trash-trashed_over_time`"
+    assert_includes readme, "`from`, `to`, and"
+    assert_includes readme, "`interval` are arguments on `trash.trashed_over_time` only"
   end
 
   def test_access_can_view_is_false_without_actor_or_admin_root

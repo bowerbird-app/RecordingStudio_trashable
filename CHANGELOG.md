@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-10-16
+
+### Changed
+
+- Requires `recording_studio_metrics` `>= 0.3.0, < 0.4` (git tag `v0.3.1`).
+- README lists MCP 0.17.0 catalog tool names for trash metrics. `from`, `to`, and `interval` apply only to `trash.trashed_over_time`.
+- Dummy trash-metrics tests assert each registry identifier hyphenates to that MCP tool name, and that `find` succeeds before catalog metadata is read.
+
+### Upgrade Notes
+
+- Bump to `0.11.1`. Pin `recording_studio_metrics` to tag `v0.3.1` (`>= 0.3.0, < 0.4`).
+- Metric registration is unchanged. The engine still calls `RecordingStudioTrashable::Metrics.register!` on reload, with `api_authorize` as `RecordingStudioTrashable::Api::Access.can_view?`. This gem still does not call `RecordingStudioMetrics::Api.register!`.
+
 ## [0.11.0] - 2026-10-14
 
 ### Added
@@ -241,7 +254,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.1...HEAD
+[0.11.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.10.1...v0.11.0
 [0.10.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.8.0...v0.9.0
