@@ -87,9 +87,11 @@ class TrashMetricsTest < ActionDispatch::IntegrationTest
 
     expected.each do |identifier, spec|
       definition = RecordingStudioMetrics.find(identifier)
-      catalog = definition.catalog_metadata
+      assert definition, "missing #{identifier}"
+      assert_equal identifier, definition.identifier
+      assert_equal spec[:tool], definition.identifier.sub(".", "-")
 
-      assert definition, "missing #{identifier} (MCP tool #{spec[:tool]})"
+      catalog = definition.catalog_metadata
       assert_equal spec[:timeseries], catalog.fetch(:date_range).fetch(:supported)
       if spec[:timeseries]
         assert_equal :timeseries, definition.result_type

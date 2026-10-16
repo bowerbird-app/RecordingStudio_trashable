@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Requires `recording_studio_metrics` `>= 0.3.0, < 0.4` (git tag `v0.3.1`).
 - README lists MCP 0.17.0 catalog tool names for trash metrics. `from`, `to`, and `interval` apply only to `trash.trashed_over_time`.
+- Dummy trash-metrics tests assert each registry identifier hyphenates to that MCP tool name, and that `find` succeeds before catalog metadata is read.
 
 ### Upgrade Notes
 
