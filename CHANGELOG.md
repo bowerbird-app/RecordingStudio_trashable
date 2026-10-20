@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.2] - 2026-10-20
+
+### Changed
+
+- Requires `recording_studio_metrics` `>= 0.3.0, < 0.6` (git tag `v0.5.0`).
+- Dummy and development Gemfiles pin Metrics `v0.5.0`.
+
+### Upgrade Notes
+
+- Bump to `0.11.2`. Pin `recording_studio_metrics` to tag `v0.5.0` (`>= 0.3.0, < 0.6`).
+- Metric registration is unchanged. This gem does not call `RecordingStudioMetrics::Admin.chart_series`, so the 0.5 `{ x:, y: }` point shape does not affect Trashable.
+
 ## [0.11.1] - 2026-10-16
 
 ### Changed
@@ -254,7 +266,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.1...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.2...HEAD
+[0.11.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.1...v0.11.2
 [0.11.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.10.1...v0.11.0
 [0.10.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.9.0...v0.10.0
