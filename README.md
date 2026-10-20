@@ -493,4 +493,4 @@ tools do not take a time window.
 Purged items are deleted, so these are current-trash totals and
 trashed-over-time of still-existing items only. There is no extra event log.
 
-Add `recording_studio_metrics` at tag `v0.3.1` (`>= 0.3.0, < 0.4`).
+Add `recording_studio_metrics` at tag `v0.5.0` (`>= 0.3.0, < 0.6`).
