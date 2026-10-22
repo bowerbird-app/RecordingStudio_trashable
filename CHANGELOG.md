@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.3] - 2026-10-22
+
+### Changed
+
+- Runtime range for `recording_studio_metrics` is now `>= 0.3.0, < 1.0` (CI tested with 0.5.0). No code change.
+
+### Upgrade Notes
+
+- Bump to `0.11.3`. Gemfile pins can stay on Metrics `v0.5.0`. The gemspec range is `>= 0.3.0, < 1.0` (CI tested with 0.5.0).
+
 ## [0.11.2] - 2026-10-20
 
 ### Changed
@@ -266,7 +276,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.2...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.3...HEAD
+[0.11.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.2...v0.11.3
 [0.11.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.1...v0.11.2
 [0.11.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.10.1...v0.11.0
