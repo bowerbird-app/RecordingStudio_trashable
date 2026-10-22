@@ -11,11 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Runtime ceiling for `recording_studio_metrics` is now `< 1.0` (`>= 0.3.0, < 1.0`). Hosts can use Logs 0.7.0 and Metrics 0.6.1. No code change.
+- Runtime range for `recording_studio_metrics` is now `>= 0.3.0, < 1.0` (CI tested with 0.5.0). No code change.
 
 ### Upgrade Notes
 
-- Bump to `0.11.3`. Gemfile pins can stay on Metrics `v0.5.0`; the gemspec now allows Metrics through 0.6.x.
+- Bump to `0.11.3`. Gemfile pins can stay on Metrics `v0.5.0`. The gemspec range is `>= 0.3.0, < 1.0` (CI tested with 0.5.0).
 
 ## [0.11.2] - 2026-10-20
 
