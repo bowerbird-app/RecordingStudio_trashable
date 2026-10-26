@@ -18,18 +18,23 @@ class RecordingStudioTrashableTest < Minitest::Test
     refute_nil RecordingStudioTrashable::VERSION
   end
 
-  def test_recording_studio_dependency_is_4_7_compatible
+  def test_recording_studio_dependency_is_6_1_compatible
     spec = Gem.loaded_specs.fetch("recording_studio")
     gemspec = File.read(File.expand_path("../recording_studio_trashable.gemspec", __dir__))
 
-    assert spec.version >= Gem::Version.new("4.7.0"),
-           "expected recording_studio ~> 4.7, got #{spec.version}"
-    assert_includes gemspec, 'spec.add_dependency "recording_studio", "~> 4.7"'
+    assert spec.version >= Gem::Version.new("6.1.0"),
+           "expected recording_studio >= 6.1.0, got #{spec.version}"
+    assert_includes gemspec, 'spec.add_dependency "recording_studio", ">= 6.1.0"'
+    assert_includes gemspec, 'spec.add_dependency "flat_pack", ">= 0.1.315"'
 
     root_gemfile = File.read(File.expand_path("../Gemfile", __dir__))
     dummy_gemfile = File.read(File.expand_path("dummy/Gemfile", __dir__))
-    assert_includes root_gemfile, 'tag: "v4.7.0"'
-    assert_includes dummy_gemfile, 'tag: "v4.7.0"'
+    assert_includes root_gemfile, 'tag: "v6.1.0"'
+    assert_includes dummy_gemfile, 'tag: "v6.1.0"'
+    assert_includes root_gemfile, 'ref: "1fcbafe94f8eb118f0a22182f63f5110fcc97a56"'
+    assert_includes dummy_gemfile, 'ref: "1fcbafe94f8eb118f0a22182f63f5110fcc97a56"'
+    assert_includes root_gemfile, 'gem "view_component", "4.19.0"'
+    assert_includes dummy_gemfile, 'gem "view_component", "4.19.0"'
   end
 
   def test_version_matches_latest_changelog_release
@@ -52,7 +57,7 @@ class RecordingStudioTrashableTest < Minitest::Test
     home_source = File.read(home_path)
     controller_source = File.read(controller_path)
 
-    assert_includes home_source, "recording_studio_page_nav("
+    assert_includes home_source, "flat_pack_page_nav("
     assert_includes home_source, "main_app.destroy_user_session_path"
     assert_includes home_source, "demo_doc_links"
     assert_includes controller_source, "main_app.showcase_path"

@@ -1,7 +1,10 @@
-<% recording_studio_page_nav(
-  title: "Trash demo",
-  page_nav_anchor_url: main_app.root_path,
-  page_nav_anchor_label: "Home"
+<% content_for :title, "Trash demo" %>
+<% content_for :subtitle, "Recording Studio Trash functionality" %>
+<% flat_pack_page_nav(
+  round: true,
+  style: :default,
+  anchor_href: main_app.root_path,
+  anchor_tooltip: "Home"
 ) %>
 
 <% recording_studio_page_nav_right do %>
@@ -14,12 +17,6 @@
 <% end %>
 
 <div class="flex flex-col gap-8">
-  <%= render FlatPack::PageTitle::Component.new(
-    title: "Trash demo",
-    subtitle: "Recording Studio Trash functionality",
-    variant: :h1
-  ) %>
-
   <% if @workspace_recording %>
     <div class="flex flex-wrap gap-3">
       <%= render FlatPack::Button::Component.new(

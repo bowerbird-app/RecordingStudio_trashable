@@ -13,7 +13,7 @@ module RecordingStudioTrashable
       retention_purge_actor_resolver: nil,
       retention_purge_impersonator_resolver: nil,
       mounted_page_authorizer: nil,
-      full_page_layout: nil,
+      layout: nil,
       default_purge_after_days: nil,
       allow_user_retention_settings: false
     }.freeze
@@ -34,10 +34,9 @@ module RecordingStudioTrashable
                   :retention_purge_actor_resolver,
                   :retention_purge_impersonator_resolver,
                   :mounted_page_authorizer,
-                  :full_page_layout,
                   :default_purge_after_days,
                   :allow_user_retention_settings
-    attr_reader :hooks
+    attr_reader :hooks, :layout
 
     def initialize
       DEFAULTS.each do |name, value|
@@ -45,6 +44,10 @@ module RecordingStudioTrashable
       end
       @authorization_roles = DEFAULT_AUTHORIZATION_ROLES.dup
       @hooks = Hooks.new
+    end
+
+    def layout=(value)
+      @layout = RecordingStudio::Layout.accept(value)
     end
 
     def authorization_roles=(roles)
@@ -85,7 +88,7 @@ module RecordingStudioTrashable
         use_recording_studio_accessible: use_recording_studio_accessible,
         allow_unconfigured_authorization: allow_unconfigured_authorization,
         authorization_roles: authorization_roles,
-        full_page_layout: full_page_layout,
+        layout: layout,
         default_purge_after_days: default_purge_after_days,
         allow_user_retention_settings: allow_user_retention_settings,
         retention_purge_actor_resolver: retention_purge_actor_resolver,

@@ -14,14 +14,11 @@ unless defined?(ApplicationController)
   end
 end
 
-unless defined?(RecordingStudio::UsesDefaultLayout)
-  module RecordingStudio
-    module UsesDefaultLayout
-      extend ActiveSupport::Concern
-
-      included do
-        layout "recording_studio/default_layout"
-      end
+unless ApplicationController.respond_to?(:recording_studio_layout)
+  if defined?(RecordingStudio::ControllerLayout)
+    ApplicationController.include(RecordingStudio::ControllerLayout)
+  else
+    def ApplicationController.recording_studio_layout(*)
     end
   end
 end

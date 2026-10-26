@@ -1,6 +1,6 @@
 # Recording Studio Trashable notes
 
-This addon requires RecordingStudio `~> 4.7` (pinned to tag `v4.7.0`). Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
+This addon requires RecordingStudio `>= 6.1.0` (development pin tag `v6.1.0`) and Flatpack `>= 0.1.315`. Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
 
 ## Capability registration
 
@@ -8,7 +8,7 @@ The engine registers `:trashable` at boot with `RecordingStudio.register_capabil
 
 ## Mounted UI
 
-Mounted screens use Recording Studio core's default layout (`RecordingStudio::UsesDefaultLayout`). That shell owns back/close PageNav, flash alerts, and page width. Views call `recording_studio_page_nav` instead of inventing breadcrumbs or a second dashboard chrome.
+Mounted screens use Recording Studio core's default layout. `RecordingStudioTrashable::ApplicationController` calls `recording_studio_layout { RecordingStudioTrashable.configuration.layout }`. `config.layout` is `nil` by default, so the host's `RecordingStudio.configuration.layout` wins, then `"recording_studio/default_layout"`. Assign a String, `false`, or a `controller:` callable. The shell owns back/close, page actions, flash alerts, and the page title. Views set `content_for :title` (and `:subtitle` when the page has one), call `flat_pack_page_nav` for back and close, and `register_page_nav` for a page action. Do not draw a second `<h1>` in the view body.
 
 The mounted UI is subtree-scoped. Pass a root recording id to the trash bin route and the addon will list trashed `trash_root` recordings in that subtree ordered by `trashed_at DESC`, while cascade-trashed descendants stay hidden behind their nearest explicit trash root.
 

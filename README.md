@@ -21,7 +21,7 @@ It extracts trash behavior from RecordingStudio core into addon-owned APIs witho
 
 ## Installation
 
-Add the gems to your host app. This addon requires Recording Studio 4.2.0 or newer:
+Add the gems to your host app. This addon requires Recording Studio 6.1.0 or newer and Flatpack 0.1.315 or newer:
 
 ```ruby
 gem "recording_studio"
@@ -88,6 +88,9 @@ class Page < ApplicationRecord
 end
 
 RecordingStudioTrashable.configure do |config|
+  # nil uses RecordingStudio.configuration.layout, then "recording_studio/default_layout".
+  # A String names a layout. false renders no layout. A callable is invoked as call(controller:).
+  config.layout = nil
   config.authorization_roles = {
     trash: :edit,
     restore: :edit,
@@ -387,12 +390,12 @@ Only `recording_studio.trashable.*` keys go through `RecordingStudio.t` / `Copy.
 
 Hosts own other languages. Copy `recording_studio.trashable.*` into `config/locales/<locale>.yml` and list that locale in `config.i18n.available_locales`. Do not add `RecordingStudio_Internationalization` as a dependency of this gem — it is optional on the host (the dummy uses it to switch English/French). Hosts override by defining the same nested keys in their own `config/locales`.
 
-Helper arguments and host translations still win. `Copy.value` and `Copy.defaulted` keep an explicit string when the host passed one, and follow the locale when the host left the English default. Do not hand-copy English `default:` strings that match `en.yml`. Requires Recording Studio `~> 4.7`.
+Helper arguments and host translations still win. `Copy.value` and `Copy.defaulted` keep an explicit string when the host passed one, and follow the locale when the host left the English default. Do not hand-copy English `default:` strings that match `en.yml`. Requires Recording Studio `>= 6.1.0`.
 
 
 Stored names stay data: recording titles, type names, and other database content are not translated.
 
-The engine has no layout of its own. Mounted screens use Recording Studio core's default layout. Hosts should set `<html lang>` on their layout (the dummy override does this, plus `dir` when Internationalization is loaded).
+The engine has no layout file of its own. `RecordingStudioTrashable::ApplicationController` calls `recording_studio_layout { RecordingStudioTrashable.configuration.layout }`. A `nil` setting follows `RecordingStudio.configuration.layout`, then `"recording_studio/default_layout"`. `false` skips the layout. A callable must accept `controller:` and return a String, `nil`, or `false`. Views set `content_for :title` and `:subtitle`, call `flat_pack_page_nav` for back and close, and `register_page_nav` for page actions. Hosts that replace the default layout should set `<html lang>` (the dummy layout does this, plus `dir` when Internationalization is loaded).
 
 The engine overview page (`/recording_studio_trashable`) follows the locale under `recording_studio.trashable.home.*`. Authorization action labels on that page use `Copy.action_name` (`recording_studio.trashable.actions.*`). Method names shown as code on that page, Metrics DSL titles (captured at registration), generator CLI text, unknown-filter `ArgumentError`s, and other developer errors stay English.
 
@@ -409,14 +412,14 @@ The dummy app demonstrates:
 - `Page` as trashable and `Folder` as non-trashable
 - workspace and project scoped trash bins
 - trash, restore, purge, and retention settings flows
-- Recording Studio core default layout (back/close PageNav) for dummy and mounted screens
+- Recording Studio core default layout (back/close page nav, one page title) for dummy and mounted screens
 - docs pages for Setup, Configuration, Adding to a recordable, and Methods, linked from the home hub
 - English and French, switched with Recording Studio Internationalization (dummy only). The language selector sits in PageNav, left of Sign out. French keys live in `test/dummy/config/locales/fr.yml`. The engine does not ship French.
 - Dummy Tailwind scans installed Flatpack components (including `/usr/local/lib/ruby/gems`) so Flatpack utilities compile. Run `bin/rails tailwindcss:build` from `test/dummy` after gem updates.
 
 ## Core follow-up assumptions
 
-Recording Studio 4 requires every configured recordable type to declare `recording_studio_recordable(...)`. Root creation must use root-declared recordables, and child recordings must be created under an allowed parent recording. This gem requires RecordingStudio `~> 4.7` (pinned to tag `v4.7.0`). Host opt-in is `include RecordingStudio::Capabilities::Trashable.to(**opts)`, a thin wrapper around `RecordingStudio::Capabilities.include_for(:trashable, **options)`. Installing this gem does not enable trash on any recordable type.
+Recording Studio 6.1 requires every configured recordable type to declare `recording_studio_recordable(...)`. Root creation must use root-declared recordables, and child recordings must be created under an allowed parent recording. This gem requires RecordingStudio `>= 6.1.0` (development pin tag `v6.1.0`) and Flatpack `>= 0.1.315`. Host opt-in is `include RecordingStudio::Capabilities::Trashable.to(**opts)`, a thin wrapper around `RecordingStudio::Capabilities.include_for(:trashable, **options)`. Installing this gem does not enable trash on any recordable type. Do not include `RecordingStudio::UsesDefaultLayout` or hard-code `layout "recording_studio/default_layout"`. Set `config.layout` instead.
 
 This addon:
 
