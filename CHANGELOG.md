@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.11.3] - 2026-10-22
+## [0.12.0] - 2026-10-26
+
+### Changed
+
+- Requires `recording_studio >= 6.1.0` (git tag `v6.1.0`) and `flat_pack >= 0.1.315` (development pin commit `1fcbafe94f8eb118f0a22182f63f5110fcc97a56`, `FlatPack::VERSION` `0.1.319`). `view_component` resolves to `4.19.0` (`>= 4.14, < 5` from Flatpack).
+- Mounted screens use the Recording Studio 6.1 layout. `RecordingStudioTrashable.configuration.layout` replaces the unused `full_page_layout` setting. `nil` follows `RecordingStudio.configuration.layout`, then `"recording_studio/default_layout"`.
+- Engine and dummy views set `content_for :title` / `:subtitle`, `flat_pack_page_nav`, and `register_page_nav`. Page headings render once, from the layout.
+- The dummy top nav does not render a language selector. Locale coverage posts `locale` to the Internationalization endpoint.
+
+### Upgrade Notes
+
+- Bump to `0.12.0`. Pin `recording_studio` to tag `v6.1.0` and `flat_pack` to ref `1fcbafe94f8eb118f0a22182f63f5110fcc97a56` (or tag `v0.1.315` or newer). Lock `view_component` at `4.19.0`.
+- Remove `include RecordingStudio::UsesDefaultLayout`, `layout "recording_studio/default_layout"`, and `recording_studio_page_nav`. Call `recording_studio_layout { RecordingStudioTrashable.configuration.layout }` on controllers that render these screens.
+- Replace `config.full_page_layout` with `config.layout`. Accepted values are `nil`, `false`, a layout name, or a callable invoked as `call(controller:)`.
+- Move the visible page heading to `content_for :title` (and `content_for :subtitle` when the page has one). Put back and close on `flat_pack_page_nav`. Put page actions on `register_page_nav`, or `recording_studio_page_nav_right` when the control is not a link.
+- If a sibling gemspec still requires `recording_studio` below 6, load `test/support/widen_recording_studio_requirement.rb` before Bundler evaluates gemspecs. Metrics `v0.5.0` and Internationalization `v0.1.2` need that hook.
+- No migration. Trash, restore, purge, `trash_root`, and the query entry point are unchanged.
 
 ### Changed
 

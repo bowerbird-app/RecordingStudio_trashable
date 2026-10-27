@@ -1,16 +1,14 @@
-<% recording_studio_page_nav(
-  title: "Events",
-  page_nav_back_url: main_app.root_path,
-  page_nav_anchor_url: main_app.root_path,
-  page_nav_anchor_label: "Close"
+<% content_for :title, "Events" %>
+<% content_for :subtitle, "All Recording Studio events in the dummy app" %>
+<% flat_pack_page_nav(
+  round: true,
+  style: :default,
+  back_href: main_app.root_path,
+  anchor_href: main_app.root_path,
+  anchor_tooltip: "Close"
 ) %>
 
 <div class="flex flex-col gap-6">
-  <%= render FlatPack::PageTitle::Component.new(
-    title: "Events",
-    subtitle: "All Recording Studio events in the dummy app",
-    variant: :h1
-  ) %>
 
   <% if @events.empty? %>
     <%= render FlatPack::Alert::Component.new(description: "No events recorded yet.", style: :info) %>

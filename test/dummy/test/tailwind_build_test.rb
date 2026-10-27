@@ -14,8 +14,9 @@ class TailwindBuildTest < ActiveSupport::TestCase
 
     assert File.exist?(css_path), "expected bin/rails tailwindcss:build to write tailwind.css"
     css = File.read(css_path)
-    assert_includes css, "flat-pack-select"
+    assert_includes css, "fp-button"
     assert_includes css, "flat-pack-input-wrapper"
     assert_includes css, "button-border-radius"
+    refute_includes css, "dummy-language-selector"
   end
 end

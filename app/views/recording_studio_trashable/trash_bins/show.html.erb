@@ -1,29 +1,26 @@
-<% recording_studio_page_nav(
-  title: trashable_t("trash.title"),
-  page_nav_back_url: recording_studio_trashable_back_path,
-  page_nav_anchor_url: recording_studio_trashable_back_path,
-  page_nav_anchor_label: trashable_t("trash.close")
+<% content_for :title, trashable_t("trash.title") %>
+<% flat_pack_page_nav(
+  round: true,
+  style: :default,
+  back_href: recording_studio_trashable_back_path,
+  anchor_href: recording_studio_trashable_back_path,
+  anchor_tooltip: trashable_t("trash.close")
 ) %>
+<% if recording_studio_trashable_retention_settings_enabled? &&
+      recording_studio_trashable_page_authorized?(:settings, recording: @scope_recording) %>
+  <% register_page_nav(
+       trashable_t("trash.settings"),
+       edit_recording_trash_settings_path(@scope_recording, recording_studio_trashable_back_link_params),
+       role: :secondary,
+       icon: :cog
+     ) %>
+<% end %>
 
 <%= render FlatPack::Grid::Component.new(
   cols: 1,
   gap: :lg,
   data: { controller: "recording-studio-trashable--live-search" }
 ) do %>
-  <%= render FlatPack::PageTitle::Component.new(title: trashable_t("trash.title"), variant: :h1) do |page_title| %>
-    <% if recording_studio_trashable_retention_settings_enabled? &&
-          recording_studio_trashable_page_authorized?(:settings, recording: @scope_recording) %>
-      <% page_title.slot do %>
-        <%= render FlatPack::Button::Component.new(
-          text: trashable_t("trash.settings"),
-          icon: :cog,
-          style: :secondary,
-          href: edit_recording_trash_settings_path(@scope_recording, recording_studio_trashable_back_link_params)
-        ) %>
-      <% end %>
-    <% end %>
-  <% end %>
-
   <%= render FlatPack::Grid::Component.new(cols: 1, gap: :md) do %>
     <%= form_with url: recording_trash_bin_path(@scope_recording),
                   method: :get,

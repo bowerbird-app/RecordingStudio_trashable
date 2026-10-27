@@ -14,16 +14,13 @@ unless defined?(ApplicationController)
   end
 end
 
-unless defined?(RecordingStudio::UsesDefaultLayout)
-  module RecordingStudio
-    module UsesDefaultLayout
-      extend ActiveSupport::Concern
+require File.join(
+  Gem.loaded_specs.fetch("recording_studio").full_gem_path,
+  "app/helpers/recording_studio/layout_helper"
+)
 
-      included do
-        layout "recording_studio/default_layout"
-      end
-    end
-  end
+unless ApplicationController.respond_to?(:recording_studio_layout)
+  ApplicationController.include(RecordingStudio::ControllerLayout)
 end
 
 require_relative "../app/controllers/recording_studio_trashable/application_controller"

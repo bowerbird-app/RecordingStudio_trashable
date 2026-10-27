@@ -11,22 +11,16 @@ class CustomerI18nTest < ActionDispatch::IntegrationTest
     @workspace_recording = RecordingStudio.root_recording_for(@workspace)
   end
 
-  test "language selector sits in the dummy top nav left of sign out" do
+  test "home top nav has sign out and no language selector" do
     sign_in @user
     get "/"
 
     assert_response :success
-    assert_select "form[action='/recording_studio_internationalization/locale']"
-    assert_includes response.body, "English"
-    assert_includes response.body, "Français"
     assert_select "html[lang='en']"
-    header = response.body[/<nav[\s\S]*?<\/nav>/].to_s
-    header = response.body if header.blank?
-    language_at = header.index("dummy-language-selector")
-    sign_out_at = header.index("Sign out")
-    assert language_at, "expected a language selector in the top nav"
-    assert sign_out_at, "expected Sign out in the top nav"
-    assert language_at < sign_out_at, "language selector should sit left of Sign out"
+    header = response.body[/<header[\s\S]*?<\/header>/].to_s
+    assert_includes header, "Sign out"
+    refute_includes response.body, "dummy-language-selector"
+    refute_includes response.body, "recording_studio_internationalization/locale"
   end
 
   test "trash screen stays English by default" do

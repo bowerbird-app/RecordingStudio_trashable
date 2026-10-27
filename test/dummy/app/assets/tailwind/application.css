@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "../builds/tailwind/gem_sources.css";
 
-/* Dummy views and helpers. Compact language-selector classes live on the helper. */
+/* Dummy views and helpers. */
 @source "../../views/**/*.erb";
 @source "../../helpers/**/*.rb";
 

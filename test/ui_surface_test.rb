@@ -8,9 +8,11 @@ class UiSurfaceTest < Minitest::Test
     trash_bin_view = read_repo_file("../app/views/recording_studio_trashable/trash_bins/show.html.erb")
     retention_view = read_repo_file("../app/views/recording_studio_trashable/retention_settings/edit.html.erb")
 
-    assert_includes home_view, "recording_studio_page_nav("
-    assert_includes home_view, "page_nav_back_url: recording_studio_trashable_back_path"
-    assert_includes home_view, "page_nav_anchor_url: recording_studio_trashable_host_root_path"
+    assert_includes home_view, "content_for :title, trashable_t(\"home.title\")"
+    assert_includes home_view, "flat_pack_page_nav("
+    assert_includes home_view, "back_href: recording_studio_trashable_back_path"
+    assert_includes home_view, "anchor_href: recording_studio_trashable_host_root_path"
+    refute_includes home_view, "recording_studio_page_nav("
     assert_includes home_view, 'trashable_t("home.title"'
     assert_includes home_view, 'trashable_t("home.close"'
     assert_includes home_view, 'trashable_t("home.capabilities.title"'
@@ -38,10 +40,12 @@ class UiSurfaceTest < Minitest::Test
     refute_includes home_view, 'text: "Capabilities", style: :ghost, url: "#capabilities"'
     refute_includes home_view, 'text: "Authorization", style: :ghost, url: "#authorization"'
     refute_includes home_view, "text-xl font-semibold"
-    assert_includes trash_bin_view, "FlatPack::PageTitle::Component"
-    assert_includes trash_bin_view, "recording_studio_page_nav("
-    assert_includes trash_bin_view, "page_nav_back_url: recording_studio_trashable_back_path"
-    assert_includes trash_bin_view, "page_nav_anchor_url: recording_studio_trashable_back_path"
+    assert_includes trash_bin_view, "content_for :title, trashable_t(\"trash.title\")"
+    refute_includes trash_bin_view, "FlatPack::PageTitle::Component"
+    assert_includes trash_bin_view, "flat_pack_page_nav("
+    assert_includes trash_bin_view, "back_href: recording_studio_trashable_back_path"
+    assert_includes trash_bin_view, "anchor_href: recording_studio_trashable_back_path"
+    refute_includes trash_bin_view, "recording_studio_page_nav("
     refute_includes trash_bin_view, "FlatPack::PageNav::Component"
     assert_includes trash_bin_view, "recording_studio_trashable_back_path"
     assert_includes trash_bin_view, "recording_studio_trashable_back_link_params"
@@ -53,8 +57,10 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, 'trashable_t("trash.settings"'
     assert_includes trash_bin_view, "icon: :cog"
     refute_includes trash_bin_view, 'text: "Trash settings"'
+    assert_includes trash_bin_view, "register_page_nav("
+    assert_includes trash_bin_view, "role: :secondary"
     assert_includes trash_bin_view,
-                    "href: edit_recording_trash_settings_path(" \
+                    "edit_recording_trash_settings_path(" \
                     "@scope_recording, recording_studio_trashable_back_link_params)"
     assert_includes trash_bin_view, "form_with url: recording_trash_bin_path(@scope_recording),"
     assert_includes trash_bin_view, "FlatPack::SearchInput::Component"
@@ -117,9 +123,13 @@ class UiSurfaceTest < Minitest::Test
     refute_includes trash_bin_view, 'redirect_target: "origin"'
     refute_includes trash_bin_view, "origin_path: request.fullpath"
     refute_includes trash_bin_view, "return_to_recording_id: @scope_recording.id"
-    assert_includes retention_view, "recording_studio_page_nav("
-    assert_includes retention_view, "page_nav_back_url: recording_studio_trashable_back_path"
-    assert_includes retention_view, "page_nav_anchor_url: recording_studio_trashable_back_path"
+    assert_includes retention_view, "content_for :title, trashable_t(\"retention.title\")"
+    assert_includes retention_view, "content_for :subtitle, trashable_t(\"retention.subtitle\")"
+    refute_includes retention_view, "FlatPack::PageTitle::Component"
+    assert_includes retention_view, "flat_pack_page_nav("
+    assert_includes retention_view, "back_href: recording_studio_trashable_back_path"
+    assert_includes retention_view, "anchor_href: recording_studio_trashable_back_path"
+    refute_includes retention_view, "recording_studio_page_nav("
     refute_includes retention_view, "FlatPack::PageNav::Component"
     assert_includes retention_view, "FlatPack::Select::Component"
     assert_includes retention_view, "recording_studio_trashable_back_path"
@@ -141,12 +151,14 @@ class UiSurfaceTest < Minitest::Test
     dummy_application_controller = File.read(
       File.expand_path("dummy/app/controllers/application_controller.rb", __dir__)
     )
-    dummy_default_layout = File.read(
+    refute File.exist?(
       File.expand_path("dummy/config/initializers/recording_studio_default_layout.rb", __dir__)
     )
 
-    assert_includes application_controller, "include RecordingStudio::UsesDefaultLayout"
+    assert_includes application_controller, "recording_studio_layout { RecordingStudioTrashable.configuration.layout }"
+    refute_includes application_controller, "UsesDefaultLayout"
     refute_includes application_controller, 'layout "recording_studio_trashable/application"'
+    refute_includes application_controller, 'layout "recording_studio/default_layout"'
     assert_includes application_controller, "include ::Pagy::Backend"
     assert_includes application_controller, "helper ::Pagy::Frontend"
     assert_includes application_controller, "recording_studio_trashable_retention_settings_enabled?"
@@ -155,10 +167,11 @@ class UiSurfaceTest < Minitest::Test
     assert_includes application_controller, "def recording_studio_trashable_confirm_form_html"
     assert_includes application_controller, "onsubmit:"
     assert_includes application_controller, "class: \"shrink-0\""
-    assert_includes dummy_application_controller, "include RecordingStudio::UsesDefaultLayout"
-    assert_includes dummy_application_controller, '"recording_studio/default_layout"'
+    assert_includes dummy_application_controller, "recording_studio_layout do"
+    assert_includes dummy_application_controller, '"application" if devise_controller?'
+    refute_includes dummy_application_controller, "UsesDefaultLayout"
+    refute_includes dummy_application_controller, '"recording_studio/default_layout"'
     refute_includes dummy_application_controller, '"flat_pack_sidebar"'
-    assert_includes dummy_default_layout, "RecordingStudio::ApplicationController.include(RecordingStudio::UsesDefaultLayout)"
     refute File.exist?(
       File.expand_path("../app/views/layouts/recording_studio_trashable/application.html.erb", __dir__)
     )
@@ -168,9 +181,17 @@ class UiSurfaceTest < Minitest::Test
     )
     assert File.exist?(dummy_default_layout_view)
     dummy_layout_source = File.read(dummy_default_layout_view)
-    assert_includes dummy_layout_source, "dummy_language_selector"
+    refute_includes dummy_layout_source, "dummy_language_selector"
     assert_includes dummy_layout_source, "dummy_document_attributes"
+    assert_includes dummy_layout_source, "FlatPack::PageLayout::Component"
+    assert_includes dummy_layout_source, "flat_pack_page_nav_tag"
+    assert_includes dummy_layout_source, "page_nav_button_group"
     assert_includes dummy_layout_source, 'stylesheet_link_tag "flat_pack/application"'
+    assert_operator dummy_layout_source.index('stylesheet_link_tag "flat_pack/variables"'), :<,
+                    dummy_layout_source.index('stylesheet_link_tag "tailwind.css"')
+    refute_includes dummy_layout_source, "floating_top_nav"
+    refute_includes dummy_layout_source, "seo_image"
+    refute_includes dummy_layout_source, "always_display"
     refute File.exist?(File.expand_path("dummy/app/views/layouts/flat_pack_sidebar.html.erb", __dir__))
     refute File.exist?(File.expand_path("dummy/app/views/layouts/flat_pack/_sidebar.html.erb", __dir__))
   end
@@ -211,7 +232,7 @@ class UiSurfaceTest < Minitest::Test
     css = File.read(File.expand_path("dummy/app/assets/tailwind/application.css", __dir__))
 
     assert_includes layout, "dummy_document_attributes"
-    assert_includes layout, "dummy_language_selector"
+    refute_includes layout, "dummy_language_selector"
     assert_includes layout, "bg-(--surface-page-background-color)"
     assert_includes layout, "mx-auto flex min-h-full w-full max-w-6xl items-center justify-center p-6"
     assert_includes layout, 'stylesheet_link_tag "application.css"'
@@ -219,8 +240,8 @@ class UiSurfaceTest < Minitest::Test
     assert_includes layout, 'stylesheet_link_tag "flat_pack/variables"'
     assert_includes layout, 'stylesheet_link_tag "flat_pack/rich_text"'
     assert_includes layout, 'stylesheet_link_tag "flat_pack/application"'
-    assert_operator layout.index('stylesheet_link_tag "tailwind.css"'), :<,
-                    layout.index('stylesheet_link_tag "flat_pack/variables"')
+    assert_operator layout.index('stylesheet_link_tag "flat_pack/variables"'), :<,
+                    layout.index('stylesheet_link_tag "tailwind.css"')
     assert_includes importmap, 'pin "@hotwired/turbo-rails", to: "turbo.min.js"'
     assert_includes importmap, 'pin "flat_pack/heroicons"'
     assert_includes javascript, 'import "@hotwired/turbo-rails"'
@@ -276,9 +297,9 @@ class UiSurfaceTest < Minitest::Test
     expired_default_retention = "expired_default_retention_recording.update!(trashed_at: 45.days.ago)"
     expired_scope_retention = "expired_scope_retention_recording.update!(trashed_at: 21.days.ago)"
 
-    assert_includes source, "recording_studio_page_nav("
-    assert_includes source, "title: \"Trash demo\""
-    assert_includes source, "subtitle: \"Recording Studio Trash functionality\""
+    assert_includes source, "flat_pack_page_nav("
+    assert_includes source, 'content_for :title, "Trash demo"'
+    assert_includes source, 'content_for :subtitle, "Recording Studio Trash functionality"'
     assert_includes source, 'title: "Docs"'
     assert_includes source, "demo_doc_links"
     assert_includes source, "text: \"Trash can\""
@@ -380,7 +401,8 @@ class UiSurfaceTest < Minitest::Test
 
     assert_includes source, "FlatPack::Grid::Component.new("
     assert_includes source, 'class: "mx-auto w-full max-w-md px-4 py-12"'
-    assert_includes source, "FlatPack::Card::Component.new(style: :elevated)"
+    assert_includes source, "FlatPack::Card::Component.new(background: :default, shadow: :md)"
+    refute_includes source, "style: :elevated"
     assert_includes source, 'title: "Sign In"'
     assert_includes source, 'class: "mb-6"'
     assert_includes source, 'html: { class: "space-y-4" }'
@@ -404,8 +426,8 @@ class UiSurfaceTest < Minitest::Test
     )
     assert_includes controller_source, "helper_method :event_recording_label, :event_actor_label, :event_metadata"
     assert_includes controller_source, "\"\#{event.recordable_type} #\#{event.recordable_id.to_s.first(8)}\""
-    assert_includes view_source, 'title: "Events"'
-    assert_includes view_source, 'subtitle: "All Recording Studio events in the dummy app"'
+    assert_includes view_source, 'content_for :title, "Events"'
+    assert_includes view_source, 'content_for :subtitle, "All Recording Studio events in the dummy app"'
     assert_includes view_source, "main_app.root_path"
     assert_includes view_source, "FlatPack::Table::Component"
     assert_includes view_source, "FlatPack::Popover::Component"
@@ -413,8 +435,9 @@ class UiSurfaceTest < Minitest::Test
     assert_includes view_source, "event_actor_label(event)"
     assert_includes view_source, "event_metadata(event)"
     assert_includes view_source, "No events recorded yet."
-    assert_includes view_source, "recording_studio_page_nav("
-    assert_includes view_source, "page_nav_back_url: main_app.root_path"
+    assert_includes view_source, "flat_pack_page_nav("
+    assert_includes view_source, "back_href: main_app.root_path"
+    refute_includes view_source, "FlatPack::PageTitle::Component"
     refute_includes view_source, "rounded-xl border"
     refute_includes view_source, 'aria-label="Breadcrumb"'
     assert_includes home_source, "demo_doc_links"
@@ -587,8 +610,10 @@ class UiSurfaceTest < Minitest::Test
     refute_includes source, "manage_retention: :admin"
     assert_includes source, "config.current_actor_resolver = ->(controller:) { controller.current_user }"
     assert_includes source, "config.current_impersonator_resolver = ->(controller:) { controller.true_user }"
-    assert_includes showcase_view, "recording_studio_page_nav("
-    assert_includes showcase_view, "page_nav_back_url: main_app.root_path"
+    assert_includes showcase_view, "flat_pack_page_nav("
+    assert_includes showcase_view, "back_href: main_app.root_path"
+    assert_includes showcase_view, "content_for :title, @page.fetch(:title)"
+    refute_includes showcase_view, "variant: :h1"
     assert_includes showcase_view, 'class="flex flex-col gap-10"'
     assert_includes showcase_view, 'class="flex flex-col gap-6"'
     refute_includes showcase_view, 'aria-label="Breadcrumb"'
@@ -646,7 +671,7 @@ class UiSurfaceTest < Minitest::Test
     home_source = File.read(File.expand_path("dummy/app/views/home/index.html.erb", __dir__))
     application_controller = File.read(File.expand_path("dummy/app/controllers/application_controller.rb", __dir__))
 
-    assert_includes home_source, "recording_studio_page_nav("
+    assert_includes home_source, "flat_pack_page_nav("
     assert_includes home_source, 'title: "Docs"'
     assert_includes home_source, "demo_doc_links"
     assert_includes application_controller, 'text: "Overview"'

@@ -48,9 +48,10 @@ FlatPack is the successor to MakeupArtist with similar components:
 
 See: https://github.com/bowerbird-app/flatpack for component documentation
 
-## RecordingStudio 4 Compatibility Notes
+## RecordingStudio 6.1 Compatibility Notes
 
-- `recording_studio_trashable` depends on `recording_studio ~> 4.2`; app Gemfiles should pin the RecordingStudio repository to tag `v4.2.2` when testing this update. Host recordables opt in with `include RecordingStudio::Capabilities::Trashable.to(...)`.
+- `recording_studio_trashable` depends on `recording_studio >= 6.1.0` and `flat_pack >= 0.1.315`. App Gemfiles should pin Recording Studio to tag `v6.1.0`. Flatpack `0.1.319` is commit `1fcbafe94f8eb118f0a22182f63f5110fcc97a56` (`FlatPack::VERSION` on main; the newest tag is `v0.1.315`). Host recordables opt in with `include RecordingStudio::Capabilities::Trashable.to(...)`.
+- Mounted screens call `recording_studio_layout { RecordingStudioTrashable.configuration.layout }`. `UsesDefaultLayout` and `recording_studio_page_nav` are gone. Views set `content_for :title` / `:subtitle`, `flat_pack_page_nav`, and `register_page_nav`.
 - Every configured host recordable must declare `recording_studio_recordable(...)`. In the dummy app, `Workspace` is the only root; `Project`, `Folder`, and `Page` are child recordables with explicit `allowed_parent_types` matching the demo tree, including nested Page recordings used by trash-root examples.
 - Trashable registers only the `trashable` capability source (`recording_studio_trashable`). It does not declare capability-owned `child_recordables`.
 - RecordingStudio core does not provide the old `RecordingStudio::Services::AccessCheck` fallback. Configure a custom resolver, use `RecordingStudioAccessible`, or leave the default deny behavior in place.

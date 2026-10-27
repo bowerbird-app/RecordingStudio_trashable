@@ -1,16 +1,14 @@
-<% recording_studio_page_nav(
-  title: @page.fetch(:title),
-  page_nav_back_url: main_app.root_path,
-  page_nav_anchor_url: main_app.root_path,
-  page_nav_anchor_label: "Close"
+<% content_for :title, @page.fetch(:title) %>
+<% content_for :subtitle, @page[:subtitle] || "Allow a recordable type to be trashed" %>
+<% flat_pack_page_nav(
+  round: true,
+  style: :default,
+  back_href: main_app.root_path,
+  anchor_href: main_app.root_path,
+  anchor_tooltip: "Close"
 ) %>
 
 <div class="flex flex-col gap-10">
-  <%= render FlatPack::PageTitle::Component.new(
-    title: @page.fetch(:title),
-    subtitle: @page[:subtitle] || "Allow a recordable type to be trashed",
-    variant: :h1
-  ) %>
 
   <% if @page[:sections].present? %>
     <div class="flex flex-col gap-10">
@@ -24,7 +22,7 @@
           ) %>
 
           <% if section[:body].present? %>
-            <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+            <%= render FlatPack::Card::Component.new(background: :default, border: :default) do |card| %>
               <% card.body do %>
                 <%= simple_format(section.fetch(:body)) %>
               <% end %>
@@ -69,7 +67,7 @@
     <% rows = @page.fetch(:table_rows) %>
 
     <% if @page.fetch(:wrap_table_in_card, true) %>
-      <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+      <%= render FlatPack::Card::Component.new(background: :default, border: :default) do |card| %>
         <% card.body do %>
           <%= render FlatPack::Table::Component.new(data: rows) do |table| %>
             <% table.column(title: columns.fetch(0), html: ->(row) { tag.code(row.fetch(:name)) }) %>
@@ -96,7 +94,7 @@
   <% end %>
 
   <% if @page[:body].present? %>
-    <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+    <%= render FlatPack::Card::Component.new(background: :default, border: :default) do |card| %>
       <% card.body do %>
         <p><%= @page.fetch(:body) %></p>
       <% end %>
