@@ -20,8 +20,7 @@ class CustomerI18nTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "English"
     assert_includes response.body, "Français"
     assert_select "html[lang='en']"
-    header = response.body[/<nav[\s\S]*?<\/nav>/].to_s
-    header = response.body if header.blank?
+    header = response.body[/<header[\s\S]*?<\/header>/].to_s
     language_at = header.index("dummy-language-selector")
     sign_out_at = header.index("Sign out")
     assert language_at, "expected a language selector in the top nav"

@@ -3,6 +3,11 @@
 require "test_helper"
 require "action_controller"
 
+require File.join(
+  Gem.loaded_specs.fetch("recording_studio").full_gem_path,
+  "app/helpers/recording_studio/layout_helper"
+)
+
 class LayoutConfigurationTest < Minitest::Test
   def setup
     @configuration = RecordingStudioTrashable::Configuration.new
@@ -51,7 +56,7 @@ class LayoutConfigurationTest < Minitest::Test
   def test_invalid_layout_values_raise_argument_error
     assert_raises(ArgumentError) { @configuration.layout = "" }
     assert_raises(ArgumentError) { @configuration.layout = 1 }
-    assert_raises(ArgumentError) { @configuration.layout = ->(controller) { "pages" } }
+    assert_raises(ArgumentError) { @configuration.layout = ->(_) { "pages" } }
     assert_raises(ArgumentError) { @configuration.layout = -> { "pages" } }
   end
 

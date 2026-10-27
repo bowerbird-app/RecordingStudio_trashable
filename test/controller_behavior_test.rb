@@ -14,13 +14,13 @@ unless defined?(ApplicationController)
   end
 end
 
+require File.join(
+  Gem.loaded_specs.fetch("recording_studio").full_gem_path,
+  "app/helpers/recording_studio/layout_helper"
+)
+
 unless ApplicationController.respond_to?(:recording_studio_layout)
-  if defined?(RecordingStudio::ControllerLayout)
-    ApplicationController.include(RecordingStudio::ControllerLayout)
-  else
-    def ApplicationController.recording_studio_layout(*)
-    end
-  end
+  ApplicationController.include(RecordingStudio::ControllerLayout)
 end
 
 require_relative "../app/controllers/recording_studio_trashable/application_controller"
