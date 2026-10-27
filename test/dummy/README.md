@@ -11,7 +11,7 @@ This Rails app exists to validate Recording Studio Trashable inside a realistic 
 - Mounted workspace and project scoped trash bins
 - Restore, purge, and retention settings flows through the addon engine
 - Recording Studio core default layout with docs pages for Setup, Configuration, Adding to a recordable, and Methods
-- English and French via Recording Studio Internationalization. The language selector sits in PageNav. The engine ships English only.
+- English and French via Recording Studio Internationalization. The top nav has no language selector. Switch locale by posting `locale` to the Internationalization endpoint. The engine ships English only.
 - Dummy Tailwind scans installed Flatpack / Recording Studio gems (`vendor/bundle`, `/usr/local/bundle`, and `/usr/local/lib/ruby/gems`) and writes Bundler `@source` paths before `tailwindcss:build`. Rebuild CSS after gem updates.
 
 ## Quick Start

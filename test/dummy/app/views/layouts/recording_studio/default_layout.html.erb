@@ -1,5 +1,5 @@
 <%# Dummy shell for Recording Studio's default layout. The chrome matches core
-    v6.1. This file stays so the dummy can set html lang and the language selector. %>
+    v6.1. This file stays so the dummy can set html lang. %>
 <%
   rs_config = RecordingStudio.configuration
   app_name = (rs_config.respond_to?(:app_name) ? rs_config.app_name : nil).presence || "CHANGE_APP_NAME_IN_DEFAULT_LAYOUT"
@@ -16,7 +16,7 @@
     variant: :outlined,
     collapse: :menu
   )
-  page_nav_right = safe_join([dummy_language_selector, content_for(:page_nav_right).presence].compact).presence
+  page_nav_right = content_for(:page_nav_right).presence
 %>
 <!DOCTYPE html>
 <html <%= tag.attributes(dummy_document_attributes) %>>

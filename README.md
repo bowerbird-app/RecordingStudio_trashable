@@ -414,7 +414,7 @@ The dummy app demonstrates:
 - trash, restore, purge, and retention settings flows
 - Recording Studio core default layout (back/close page nav, one page title) for dummy and mounted screens
 - docs pages for Setup, Configuration, Adding to a recordable, and Methods, linked from the home hub
-- English and French, switched with Recording Studio Internationalization (dummy only). The language selector sits in PageNav, left of Sign out. French keys live in `test/dummy/config/locales/fr.yml`. The engine does not ship French.
+- English and French, switched with Recording Studio Internationalization (dummy only). The dummy top nav has no language selector. Tests post `{ locale: "fr" }` to the Internationalization locale endpoint. French keys live in `test/dummy/config/locales/fr.yml`. The engine does not ship French.
 - Dummy Tailwind scans installed Flatpack components (including `/usr/local/lib/ruby/gems`) so Flatpack utilities compile. Run `bin/rails tailwindcss:build` from `test/dummy` after gem updates.
 
 ## Core follow-up assumptions

@@ -181,7 +181,7 @@ class UiSurfaceTest < Minitest::Test
     )
     assert File.exist?(dummy_default_layout_view)
     dummy_layout_source = File.read(dummy_default_layout_view)
-    assert_includes dummy_layout_source, "dummy_language_selector"
+    refute_includes dummy_layout_source, "dummy_language_selector"
     assert_includes dummy_layout_source, "dummy_document_attributes"
     assert_includes dummy_layout_source, "FlatPack::PageLayout::Component"
     assert_includes dummy_layout_source, "flat_pack_page_nav_tag"
@@ -232,7 +232,7 @@ class UiSurfaceTest < Minitest::Test
     css = File.read(File.expand_path("dummy/app/assets/tailwind/application.css", __dir__))
 
     assert_includes layout, "dummy_document_attributes"
-    assert_includes layout, "dummy_language_selector"
+    refute_includes layout, "dummy_language_selector"
     assert_includes layout, "bg-(--surface-page-background-color)"
     assert_includes layout, "mx-auto flex min-h-full w-full max-w-6xl items-center justify-center p-6"
     assert_includes layout, 'stylesheet_link_tag "application.css"'

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Requires `recording_studio >= 6.1.0` (git tag `v6.1.0`) and `flat_pack >= 0.1.315` (development pin commit `1fcbafe94f8eb118f0a22182f63f5110fcc97a56`, `FlatPack::VERSION` `0.1.319`). `view_component` resolves to `4.19.0` (`>= 4.14, < 5` from Flatpack).
 - Mounted screens use the Recording Studio 6.1 layout. `RecordingStudioTrashable.configuration.layout` replaces the unused `full_page_layout` setting. `nil` follows `RecordingStudio.configuration.layout`, then `"recording_studio/default_layout"`.
 - Engine and dummy views set `content_for :title` / `:subtitle`, `flat_pack_page_nav`, and `register_page_nav`. Page headings render once, from the layout.
+- The dummy top nav does not render a language selector. Locale coverage posts `locale` to the Internationalization endpoint.
 
 ### Upgrade Notes
 
