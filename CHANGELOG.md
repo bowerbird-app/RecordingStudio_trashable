@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Root workflow `.github/workflows/security.yml` (Bundler Audit, Brakeman, Importmap Audit), copied from RecordingStudio_attachable.
+- Root workflow `.github/workflows/security.yml` (Bundler Audit, Brakeman, Importmap Audit), copied from RecordingStudio_attachable. Dummy `brakeman` lock is `8.1.0` so `bin/brakeman --ensure-latest` can run.
 
 ### Upgrade Notes
 
