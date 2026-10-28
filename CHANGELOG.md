@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-10-28
+
+### Changed
+
+- Development Gemfiles pin `recording_studio_metrics` to tag `v0.7.0` and dummy `recording_studio_internationalization` to tag `v0.1.8`, which accept `recording_studio >= 6.1.0` without a Bundler gemspec shim.
+- Committed SimpleCov output under `coverage/` and `test/dummy/coverage/` is untracked and gitignored.
+- Sibling gemspec example for the query entry point is `recording_studio_trashable ~> 0.12`.
+
+### Removed
+
+- `test/support/widen_recording_studio_requirement.rb` (`Gem::Specification.prepend` that rewrote sibling `recording_studio` requirements).
+- Dead dummy template workflow `test/dummy/.github/workflows/ci.yml`.
+- Template leftovers: `docs/gem_template/`, `UPDATE_SUMMARY.md`, `MIGRATION_NOTES.md`, unused dummy `hello_controller.js`, and RuboCop excludes for nonexistent `lib/gem_template` paths.
+
+### Added
+
+- Root workflow `.github/workflows/security.yml` (Bundler Audit, Brakeman, Importmap Audit), copied from RecordingStudio_attachable.
+
+### Upgrade Notes
+
+- Bump to `0.12.1` (pending Marikit's confirmation). Pin Metrics `v0.7.0`. Dummy/host Internationalization can pin `v0.1.8`. Delete any copy of `widen_recording_studio_requirement.rb`.
+- No migration. Trash, restore, purge, `trash_root`, and the query entry point are unchanged.
+
 ## [0.12.0] - 2026-10-26
 
 ### Changed
@@ -24,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Move the visible page heading to `content_for :title` (and `content_for :subtitle` when the page has one). Put back and close on `flat_pack_page_nav`. Put page actions on `register_page_nav`, or `recording_studio_page_nav_right` when the control is not a link.
 - If a sibling gemspec still requires `recording_studio` below 6, load `test/support/widen_recording_studio_requirement.rb` before Bundler evaluates gemspecs. Metrics `v0.5.0` and Internationalization `v0.1.2` need that hook.
 - No migration. Trash, restore, purge, `trash_root`, and the query entry point are unchanged.
+
+## [0.11.3] - 2026-10-22
 
 ### Changed
 
@@ -292,7 +317,9 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.3...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.1...HEAD
+[0.12.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.0...v0.12.1
+[0.12.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.3...v0.12.0
 [0.11.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.2...v0.11.3
 [0.11.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.1...v0.11.2
 [0.11.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.0...v0.11.1

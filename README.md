@@ -195,7 +195,7 @@ Sibling gems that only need kept/trashed scopes, predicates, SQL fragments, or `
 In the sibling gemspec:
 
 ```ruby
-spec.add_dependency "recording_studio_trashable", "~> 0.10"
+spec.add_dependency "recording_studio_trashable", "~> 0.12"
 ```
 
 In the sibling library (not the host Gemfile auto-require):
@@ -217,7 +217,7 @@ If the sibling ships as a Bundler Gemfile entry that would otherwise auto-requir
 
 Trashable owns `trashed_at` reads and writes for sibling gems. Replace raw column access with the APIs above. Existing host and Trashable callers keep the same behavior; these helpers are additive.
 
-**Dependencies:** `accessible`, `api`, `Embeddable`, `admin`, `Oauth`, `support`, and `presskits` should add `recording_studio_trashable`, `"~> 0.10"` (or the host's equivalent git tag pin) and `require "recording_studio_trashable/query"` when they only need the helpers. Keep each gem's existing column-existence / `respond_to?(:trashed_at)` guards so hosts without Trashable still boot; only call Trashable helpers when the column (and gem) is present. Mapping rows below that are conditional are marked **(conditional)**.
+**Dependencies:** `accessible`, `api`, `Embeddable`, `admin`, `Oauth`, `support`, and `presskits` should add `recording_studio_trashable`, `"~> 0.12"` (or the host's equivalent git tag pin) and `require "recording_studio_trashable/query"` when they only need the helpers. Keep each gem's existing column-existence / `respond_to?(:trashed_at)` guards so hosts without Trashable still boot; only call Trashable helpers when the column (and gem) is present. Mapping rows below that are conditional are marked **(conditional)**.
 
 **`merge` caveat:** `scope.merge(RecordingStudio::Recording.recording_studio_trashable_active)` drops earlier `trashed_at` conditions on that scope because the active scope unscopes `trashed_at` first. Prefer chaining `.recording_studio_trashable_active` when you start from `Recording`, or merge only when replacing prior trash filters is intended.
 
@@ -496,4 +496,4 @@ tools do not take a time window.
 Purged items are deleted, so these are current-trash totals and
 trashed-over-time of still-existing items only. There is no extra event log.
 
-Add `recording_studio_metrics` at tag `v0.5.0` (`>= 0.3.0, < 0.6`).
+Add `recording_studio_metrics` at tag `v0.7.0` (`>= 0.3.0, < 1.0`).
