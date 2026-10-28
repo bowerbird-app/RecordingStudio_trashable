@@ -38,7 +38,7 @@ Sibling gems should not read or write `trashed_at` directly. Prefer
 (`update_columns`). Gems that only need the query helpers should
 `require "recording_studio_trashable/query"` (see README) instead of the full
 engine. See the README sibling mapping table for call-site replacements,
-`~> 0.10` dependency notes, and column-existence conditionals.
+`~> 0.12` dependency notes, and column-existence conditionals.
 
 ## Retention persistence
 
