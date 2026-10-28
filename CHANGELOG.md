@@ -21,13 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dead dummy template workflow `test/dummy/.github/workflows/ci.yml`.
 - Template leftovers: `docs/gem_template/`, `UPDATE_SUMMARY.md`, `MIGRATION_NOTES.md`, unused dummy `hello_controller.js`, and RuboCop excludes for nonexistent `lib/gem_template` paths.
 
-### Added
-
-- Root workflow `.github/workflows/security.yml` (Bundler Audit, Brakeman, Importmap Audit), copied from RecordingStudio_attachable. Dummy `brakeman` lock is `8.1.0` so `bin/brakeman --ensure-latest` can run.
-
 ### Upgrade Notes
 
-- Bump to `0.12.1` (pending Marikit's confirmation). Pin Metrics `v0.7.0`. Dummy/host Internationalization can pin `v0.1.8`. Delete any copy of `widen_recording_studio_requirement.rb`.
+- Pin Metrics `v0.7.0`. Dummy/host Internationalization can pin `v0.1.8`. Delete any copy of `widen_recording_studio_requirement.rb`.
 - No migration. Trash, restore, purge, `trash_root`, and the query entry point are unchanged.
 
 ## [0.12.0] - 2026-10-26
