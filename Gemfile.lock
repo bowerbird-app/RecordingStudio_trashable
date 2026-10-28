@@ -30,7 +30,7 @@ GIT
 PATH
   remote: .
   specs:
-    recording_studio_trashable (0.12.1)
+    recording_studio_trashable (1.0.0)
       flat_pack (>= 0.1.315)
       rails (~> 8.1.0)
       recording_studio (>= 6.1.0)
