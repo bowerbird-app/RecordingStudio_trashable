@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-11-04
+
+### Changed
+
+- Development Gemfiles pin `recording_studio` to tag `v6.3.0`, `flat_pack` to GitHub tag `v0.1.341`, and `recording_studio_metrics` to tag `v0.7.2`. Dummy also pins `recording_studio_internationalization` to tag `v0.2.0`. `view_component` stays at `4.19.0`. Gemspec floors are unchanged (`recording_studio >= 6.1.0`, `flat_pack >= 0.1.315`, `recording_studio_metrics >= 0.3.0, < 1.0`).
+- Lockfiles pick up transitive bumps from those pins, including Rails `8.1.4`, `nokogiri` `1.19.7`, `i18n` `1.15.2`, `rack` `3.2.8`, `rdoc` `8.1.0`, and `net-protocol` `0.4.0`. Dummy also moves `action_text-trix` to `2.1.19` and `minitest` to `6.0.6`.
+
+### Security
+
+- Trash bin table cells that render a recording label or recordable type through FlatPack `html:` now HTML-escape those values.
+
+### Upgrade Notes
+
+- Bump to `0.12.2`. Pin `recording_studio` to tag `v6.3.0`, `flat_pack` to tag `v0.1.341`, and Metrics to `v0.7.2`. Dummy/host Internationalization can pin `v0.2.0`. Keep `view_component` at `4.19.0`.
+- No migration. Trash, restore, purge, `trash_root`, and the query entry point are unchanged.
+
 ## [0.12.1] - 2026-10-28
 
 ### Changed
@@ -313,7 +329,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.1...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.2...HEAD
+[0.12.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.3...v0.12.0
 [0.11.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.2...v0.11.3
