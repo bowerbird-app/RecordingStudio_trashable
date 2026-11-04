@@ -62,8 +62,8 @@
           data: @trashed_recordings,
           tbody_data: { pagination_content: true }
         ) do |table| %>
-          <% table.column(title: trashable_t("trash.columns.name"), html: ->(recording) { recording_studio_trashable_recording_label(recording) }) %>
-          <% table.column(title: trashable_t("trash.columns.type"), html: ->(recording) { recording.recordable_type }) %>
+          <% table.column(title: trashable_t("trash.columns.name"), html: ->(recording) { ERB::Util.html_escape(recording_studio_trashable_recording_label(recording)) }) %>
+          <% table.column(title: trashable_t("trash.columns.type"), html: ->(recording) { ERB::Util.html_escape(recording.recordable_type) }) %>
           <% table.column(
                title: trashable_t("trash.columns.trashed"),
                html: lambda { |recording|

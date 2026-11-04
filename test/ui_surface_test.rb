@@ -95,6 +95,8 @@ class UiSurfaceTest < Minitest::Test
     assert_includes trash_bin_view, 'trashable_t("trash.empty"'
     refute_includes trash_bin_view, "No trash roots."
     assert_includes trash_bin_view, 'trashable_t("trash.columns.name"'
+    assert_includes trash_bin_view, "ERB::Util.html_escape(recording_studio_trashable_recording_label(recording))"
+    assert_includes trash_bin_view, "ERB::Util.html_escape(recording.recordable_type)"
     assert_includes trash_bin_view, 'trashable_t("trash.columns.type"'
     assert_includes trash_bin_view, 'trashable_t("trash.columns.trashed"'
     assert_includes trash_bin_view, 'trashable_t("trash.columns.action"'

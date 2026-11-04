@@ -197,7 +197,8 @@ class LocalesTest < Minitest::Test
 
     assert_includes dummy_gemfile, "recording_studio_internationalization"
     assert_includes dummy_gemfile, "RecordingStudio_Internationalization"
-    assert_includes dummy_gemfile, 'ref: "1fcbafe94f8eb118f0a22182f63f5110fcc97a56"'
+    assert_includes dummy_gemfile, 'tag: "v0.1.341"'
+    assert_includes dummy_gemfile, 'tag: "v0.2.0"'
   end
 
   def test_config_copy_overrides_still_win_over_locale_defaults

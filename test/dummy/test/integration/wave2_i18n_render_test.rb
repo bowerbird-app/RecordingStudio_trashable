@@ -50,6 +50,23 @@ class Wave2I18nRenderTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Save"
   end
 
+  test "trashed page label with script markup is escaped on the trash bin" do
+    sign_in @user
+    script_recording = trash_demo_recording("<script>alert(1)</script>")
+    script_recording.recording_studio_trashable_trash!(actor: @user)
+    amp_recording = trash_demo_recording("Q&A")
+    amp_recording.recording_studio_trashable_trash!(actor: @user)
+
+    get "/recording_studio_trashable/recordings/#{@workspace_recording.id}/trash_bin"
+
+    assert_response :success
+    refute_includes response.body, "<script>alert(1)</script>"
+    assert_includes response.body, "&lt;script&gt;alert(1)&lt;/script&gt;"
+    assert_includes response.body, 'data-confirm="Restore Q&amp;A?"'
+    assert_includes response.body, 'data-confirm="Permanently delete Q&amp;A?"'
+    refute_includes response.body, "Q&amp;amp;A"
+  end
+
   test "restore flash renders literal english at the redirect" do
     sign_in @user
     recording = trash_demo_recording("Wave2 Restore Page")
