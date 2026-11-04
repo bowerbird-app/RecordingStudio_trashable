@@ -77,7 +77,7 @@
                title: trashable_t("trash.columns.action"),
                html: lambda { |recording|
                  actions = []
-                 label = ERB::Util.html_escape(recording_studio_trashable_recording_label(recording))
+                 label = recording_studio_trashable_recording_label(recording)
 
                  if recording_studio_trashable_action_authorized?(:restore, recording)
                    actions << form_with(
