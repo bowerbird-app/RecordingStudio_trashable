@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.3] - 2026-11-05
+
+### Security
+
+- Development lockfiles move Rails to `8.1.4.1`. Dummy also moves `net-ssh` to `7.3.8`. `rack` stays `3.2.8`, `nokogiri` `1.19.7`, `loofah` `2.25.3`, and `rails-html-sanitizer` `1.7.2`. Gemspec floors are unchanged.
+
+### Upgrade Notes
+
+- Bump to `0.12.3`. Re-bundle to pick up Rails `8.1.4.1`. No migration. Trash, restore, purge, `trash_root`, and the query entry point are unchanged.
+
 ## [0.12.2] - 2026-11-04
 
 ### Changed
@@ -329,7 +339,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.2...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.3...HEAD
+[0.12.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.2...v0.12.3
 [0.12.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.11.3...v0.12.0
