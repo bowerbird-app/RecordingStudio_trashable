@@ -4,6 +4,7 @@ require "test_helper"
 require "active_record"
 require_relative "../db/migrate/20250101000001_add_trashed_at_to_recording_studio_recordings"
 require_relative "../db/migrate/20250101000003_add_trash_root_to_recording_studio_recordings"
+require_relative "../db/migrate/20250101000004_add_purge_at_to_recording_studio_recordings"
 
 class MigrationTest < Minitest::Test
   def test_add_trashed_at_migration_adds_missing_column_and_index_independently
@@ -81,5 +82,51 @@ class MigrationTest < Minitest::Test
       calls[0]
     )
     assert_equal [:remove_column, %i[recording_studio_recordings trash_root]], calls[1]
+  end
+
+  def test_add_purge_at_migration_adds_nullable_column_and_partial_index
+    migration = AddPurgeAtToRecordingStudioRecordings.new
+    calls = []
+
+    migration.singleton_class.class_eval do
+      define_method(:table_exists?) { |*_args| true }
+      define_method(:column_exists?) { |*_args| false }
+      define_method(:index_exists?) { |*_args, **_kwargs| false }
+      define_method(:add_column) { |*args| calls << [:add_column, args] }
+      define_method(:add_index) { |*args, **kwargs| calls << [:add_index, args, kwargs] }
+    end
+
+    migration.up
+
+    assert_equal [:add_column, %i[recording_studio_recordings purge_at datetime]], calls[0]
+    assert_equal(
+      [
+        :add_index,
+        %i[recording_studio_recordings purge_at],
+        { name: "idx_rs_recordings_due_purge_at", where: "trashed_at IS NOT NULL" }
+      ],
+      calls[1]
+    )
+  end
+
+  def test_add_purge_at_migration_down_removes_index_and_column
+    migration = AddPurgeAtToRecordingStudioRecordings.new
+    calls = []
+
+    migration.singleton_class.class_eval do
+      define_method(:table_exists?) { |*_args| true }
+      define_method(:column_exists?) { |*_args| true }
+      define_method(:index_exists?) { |*_args, **_kwargs| true }
+      define_method(:remove_index) { |*args, **kwargs| calls << [:remove_index, args, kwargs] }
+      define_method(:remove_column) { |*args| calls << [:remove_column, args] }
+    end
+
+    migration.down
+
+    assert_equal(
+      [:remove_index, [:recording_studio_recordings], { name: "idx_rs_recordings_due_purge_at" }],
+      calls[0]
+    )
+    assert_equal [:remove_column, %i[recording_studio_recordings purge_at]], calls[1]
   end
 end

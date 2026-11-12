@@ -14,6 +14,8 @@ module RecordingStudio
           options.to_h.transform_keys(&:to_sym)
         end
 
+        TrashWrite = Struct.new(:trashed_at, :days_by_id, :actor, :impersonator, :metadata, keyword_init: true)
+
         # rubocop:disable Metrics/ModuleLength, Metrics/MethodLength
         module RecordingMethods
           include RecordingStudio::Capability
@@ -22,17 +24,12 @@ module RecordingStudio
             recording_studio_trashable_assert_capability!
             recording_studio_trashable_authorize!(:trash, actor: actor)
             recording_studio_trashable_with_locked_targets do |targets|
-              targets.reverse_each do |recording|
-                next if recording.trashed_at.present?
-
-                recording.log_event!(
-                  action: "trashed",
-                  actor: recording_studio_trashable_actor(actor),
-                  impersonator: recording_studio_trashable_impersonator(impersonator),
-                  metadata: recording_studio_trashable_metadata(metadata)
-                )
-                recording.update!(trashed_at: Time.current, trash_root: recording.id == id)
-              end
+              recording_studio_trashable_mark_trashed!(
+                targets,
+                actor: actor,
+                impersonator: impersonator,
+                metadata: metadata
+              )
             end
             reload
           end
@@ -50,7 +47,7 @@ module RecordingStudio
                   impersonator: recording_studio_trashable_impersonator(impersonator),
                   metadata: recording_studio_trashable_metadata(metadata)
                 )
-                recording.update!(trashed_at: nil, trash_root: false)
+                recording.update!(trashed_at: nil, trash_root: false, purge_at: nil)
               end
             end
             reload
@@ -87,6 +84,42 @@ module RecordingStudio
           # rubocop:enable Naming/PredicateMethod
 
           private
+
+          def recording_studio_trashable_mark_trashed!(targets, actor:, impersonator:, metadata:)
+            pending = targets.reject { |recording| recording.trashed_at.present? }
+            write = TrashWrite.new(
+              trashed_at: Time.current,
+              days_by_id: RecordingStudioTrashable::PurgeStamp.days_by_recording_id(pending),
+              actor: actor,
+              impersonator: impersonator,
+              metadata: metadata
+            )
+            targets.reverse_each { |recording| recording_studio_trashable_stamp_row!(recording, write) }
+          end
+
+          def recording_studio_trashable_stamp_row!(recording, write)
+            return if recording.trashed_at.present?
+
+            recording_studio_trashable_log_trash!(recording, write)
+            recording.update!(recording_studio_trashable_trash_attributes(recording, write))
+          end
+
+          def recording_studio_trashable_log_trash!(recording, write)
+            recording.log_event!(
+              action: "trashed",
+              actor: recording_studio_trashable_actor(write.actor),
+              impersonator: recording_studio_trashable_impersonator(write.impersonator),
+              metadata: recording_studio_trashable_metadata(write.metadata)
+            )
+          end
+
+          def recording_studio_trashable_trash_attributes(recording, write)
+            {
+              trashed_at: write.trashed_at,
+              trash_root: recording.id == id,
+              purge_at: RecordingStudioTrashable::PurgeStamp.deadline(write.trashed_at, write.days_by_id[recording.id])
+            }
+          end
 
           def recording_studio_trashable_assert_capability!
             assert_capability!(:trashable)
