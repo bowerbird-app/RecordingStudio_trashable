@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-12
+
+### Added
+
+- Nullable `purge_at` on `recording_studio_recordings`, plus partial index `idx_rs_recordings_due_purge_at` on `purge_at` where `trashed_at` is present.
+- Trash sets `purge_at` to `trashed_at` plus the retention days on the trash root and every newly trashed descendant. A blank day count stores null. Restore clears `purge_at` on the rows it restores. A nested trash root stays trashed and keeps its date.
+- Saving or deleting a retention setting restamps `purge_at` for trashed rows in that recording's subtree.
+- `bin/rails recording_studio_trashable:restamp_purge_at` recomputes `purge_at` for current trash. Pass `SCOPE_RECORDING_IDS` to limit the subtrees. Running it again writes the same dates.
+
+### Changed
+
+- Retention purge loads trashed rows with `purge_at` at or before `as_of` in one query, optionally limited to the given scope ids. It does not load active rows. Parents that still have an active or not-yet-due descendant stay skipped. Due rows are still deleted deepest first, then by `trashed_at`, and the log action is still `purged`.
+
+### Upgrade Notes
+
+- Bump to `0.14.0`. This release is additive. Install the new migration with `bin/rails generate recording_studio_trashable:migrations`, then `bin/rails db:migrate`.
+- Run `bin/rails recording_studio_trashable:restamp_purge_at` once after migrating. Rows trashed before the upgrade have a null `purge_at` and are not purged until that backfill runs. Run the task again after you change `default_purge_after_days` or a recordable's `purge_after_days`.
+- `purge_due_recordings`, `purge_due_recordings_for_all_scopes`, `RetentionPurgeJob#perform`, and `recording_studio_trashable:purge_due` keep their signatures. `dry_run` still deletes nothing. You still need `retention_purge_actor_resolver` when Accessible is on.
+
 ## [0.13.0] - 2026-11-12
 
 ### Added
@@ -356,7 +375,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.3...v0.13.0
 [0.12.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.2...v0.12.3
 [0.12.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.1...v0.12.2

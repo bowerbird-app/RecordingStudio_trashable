@@ -6,14 +6,15 @@ module RecordingStudioTrashable
 
     # rubocop:disable Metrics/ParameterLists
     def initialize(
-      scope_recording:,
+      scope_recording: nil,
       actor: nil,
       impersonator: nil,
       as_of: Time.current,
       metadata: {},
-      dry_run: false
+      dry_run: false,
+      scope_recordings: nil
     )
-      @scope_recording = scope_recording
+      @scope_recordings = scope_recordings.nil? ? Array(scope_recording).compact : Array(scope_recordings).compact
       @actor = actor
       @impersonator = impersonator
       @as_of = as_of
@@ -35,59 +36,17 @@ module RecordingStudioTrashable
     private
 
     def purge_candidates
-      recordings = RecordingStudioTrashable::SubtreeQuery.recordings_for(@scope_recording)
-      index = recordings.index_by(&:id)
-      settings_by_recording_id = RecordingStudioTrashable::RetentionPolicy.settings_by_recording_id(recordings)
-      eligible_recordings = recordings.select { |recording| due_recording?(recording, index, settings_by_recording_id) }
-      candidates, skipped = partition_purge_candidates(recordings, eligible_recordings)
-
-      [sort_by_purge_order(candidates, index), sort_by_purge_order(skipped, index)]
+      rows = DueRecordings.rows(as_of: @as_of, scope_recordings: @scope_recordings)
+      candidates, skipped = rows.partition { |recording| purge_flag(recording, "blocked").zero? }
+      [sort_for_purge(candidates), sort_for_purge(skipped)]
     end
 
-    def due_recording?(recording, recordings_by_id, settings_by_recording_id)
-      recording.trashed_at.present? && retention_due?(recording, recordings_by_id, settings_by_recording_id)
+    def sort_for_purge(rows)
+      rows.sort_by { |recording| [-purge_flag(recording, "depth"), recording.trashed_at.to_f] }
     end
 
-    def retention_due?(recording, recordings_by_id, settings_by_recording_id)
-      RecordingStudioTrashable::RetentionPolicy.due?(
-        recording: recording,
-        scope_recording: @scope_recording,
-        as_of: @as_of,
-        recordings_by_id: recordings_by_id,
-        settings_by_recording_id: settings_by_recording_id
-      )
-    end
-
-    def partition_purge_candidates(recordings, eligible_recordings)
-      children_by_parent_id = recordings.group_by(&:parent_recording_id)
-      eligible_ids = eligible_recordings.map(&:id)
-
-      eligible_recordings.partition do |recording|
-        retention_due_subtree?(recording, children_by_parent_id, eligible_ids)
-      end
-    end
-
-    def sort_by_purge_order(recordings, index)
-      recordings.sort_by { |recording| [-depth_for(recording, index), recording.trashed_at.to_f] }
-    end
-
-    def retention_due_subtree?(recording, children_by_parent_id, eligible_ids)
-      subtree_for(recording, children_by_parent_id).all? do |target|
-        target.trashed_at.present? && eligible_ids.include?(target.id)
-      end
-    end
-
-    def subtree_for(recording, children_by_parent_id)
-      targets = [recording]
-      frontier = [recording.id]
-
-      until frontier.empty?
-        children = frontier.flat_map { |recording_id| children_by_parent_id.fetch(recording_id, []) }
-        targets.concat(children)
-        frontier = children.map(&:id)
-      end
-
-      targets
+    def purge_flag(recording, name)
+      recording.read_attribute("recording_studio_trashable_purge_#{name}").to_i
     end
 
     def purge_recording(recording, result)
@@ -114,18 +73,6 @@ module RecordingStudioTrashable
 
     def validate_purge_recording!(recording)
       recording.recording_studio_trashable_validate_purge!(actor: @actor)
-    end
-
-    def depth_for(recording, index)
-      depth = 0
-      current = recording
-
-      while current.respond_to?(:parent_recording_id) && current.parent_recording_id.present?
-        current = index[current.parent_recording_id]
-        depth += 1
-      end
-
-      depth
     end
   end
 end

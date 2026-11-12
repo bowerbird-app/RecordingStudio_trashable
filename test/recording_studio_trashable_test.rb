@@ -224,23 +224,27 @@ class RecordingStudioTrashableTest < Minitest::Test
     assert_equal true, captured_arguments.fetch(:dry_run)
   end
 
-  def test_purge_due_recordings_for_all_scopes_aggregates_results_using_retention_purge_resolvers
+  def test_purge_due_recordings_for_all_scopes_aggregates_one_query_using_retention_purge_resolvers
     scope_recordings = %i[workspace project]
     as_of = Time.utc(2026, 1, 2)
-    captured_arguments = []
-    results = [
-      FakeSweepResult.new(purged_recordings: [:first], skipped_recordings: [:skip_first], would_purge_recordings: []),
-      FakeSweepResult.new(purged_recordings: [:second], skipped_recordings: [], would_purge_recordings: [])
-    ]
+    captured_arguments = nil
+    purger_result = FakeSweepResult.new(
+      purged_recordings: %i[first second],
+      skipped_recordings: [:skip_first],
+      would_purge_recordings: []
+    )
+    purger = Struct.new(:result) do
+      def purge! = result
+    end.new(purger_result)
 
     RecordingStudioTrashable.configure do |config|
       config.retention_purge_actor_resolver = -> { :system_actor }
       config.retention_purge_impersonator_resolver = -> { :system_impersonator }
     end
 
-    RecordingStudioTrashable.stub(:purge_due_recordings, lambda { |**kwargs|
-      captured_arguments << kwargs
-      results.shift
+    RecordingStudioTrashable::RetentionPurger.stub(:new, lambda { |**kwargs|
+      captured_arguments = kwargs
+      purger
     }) do
       result = RecordingStudioTrashable.purge_due_recordings_for_all_scopes(
         scope_recordings: scope_recordings,
@@ -255,26 +259,25 @@ class RecordingStudioTrashableTest < Minitest::Test
     end
 
     assert_equal(
-      [
-        {
-          scope_recording: :workspace,
-          actor: :system_actor,
-          impersonator: :system_impersonator,
-          as_of: as_of,
-          metadata: { source: :job },
-          dry_run: false
-        },
-        {
-          scope_recording: :project,
-          actor: :system_actor,
-          impersonator: :system_impersonator,
-          as_of: as_of,
-          metadata: { source: :job },
-          dry_run: false
-        }
-      ],
+      {
+        scope_recordings: scope_recordings,
+        actor: :system_actor,
+        impersonator: :system_impersonator,
+        as_of: as_of,
+        metadata: { source: :job },
+        dry_run: false
+      },
       captured_arguments
     )
+  end
+
+  def test_purge_due_recordings_for_all_scopes_with_no_scopes_skips_the_query
+    result = RecordingStudioTrashable.purge_due_recordings_for_all_scopes(scope_recordings: [])
+
+    assert_empty result.scope_recordings
+    assert_empty result.purged_recordings
+    assert_empty result.skipped_recordings
+    assert_empty result.would_purge_recordings
   end
 
   def test_root_scope_recordings_returns_top_level_recordings

@@ -8,5 +8,14 @@ module RecordingStudioTrashable
 
     validates :purge_after_days,
               numericality: { only_integer: true, greater_than: 0, allow_nil: true }
+
+    after_save :recording_studio_trashable_restamp_subtree
+    after_destroy :recording_studio_trashable_restamp_subtree
+
+    private
+
+    def recording_studio_trashable_restamp_subtree
+      RecordingStudioTrashable::PurgeStamp.restamp_subtree!(recording)
+    end
   end
 end

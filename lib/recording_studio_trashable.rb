@@ -14,6 +14,8 @@ require "recording_studio_trashable/hooks"
 require "recording_studio_trashable/configuration"
 require "recording_studio_trashable/authorization"
 require "recording_studio_trashable/retention_policy"
+require "recording_studio_trashable/purge_stamp"
+require "recording_studio_trashable/due_recordings"
 require "recording_studio_trashable/retention_purger"
 require "recording_studio_trashable/retention_purge_job"
 require "recording_studio_trashable/engine"
@@ -101,14 +103,12 @@ module RecordingStudioTrashable
 
     def purge_due_recordings_for_all_scopes(scope_recordings: root_scope_recordings, **purge_options)
       purge_options = default_purge_options.merge(purge_options)
+      scopes = Array(scope_recordings).compact
+      result = build_sweep_result
+      result.scope_recordings.concat(scopes)
+      return result if scopes.empty?
 
-      Array(scope_recordings).compact.each_with_object(build_sweep_result) do |scope_recording, result|
-        append_scope_purge_result(
-          result: result,
-          scope_recording: scope_recording,
-          purge_options: purge_options
-        )
-      end
+      append_purge_result(result, purge_scopes(scopes, purge_options))
     end
 
     def purge_summary_message(result, dry_run: false)
@@ -186,13 +186,15 @@ module RecordingStudioTrashable
       }
     end
 
-    def append_scope_purge_result(result:, scope_recording:, purge_options:)
-      scope_result = purge_due_recordings(scope_recording: scope_recording, **purge_options)
+    def purge_scopes(scopes, purge_options)
+      RetentionPurger.new(scope_recordings: scopes, **purge_options).purge!
+    end
 
-      result.scope_recordings << scope_recording
+    def append_purge_result(result, scope_result)
       result.purged_recordings.concat(scope_result.purged_recordings)
       result.skipped_recordings.concat(scope_result.skipped_recordings)
       result.would_purge_recordings.concat(scope_result.would_purge_recordings)
+      result
     end
 
     def capability_type_name(recording_or_type)
