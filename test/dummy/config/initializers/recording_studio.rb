@@ -5,6 +5,8 @@ RecordingStudio.configure do |config|
   config.recordable_types = %w[Workspace Project Folder Page]
   config.recordable_types += %w[RecordingStudio::Access] if defined?(RecordingStudioAccessible)
   if defined?(RecordingStudioApi)
+    # RecordingStudioApi::AdminApi lists AdminRoot as an allowed parent.
+    config.recordable_types += %w[AdminRoot]
     config.recordable_types += %w[
       RecordingStudioApi::ApiClient
       RecordingStudioApi::ApiCredential
