@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "recording_studio_trashable/subtree_query"
+require "recording_studio_trashable/api"
 require_relative "../../app/helpers/recording_studio_trashable/copy_helper"
 
 module RecordingStudioTrashable
@@ -52,6 +53,10 @@ module RecordingStudioTrashable
 
     initializer "recording_studio_trashable.metrics" do
       config.to_prepare { RecordingStudioTrashable::Metrics.register! }
+    end
+
+    initializer "recording_studio_trashable.api" do
+      config.to_prepare { RecordingStudioTrashable::Api.register! }
     end
 
     class << self

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-12
+
+### Added
+
+- Trash, restore, purge, and list-trash-bin on Recording Studio API as capability actions (`:trashable`). Hosts that already mount the API get them on types that enable Trashable. MCP sees them on the generic `capability_action` path.
+- `trash` and `restore` require `:edit`. `purge` requires `:admin`. `list_trash_bin` requires `:edit`, matching the trash bin screen.
+- Handlers call `recording_studio_trashable_trash!`, `recording_studio_trashable_restore!`, `recording_studio_trashable_purge!`, and `SubtreeQuery.trashed_recordings_for_query`. Lookup uses `access_grant.accessible_recordings(include_trashed: true)` and `access_grant.authorize!`.
+- Dummy mounts Recording Studio API `v0.21.3` in development and test so those HTTP paths can be exercised.
+
+### Upgrade Notes
+
+- Bump to `0.13.0`. No migration.
+- This gem still does not depend on Recording Studio API. When the API gem is loaded, Trashable registers the actions on every named API.
+- Enable the actions on a type by including `RecordingStudio::Capabilities::Trashable.to` and exposing that type on the API (`auto_capability_actions` stays on unless you turn it off).
+- Metrics stay on `:operations` through `RecordingStudioTrashable::Metrics.register!`. This change does not call `RecordingStudioMetrics::Api.register!`.
+
 ## [0.12.3] - 2026-11-05
 
 ### Security
@@ -339,7 +355,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.3...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.3...v0.13.0
 [0.12.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.2...v0.12.3
 [0.12.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.0...v0.12.1
