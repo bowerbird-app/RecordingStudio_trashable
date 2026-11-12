@@ -22,7 +22,7 @@ module RecordingStudioTrashable
           per_page: {
             type: :integer,
             required: false,
-            description: "Items per page. Defaults to 25, same as the trash bin screen. Values above 100 are treated as 100."
+            description: "Items per page. Defaults to 25, same as the trash bin. Capped at 100."
           }
         }
       }.freeze
