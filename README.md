@@ -16,6 +16,7 @@ It extracts trash behavior from RecordingStudio core into addon-owned APIs witho
 - sibling ownership helpers on every Recording (kept/active scope, `trashed?` / `kept?` predicates, quoted SQL fragments, and `void_recording!` soft-void via `update_columns`)
 - lightweight `require "recording_studio_trashable/query"` for sibling gems that need those helpers without the engine, importmap, capability, CopyHelper, or metrics
 - subtree trash bins with restore, purge, and retention settings UI
+- Recording Studio API capability actions (`trashable_trash`, `trashable_restore`, `trashable_purge`, `trashable_list_trash_bin`) when `recording_studio_api` is loaded
 - optional RecordingStudioAccessible authorization integration
 - addon-owned migrations for `trashed_at`, `trash_root`, and retention settings
 
@@ -195,7 +196,7 @@ Sibling gems that only need kept/trashed scopes, predicates, SQL fragments, or `
 In the sibling gemspec:
 
 ```ruby
-spec.add_dependency "recording_studio_trashable", "~> 0.12"
+spec.add_dependency "recording_studio_trashable", "~> 0.13"
 ```
 
 In the sibling library (not the host Gemfile auto-require):
@@ -217,7 +218,7 @@ If the sibling ships as a Bundler Gemfile entry that would otherwise auto-requir
 
 Trashable owns `trashed_at` reads and writes for sibling gems. Replace raw column access with the APIs above. Existing host and Trashable callers keep the same behavior; these helpers are additive.
 
-**Dependencies:** `accessible`, `api`, `Embeddable`, `admin`, `Oauth`, `support`, and `presskits` should add `recording_studio_trashable`, `"~> 0.12"` (or the host's equivalent git tag pin) and `require "recording_studio_trashable/query"` when they only need the helpers. Keep each gem's existing column-existence / `respond_to?(:trashed_at)` guards so hosts without Trashable still boot; only call Trashable helpers when the column (and gem) is present. Mapping rows below that are conditional are marked **(conditional)**.
+**Dependencies:** `accessible`, `api`, `Embeddable`, `admin`, `Oauth`, `support`, and `presskits` should add `recording_studio_trashable`, `"~> 0.13"` (or the host's equivalent git tag pin) and `require "recording_studio_trashable/query"` when they only need the helpers. Keep each gem's existing column-existence / `respond_to?(:trashed_at)` guards so hosts without Trashable still boot; only call Trashable helpers when the column (and gem) is present. Mapping rows below that are conditional are marked **(conditional)**.
 
 **`merge` caveat:** `scope.merge(RecordingStudio::Recording.recording_studio_trashable_active)` drops earlier `trashed_at` conditions on that scope because the active scope unscopes `trashed_at` first. Prefer chaining `.recording_studio_trashable_active` when you start from `Recording`, or merge only when replacing prior trash filters is intended.
 
@@ -282,6 +283,32 @@ Default roles:
 - purge: `:admin`
 - settings: `:admin`
 - trash bin: `:edit`
+
+## Recording Studio API
+
+When Recording Studio API is loaded, this gem registers capability actions on every named API. There is no runtime gemspec dependency on the API gem.
+
+| Action | HTTP | Role | Domain method |
+| --- | --- | --- | --- |
+| `trashable_trash` | POST | `:edit` | `recording_studio_trashable_trash!` |
+| `trashable_restore` | POST | `:edit` | `recording_studio_trashable_restore!` |
+| `trashable_purge` | POST | `:admin` | `recording_studio_trashable_purge!` |
+| `trashable_list_trash_bin` | GET | `:edit` | `SubtreeQuery.trashed_recordings_for_query` |
+
+MCP calls them through the generic `capability_action` path. Authorization is Recording Studio Accessible: API `required_role` (Recording Studio API authorizes the grant with `include_trashed: true` before the handler) plus a lookup on `access_grant.accessible_recordings(include_trashed: true)`. `trashable_list_trash_bin` also calls `RecordingStudioTrashable.authorized?(action: :trash_bin, ...)`, so a host `authorization_resolver` is honoured the same way as the trash bin screen.
+
+Enable a type on the API as usual. Types that include `RecordingStudio::Capabilities::Trashable.to` get these actions when `auto_capability_actions` is on:
+
+```ruby
+RecordingStudioApi.register_recordable_type_api(
+  "Page",
+  operations: %i[show],
+  serializer: ->(page, **) { { title: page.title } },
+  output_keys: %i[title]
+)
+```
+
+`trashable_list_trash_bin` accepts `q` (search, stripped), `page`, and `per_page` (default 25, capped at 100). Results are `trashed_at DESC`, then `id DESC`, matching the HTML trash bin. Site-wide trash metrics stay on the operations API through `RecordingStudioTrashable::Metrics.register!` and are unchanged.
 
 ## Mounted UI
 
@@ -411,6 +438,7 @@ The dummy app demonstrates:
 - `Project`, `Page`, and `Folder` recordables
 - `Page` as trashable and `Folder` as non-trashable
 - workspace and project scoped trash bins
+- Recording Studio API in development/test (`/recording_studio_api`) for trash capability actions
 - trash, restore, purge, and retention settings flows
 - Recording Studio core default layout (back/close page nav, one page title) for dummy and mounted screens
 - docs pages for Setup, Configuration, Adding to a recordable, and Methods, linked from the home hub

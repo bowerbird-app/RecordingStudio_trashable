@@ -83,6 +83,8 @@ fr:
         retention_managed: "Les durées de conservation sont gérées par l’application."
       errors:
         not_authorized: "Vous n’êtes pas autorisé à %{action} %{type}"
+        already_trashed: "Cet élément est déjà dans la corbeille."
+        not_trashed: "Cet élément n’est pas dans la corbeille."
         purge_not_trashed: "La suppression définitive exige que tous les éléments ciblés soient déjà dans la corbeille"
         purge_after_days_invalid: "doit être un nombre entier positif"
         could_not_save_retention: "Impossible d’enregistrer les durées de conservation"

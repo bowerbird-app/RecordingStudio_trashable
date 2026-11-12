@@ -3,6 +3,17 @@
 RecordingStudio.configure do |config|
   config.app_name = "Trashable Demo" if config.respond_to?(:app_name=)
   config.recordable_types = %w[Workspace Project Folder Page]
+  config.recordable_types += %w[RecordingStudio::Access] if defined?(RecordingStudioAccessible)
+  if defined?(RecordingStudioApi)
+    # RecordingStudioApi::AdminApi lists AdminRoot as an allowed parent.
+    config.recordable_types += %w[AdminRoot]
+    config.recordable_types += %w[
+      RecordingStudioApi::ApiClient
+      RecordingStudioApi::ApiCredential
+      RecordingStudioApi::ApiAccessToken
+      RecordingStudioApi::AdminApi
+    ]
+  end
   config.actor = -> { Current.actor }
   config.event_notifications_enabled = true
   config.idempotency_mode = :return_existing

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-12
+
+### Added
+
+- Trash, restore, purge, and list-trash-bin on Recording Studio API as capability actions (`:trashable`) named `trashable_trash`, `trashable_restore`, `trashable_purge`, and `trashable_list_trash_bin`. Hosts that already mount the API get them on types that enable Trashable. MCP sees them on the generic `capability_action` path.
+- `trashable_trash` and `trashable_restore` require `:edit`. `trashable_purge` requires `:admin`. `trashable_list_trash_bin` requires `:edit`, matching the trash bin screen, and also calls `RecordingStudioTrashable.authorized?(action: :trash_bin)`.
+- Handlers call `recording_studio_trashable_trash!`, `recording_studio_trashable_restore!`, `recording_studio_trashable_purge!`, and `SubtreeQuery.trashed_recordings_for_query`. Lookup uses `access_grant.accessible_recordings(include_trashed: true)`. Recording Studio API already authorizes the grant at the action `required_role` with `include_trashed: true` before the handler. `trashable_list_trash_bin` also calls `RecordingStudioTrashable.authorized?(action: :trash_bin)`.
+- `trashable_list_trash_bin` strips `q`, orders by `trashed_at DESC, id DESC`, and pages with `page` / `per_page` defaulting to 25 and capped at 100.
+- Dummy mounts Recording Studio API `v0.21.3` in development and test so those HTTP paths can be exercised. Dummy `recordable_types` keep the host Workspace/Project/Folder/Page list, then add Access and API types. `AdminRoot` is registered only when Recording Studio API is loaded, because `RecordingStudioApi::AdminApi` lists it as an allowed parent.
+
+### Upgrade Notes
+
+- Bump to `0.13.0`. No migration.
+- This gem still does not depend on Recording Studio API. When the API gem is loaded, Trashable registers the actions on every named API. Registering twice with the same handler is a no-op. A different handler for the same name raises.
+- Enable the actions on a type by including `RecordingStudio::Capabilities::Trashable.to` and exposing that type on the API (`auto_capability_actions` stays on unless you turn it off).
+- Metrics stay on `:operations` through `RecordingStudioTrashable::Metrics.register!`. This change does not call `RecordingStudioMetrics::Api.register!`.
+
 ## [0.12.3] - 2026-11-05
 
 ### Security
@@ -339,7 +356,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.3...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.3...v0.13.0
 [0.12.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.2...v0.12.3
 [0.12.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.0...v0.12.1
