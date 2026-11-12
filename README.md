@@ -341,16 +341,28 @@ For example, a synchronous form can just post the action and rely on the browser
 
 ## Retention
 
-Retention settings are stored in the addon-owned `recording_studio_trashable_retention_settings` table and scoped to a subtree root recording. Trashable also owns the `trashed_at` and `trash_root` schema it adds to `recording_studio_recordings`.
+Retention settings are stored in the addon-owned `recording_studio_trashable_retention_settings` table and scoped to a subtree root recording. Trashable also owns the `trashed_at`, `trash_root`, and `purge_at` columns it adds to `recording_studio_recordings`.
 
-During a sweep, each recording resolves retention from the nearest saved setting on the path from that recording up to and including the sweep scope:
+`purge_at` is the moment a trashed row becomes eligible for automatic purge. Trash sets it on the trash root and on every descendant that is newly trashed. The stored value is that row's `trashed_at` plus its retention days. Days are resolved with that recording's root as the sweep scope, in this order:
 
 1. the recording's own retention setting, when `config.allow_user_retention_settings = true`
-2. the nearest ancestor setting inside the sweep scope, including a saved blank value that means keep until manually purged
+2. the nearest ancestor setting inside that root, including a saved blank value that means keep until manually purged
 3. per-recordable capability option such as `purge_after_days: 14`
 4. addon-wide `config.default_purge_after_days`
 
-Settings above the sweep scope are ignored. A workspace "keep until manually purged" setting does not hide a shorter setting saved on a project inside that workspace.
+A blank saved setting stores a null `purge_at`. Null is never auto-purged. A nearer setting still wins, so a project setting of 7 days still applies under a workspace that says keep until manually purged.
+
+Restore clears `purge_at` on the rows it restores. A nested trash root stays trashed and keeps its date.
+
+Saving or deleting a retention setting recomputes `purge_at` for trashed rows in that recording's subtree.
+
+Rows trashed before this column existed have a null `purge_at`. The purge leaves them in place until you backfill. After you migrate, and again after you change `default_purge_after_days` or a recordable's `purge_after_days`, run:
+
+```bash
+bin/rails recording_studio_trashable:restamp_purge_at
+```
+
+`SCOPE_RECORDING_IDS` limits the backfill to those recordings and their descendants. The task is safe to run again.
 
 By default, subtree users cannot override retention through the mounted UI. When
 `config.allow_user_retention_settings` is left `false`, saved subtree settings are ignored and
@@ -380,6 +392,7 @@ For background or cron-driven purging, the gem now ships with both of these entr
 Both entry points also support a dry-run mode so operators can preview what would be purged without deleting recordings.
 
 The job and rake task default to sweeping every root recording (`parent_recording_id: nil`).
+The sweep reads `purge_at` in one query. It does not load active rows, and it does not resolve days again. Passing scope ids limits which trashed rows are considered. It does not ignore a setting that was above that scope when `purge_at` was stored.
 If your app uses `RecordingStudioAccessible`, set `config.retention_purge_actor_resolver`
 so scheduled purges run as a real system actor that is allowed to purge.
 
@@ -390,7 +403,7 @@ RecordingStudioTrashable::RetentionPurgeJob.perform_later
 RecordingStudioTrashable::RetentionPurgeJob.perform_later(dry_run: true)
 ```
 
-The retention purger walks due recordings leaf-first so parent recordings are only removed after due descendants are gone. Parents that still have active descendants stay skipped for later review.
+The retention purger removes due recordings deepest first, then by `trashed_at`. A parent stays skipped while any descendant is still active or not yet due.
 
 Preview the rake task without deleting anything:
 
