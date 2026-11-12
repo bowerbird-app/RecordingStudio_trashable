@@ -4,10 +4,8 @@ module RecordingStudioTrashable
   module Api
     module Errors
       INPUT_ERRORS = [
-        ArgumentError,
-        RecordingStudioTrashable::PurgeTargetsNotTrashedError,
-        (RecordingStudio::CapabilityDisabled if defined?(RecordingStudio::CapabilityDisabled))
-      ].compact.freeze
+        RecordingStudioTrashable::PurgeTargetsNotTrashedError
+      ].freeze
 
       module_function
 

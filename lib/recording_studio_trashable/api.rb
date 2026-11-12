@@ -10,32 +10,8 @@ module RecordingStudioTrashable
 
     def register!
       return unless defined?(::RecordingStudioApi)
-      return unless RecordingStudioApi.respond_to?(:register_capability_action)
 
-      each_api { |api_name| register_api(api_name) }
-    end
-
-    def each_api
-      if named_api_registration_supported?
-        RecordingStudioApi.configuration.each_api { |definition| yield definition.name }
-      else
-        yield :public
-      end
-    end
-
-    def named_api_registration_supported?
-      RecordingStudioApi.respond_to?(:configuration) &&
-        RecordingStudioApi.configuration.respond_to?(:each_api) &&
-        accepts_api_keyword?(:capability_action) &&
-        accepts_api_keyword?(:register_capability_action)
-    end
-
-    def accepts_api_keyword?(method_name)
-      return false unless RecordingStudioApi.respond_to?(method_name)
-
-      RecordingStudioApi.method(method_name).parameters.any? do |type, name|
-        type == :keyrest || (name == :api && %i[key keyreq].include?(type))
-      end
+      RecordingStudioApi.configuration.each_api { |api| register_api(api.name) }
     end
 
     def register_api(api_name)
@@ -44,58 +20,57 @@ module RecordingStudioTrashable
     end
 
     def register_action(api_name, name)
-      return if existing_action(api_name, name)
+      handler = Catalog::ACTIONS.fetch(name).fetch(:handler)
+      existing = RecordingStudioApi.capability_action(name, api: api_name)
+      if existing
+        raise_mismatched_registration!(name, api_name, existing.handler, handler)
+        return
+      end
 
       RecordingStudioApi.register_capability_action(name, **action_options(api_name, name))
     end
 
-    def existing_action(api_name, name)
-      if named_api_registration_supported?
-        RecordingStudioApi.capability_action(name, api: api_name)
-      else
-        RecordingStudioApi.capability_action(name)
-      end
-    end
-
     def action_options(api_name, name)
       spec = Catalog::ACTIONS.fetch(name)
-      options = base_action_options(name, spec)
-      options[:api] = api_name if named_api_registration_supported?
-      options
-    end
-
-    def base_action_options(name, spec)
-      {
+      spec.slice(:http_verb, :required_role, :handler).merge(
         capability: :trashable,
         version: Catalog::ACTION_VERSION,
-        http_verb: spec.fetch(:http_verb),
-        required_role: spec.fetch(:required_role),
-        handler: spec.fetch(:handler),
-        serializer: method(:serialize),
+        serializer: nil,
         input_contract: Catalog.contract_for(name),
-        openapi: Catalog.openapi_for(name)
-      }
-    end
-
-    def serialize(result)
-      result
+        openapi: Catalog.openapi_for(name),
+        api: api_name
+      )
     end
 
     def register_resource_handlers(api_name)
-      return unless RecordingStudioApi.respond_to?(:register_resource_handler)
-      return unless RecordingStudio.respond_to?(:capability_enabled?)
-
       trashable_types.each { |type| register_type_handlers(api_name, type) }
     end
 
     def register_type_handlers(api_name, recordable_type)
-      Catalog::ACTIONS.each_key do |name|
-        next if RecordingStudioApi.resource_handler(recordable_type, name, api: api_name)
+      Catalog::ACTIONS.each do |name, spec|
+        handler = spec.fetch(:handler)
+        existing = RecordingStudioApi.resource_handler(recordable_type, name, api: api_name)
+        raise_mismatched_registration!(name, api_name, existing, handler, recordable_type:) if existing
+        next if existing
 
-        RecordingStudioApi.register_resource_handler(
-          recordable_type, name, api: api_name, handler: Catalog::ACTIONS.fetch(name).fetch(:handler)
-        )
+        RecordingStudioApi.register_resource_handler(recordable_type, name, api: api_name, handler:)
       end
+    end
+
+    def raise_mismatched_registration!(name, api_name, existing, handler, recordable_type: nil)
+      return if identical_handler?(existing, handler)
+
+      scope = recordable_type ? "#{recordable_type} #{name}" : name
+      raise RecordingStudioApi::ConfigurationError,
+            "Recording Studio API #{scope} on #{api_name} is already registered with a different handler"
+    end
+
+    def identical_handler?(existing, handler)
+      return true if existing == handler
+
+      existing_name = existing.respond_to?(:name) ? existing.name : nil
+      handler_name = handler.respond_to?(:name) ? handler.name : nil
+      existing_name.present? && existing_name == handler_name
     end
 
     def trashable_types

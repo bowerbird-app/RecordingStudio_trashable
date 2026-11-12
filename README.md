@@ -16,7 +16,7 @@ It extracts trash behavior from RecordingStudio core into addon-owned APIs witho
 - sibling ownership helpers on every Recording (kept/active scope, `trashed?` / `kept?` predicates, quoted SQL fragments, and `void_recording!` soft-void via `update_columns`)
 - lightweight `require "recording_studio_trashable/query"` for sibling gems that need those helpers without the engine, importmap, capability, CopyHelper, or metrics
 - subtree trash bins with restore, purge, and retention settings UI
-- Recording Studio API capability actions (`trash`, `restore`, `purge`, `list_trash_bin`) when `recording_studio_api` is loaded
+- Recording Studio API capability actions (`trashable_trash`, `trashable_restore`, `trashable_purge`, `trashable_list_trash_bin`) when `recording_studio_api` is loaded
 - optional RecordingStudioAccessible authorization integration
 - addon-owned migrations for `trashed_at`, `trash_root`, and retention settings
 
@@ -290,12 +290,12 @@ When Recording Studio API is loaded, this gem registers capability actions on ev
 
 | Action | HTTP | Role | Domain method |
 | --- | --- | --- | --- |
-| `trash` | POST | `:edit` | `recording_studio_trashable_trash!` |
-| `restore` | POST | `:edit` | `recording_studio_trashable_restore!` |
-| `purge` | POST | `:admin` | `recording_studio_trashable_purge!` |
-| `list_trash_bin` | GET | `:edit` | `SubtreeQuery.trashed_recordings_for_query` |
+| `trashable_trash` | POST | `:edit` | `recording_studio_trashable_trash!` |
+| `trashable_restore` | POST | `:edit` | `recording_studio_trashable_restore!` |
+| `trashable_purge` | POST | `:admin` | `recording_studio_trashable_purge!` |
+| `trashable_list_trash_bin` | GET | `:edit` | `SubtreeQuery.trashed_recordings_for_query` |
 
-MCP calls them through the generic `capability_action` path. Authorization is Recording Studio Accessible: API `required_role` plus `access_grant.authorize!` after a lookup on `access_grant.accessible_recordings(include_trashed: true)`.
+MCP calls them through the generic `capability_action` path. Authorization is Recording Studio Accessible: API `required_role` plus `access_grant.authorize!` after a lookup on `access_grant.accessible_recordings(include_trashed: true)`. `trashable_list_trash_bin` also calls `RecordingStudioTrashable.authorized?(action: :trash_bin, ...)`, so a host `authorization_resolver` is honoured the same way as the trash bin screen.
 
 Enable a type on the API as usual. Types that include `RecordingStudio::Capabilities::Trashable.to` get these actions when `auto_capability_actions` is on:
 
@@ -308,7 +308,7 @@ RecordingStudioApi.register_recordable_type_api(
 )
 ```
 
-`list_trash_bin` accepts `q` (search) and `limit`. Site-wide trash metrics stay on the operations API through `RecordingStudioTrashable::Metrics.register!` and are unchanged.
+`trashable_list_trash_bin` accepts `q` (search, stripped), `page`, and `per_page` (default 25). Results are `trashed_at DESC`, then `id DESC`, matching the HTML trash bin. Site-wide trash metrics stay on the operations API through `RecordingStudioTrashable::Metrics.register!` and are unchanged.
 
 ## Mounted UI
 

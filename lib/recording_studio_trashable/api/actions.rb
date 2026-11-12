@@ -134,6 +134,8 @@ module RecordingStudioTrashable
       end
 
       class ListTrashBin
+        PAGE_SIZE = 25
+
         def self.call(context)
           Errors.wrap { new(context).call }
         end
@@ -145,6 +147,7 @@ module RecordingStudioTrashable
         def call
           recording = Lookup.recording(context)
           context.access_grant.authorize!(recording: recording, role: :edit, include_trashed: true)
+          authorize_trash_bin!(recording)
           Payload.wrap(context, { records: serialized_records(recording) })
         end
 
@@ -152,13 +155,48 @@ module RecordingStudioTrashable
 
         attr_reader :context
 
+        def authorize_trash_bin!(recording)
+          return if RecordingStudioTrashable.authorized?(
+            action: :trash_bin, actor: context.actor, recording: recording
+          )
+
+          raise RecordingStudioApi::AuthorizationError, RecordingStudioTrashable::Copy.t(
+            "errors.not_authorized",
+            action: RecordingStudioTrashable::Copy.action_name(:trash_bin),
+            type: recording.recordable_type
+          )
+        end
+
         def serialized_records(recording)
+          page = page_param
+          per_page = per_page_param
           relation = RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for_query(
             recording,
-            query: context.params[:q]
-          )
-          relation = relation.limit(context.params[:limit]) if context.params[:limit]
-          relation.map { |trashed| Payload.serialize(context, trashed) }
+            query: context.params[:q].to_s.strip
+          ).reorder(trashed_at: :desc, id: :desc)
+          relation.offset((page - 1) * per_page).limit(per_page).map do |trashed|
+            Payload.serialize(context, trashed)
+          end
+        end
+
+        def page_param
+          positive_integer(context.params[:page], default: 1)
+        end
+
+        def per_page_param
+          positive_integer(context.params[:per_page], default: PAGE_SIZE)
+        end
+
+        def positive_integer(value, default:)
+          return default if value.nil? || (value.is_a?(String) && value.strip.empty?)
+
+          parsed = Integer(value)
+          raise ArgumentError if parsed < 1
+
+          parsed
+        rescue ArgumentError, TypeError
+          raise RecordingStudioApi::InvalidActionInputError,
+                Catalog::UNPROCESSABLE.fetch(:trashable_list_trash_bin)
         end
       end
     end

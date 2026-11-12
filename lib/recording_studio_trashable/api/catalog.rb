@@ -14,21 +14,26 @@ module RecordingStudioTrashable
             allow_blank: true,
             description: "Search trash by name, type, or id"
           },
-          limit: {
+          page: {
             type: :integer,
             required: false,
-            description: "Maximum number of trash items to return"
+            description: "Trash bin page. Starts at 1."
+          },
+          per_page: {
+            type: :integer,
+            required: false,
+            description: "Items per page. Defaults to 25, same as the trash bin screen."
           }
         }
       }.freeze
       UNPROCESSABLE = {
-        trash: "This item is already in the trash.",
-        restore: "This item is not in the trash.",
-        purge: "Purging requires the item to already be in the trash.",
-        list_trash_bin: "Search or limit is not valid."
+        trashable_trash: "This item is already in the trash.",
+        trashable_restore: "This item is not in the trash.",
+        trashable_purge: "Purging requires the item to already be in the trash.",
+        trashable_list_trash_bin: "Search or page is not valid."
       }.freeze
       ACTIONS = {
-        trash: {
+        trashable_trash: {
           http_verb: :post,
           required_role: :edit,
           handler: Actions::Trash,
@@ -36,7 +41,7 @@ module RecordingStudioTrashable
           summary: "Move to trash",
           description: "Soft-deletes this item and everything nested under it. Same as Trash on the page."
         }.freeze,
-        restore: {
+        trashable_restore: {
           http_verb: :post,
           required_role: :edit,
           handler: Actions::Restore,
@@ -44,7 +49,7 @@ module RecordingStudioTrashable
           summary: "Restore from trash",
           description: "Brings this item back. Nested items that were trashed on their own stay in the trash."
         }.freeze,
-        purge: {
+        trashable_purge: {
           http_verb: :post,
           required_role: :admin,
           handler: Actions::Purge,
@@ -52,7 +57,7 @@ module RecordingStudioTrashable
           summary: "Delete forever",
           description: "Permanently deletes this trashed item and its nested trash. Active items must be trashed first."
         }.freeze,
-        list_trash_bin: {
+        trashable_list_trash_bin: {
           http_verb: :get,
           required_role: :edit,
           handler: Actions::ListTrashBin,
@@ -65,7 +70,7 @@ module RecordingStudioTrashable
       module_function
 
       def contract_for(name)
-        name == :list_trash_bin ? LIST_TRASH_BIN_CONTRACT : EMPTY_CONTRACT
+        name == :trashable_list_trash_bin ? LIST_TRASH_BIN_CONTRACT : EMPTY_CONTRACT
       end
 
       def openapi_for(name)

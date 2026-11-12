@@ -29,98 +29,98 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
   teardown { Current.actor = @previous_actor }
 
   test "trash restore purge and list_trash_bin succeed for the roles the screens use" do
-    trashed = call(:post, "/pages/#{@page.id}/actions/trash", @editor_token)
+    trashed = call(:post, "/pages/#{@page.id}/actions/trashable_trash", @editor_token)
     assert_response :success, response.body
     assert @page.reload.recording_studio_trashable_trashed?
     assert_equal @page.id, trashed.fetch("id")
 
-    listed = call(:get, "/pages/#{@page.id}/actions/list_trash_bin", @editor_token)
+    listed = call(:get, "/pages/#{@page.id}/actions/trashable_list_trash_bin", @editor_token)
     assert_response :success, response.body
     assert_equal [@page.id], listed.fetch("records").map { |row| row.fetch("id") }
 
-    restored = call(:post, "/pages/#{@page.id}/actions/restore", @editor_token)
+    restored = call(:post, "/pages/#{@page.id}/actions/trashable_restore", @editor_token)
     assert_response :success, response.body
     assert @page.reload.recording_studio_trashable_kept?
     assert_equal @page.id, restored.fetch("id")
 
-    call(:post, "/pages/#{@page.id}/actions/trash", @editor_token)
+    call(:post, "/pages/#{@page.id}/actions/trashable_trash", @editor_token)
     assert_response :success, response.body
 
-    purged = call(:post, "/pages/#{@page.id}/actions/purge", @admin_token)
+    purged = call(:post, "/pages/#{@page.id}/actions/trashable_purge", @admin_token)
     assert_response :success, response.body
     assert_equal true, purged.fetch("purged")
     assert_nil RecordingStudio::Recording.recording_studio_trashable_including_trashed.find_by(id: @page.id)
   end
 
   test "unauthenticated calls are 401" do
-    post "#{BASE}/pages/#{@page.id}/actions/trash", as: :json
+    post "#{BASE}/pages/#{@page.id}/actions/trashable_trash", as: :json
     assert_response :unauthorized
 
-    post "#{BASE}/pages/#{@page.id}/actions/restore", as: :json
+    post "#{BASE}/pages/#{@page.id}/actions/trashable_restore", as: :json
     assert_response :unauthorized
 
-    post "#{BASE}/pages/#{@page.id}/actions/purge", as: :json
+    post "#{BASE}/pages/#{@page.id}/actions/trashable_purge", as: :json
     assert_response :unauthorized
 
-    get "#{BASE}/pages/#{@page.id}/actions/list_trash_bin", as: :json
+    get "#{BASE}/pages/#{@page.id}/actions/trashable_list_trash_bin", as: :json
     assert_response :unauthorized
   end
 
   test "view is forbidden from trash restore purge and the trash bin" do
-    call(:post, "/pages/#{@page.id}/actions/trash", @viewer_token)
+    call(:post, "/pages/#{@page.id}/actions/trashable_trash", @viewer_token)
     assert_response :forbidden, response.body
 
     @page.recording_studio_trashable_trash!(actor: @owner)
 
-    call(:post, "/pages/#{@page.id}/actions/restore", @viewer_token)
+    call(:post, "/pages/#{@page.id}/actions/trashable_restore", @viewer_token)
     assert_response :forbidden, response.body
 
-    call(:post, "/pages/#{@page.id}/actions/purge", @viewer_token)
+    call(:post, "/pages/#{@page.id}/actions/trashable_purge", @viewer_token)
     assert_response :forbidden, response.body
 
-    call(:get, "/pages/#{@page.id}/actions/list_trash_bin", @viewer_token)
+    call(:get, "/pages/#{@page.id}/actions/trashable_list_trash_bin", @viewer_token)
     assert_response :forbidden, response.body
   end
 
   test "edit is forbidden from purge" do
     @page.recording_studio_trashable_trash!(actor: @owner)
 
-    call(:post, "/pages/#{@page.id}/actions/purge", @editor_token)
+    call(:post, "/pages/#{@page.id}/actions/trashable_purge", @editor_token)
     assert_response :forbidden, response.body
   end
 
   test "a page in another workspace is not found" do
     stranger_page = record_page(@other, "Elsewhere", actor: @stranger)
 
-    call(:post, "/pages/#{stranger_page.id}/actions/trash", @editor_token)
+    call(:post, "/pages/#{stranger_page.id}/actions/trashable_trash", @editor_token)
     assert_response :not_found, response.body
 
     stranger_page.recording_studio_trashable_trash!(actor: @stranger)
 
-    call(:post, "/pages/#{stranger_page.id}/actions/restore", @editor_token)
+    call(:post, "/pages/#{stranger_page.id}/actions/trashable_restore", @editor_token)
     assert_response :not_found, response.body
 
-    call(:post, "/pages/#{stranger_page.id}/actions/purge", @admin_token)
+    call(:post, "/pages/#{stranger_page.id}/actions/trashable_purge", @admin_token)
     assert_response :not_found, response.body
 
-    call(:get, "/pages/#{stranger_page.id}/actions/list_trash_bin", @editor_token)
+    call(:get, "/pages/#{stranger_page.id}/actions/trashable_list_trash_bin", @editor_token)
     assert_response :not_found, response.body
   end
 
   test "wrong state and bad input are 422" do
-    call(:post, "/pages/#{@page.id}/actions/restore", @editor_token)
+    call(:post, "/pages/#{@page.id}/actions/trashable_restore", @editor_token)
     assert_response :unprocessable_entity, response.body
 
-    call(:post, "/pages/#{@page.id}/actions/purge", @admin_token)
+    call(:post, "/pages/#{@page.id}/actions/trashable_purge", @admin_token)
     assert_response :unprocessable_entity, response.body
 
-    call(:post, "/pages/#{@page.id}/actions/trash", @editor_token)
+    call(:post, "/pages/#{@page.id}/actions/trashable_trash", @editor_token)
     assert_response :success, response.body
 
-    call(:post, "/pages/#{@page.id}/actions/trash", @editor_token)
+    call(:post, "/pages/#{@page.id}/actions/trashable_trash", @editor_token)
     assert_response :unprocessable_entity, response.body
 
-    call(:get, "/pages/#{@page.id}/actions/list_trash_bin", @editor_token, limit: "nope")
+    call(:get, "/pages/#{@page.id}/actions/trashable_list_trash_bin", @editor_token, per_page: "nope")
     assert_response :unprocessable_entity, response.body
   end
 
@@ -131,16 +131,86 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     match.recording_studio_trashable_trash!(actor: @owner)
     other.recording_studio_trashable_trash!(actor: @owner)
 
-    listed = call(:get, "/pages/#{parent.id}/actions/list_trash_bin", @editor_token, q: "Mix")
+    listed = call(:get, "/pages/#{parent.id}/actions/trashable_list_trash_bin", @editor_token, q: "  Mix  ")
     assert_response :success, response.body
     assert_equal ["Mix Notes"], listed.fetch("records").map { |row| row["title"] }
   end
 
+  test "list_trash_bin pages with a stable order and no overlap" do
+    parent = record_page(@workspace, "Bin Parent")
+    trashed = 26.times.map do |index|
+      page = record_page(parent, format("Trashed %02d", index))
+      page.recording_studio_trashable_trash!(actor: @owner)
+      page.update_column(:trashed_at, Time.utc(2026, 1, 1, 12, 0, index))
+      page.reload
+    end
+    expected = trashed.sort_by { |page| [-page.trashed_at.to_i, -page.id] }.map(&:id)
+
+    default_page = call(:get, "/pages/#{parent.id}/actions/trashable_list_trash_bin", @editor_token)
+    assert_response :success, response.body
+    first = call(:get, "/pages/#{parent.id}/actions/trashable_list_trash_bin", @editor_token, page: 1, per_page: 25)
+    assert_response :success, response.body
+    second = call(:get, "/pages/#{parent.id}/actions/trashable_list_trash_bin", @editor_token, page: 2, per_page: 25)
+    assert_response :success, response.body
+
+    first_ids = first.fetch("records").map { |row| row.fetch("id") }
+    second_ids = second.fetch("records").map { |row| row.fetch("id") }
+
+    assert_equal 25, first_ids.size
+    assert_equal 1, second_ids.size
+    assert_empty first_ids & second_ids
+    assert_equal expected.first(25), first_ids
+    assert_equal expected.last(1), second_ids
+    assert_equal first_ids, default_page.fetch("records").map { |row| row.fetch("id") }
+  end
+
+  test "list_trash_bin honours a host authorization_resolver" do
+    previous = RecordingStudioTrashable.configuration.authorization_resolver
+    RecordingStudioTrashable.configuration.authorization_resolver = lambda { |**payload|
+      payload.fetch(:action) != :trash_bin
+    }
+
+    call(:get, "/pages/#{@page.id}/actions/trashable_list_trash_bin", @editor_token)
+    assert_response :forbidden, response.body
+  ensure
+    RecordingStudioTrashable.configuration.authorization_resolver = previous
+  end
+
+  test "registering the api twice does not raise" do
+    2.times { RecordingStudioTrashable::Api.register! }
+
+    trash = RecordingStudioApi.capability_action(:trashable_trash)
+    assert_equal RecordingStudioTrashable::Api::Actions::Trash, trash.handler
+  end
+
+  test "a mismatched existing registration raises" do
+    original = RecordingStudioApi.instance_variable_get(:@configuration)
+    RecordingStudioApi.instance_variable_set(:@configuration, RecordingStudioApi::Configuration.new)
+    RecordingStudioApi.configure { |config| config.api :conflict }
+    RecordingStudioApi.register_capability_action(
+      :trashable_trash,
+      api: :conflict,
+      capability: :trashable,
+      handler: ->(_context) {},
+      http_verb: :post,
+      required_role: :edit
+    )
+
+    error = assert_raises(RecordingStudioApi::ConfigurationError) do
+      RecordingStudioTrashable::Api.register!
+    end
+    assert_match(/trashable_trash/, error.message)
+    assert_match(/different handler/, error.message)
+  ensure
+    RecordingStudioApi.instance_variable_set(:@configuration, original) if original
+    RecordingStudioTrashable::Api.register!
+  end
+
   test "capability actions match screen roles" do
-    trash = RecordingStudioApi.capability_action(:trash)
-    restore = RecordingStudioApi.capability_action(:restore)
-    purge = RecordingStudioApi.capability_action(:purge)
-    list = RecordingStudioApi.capability_action(:list_trash_bin)
+    trash = RecordingStudioApi.capability_action(:trashable_trash)
+    restore = RecordingStudioApi.capability_action(:trashable_restore)
+    purge = RecordingStudioApi.capability_action(:trashable_purge)
+    list = RecordingStudioApi.capability_action(:trashable_list_trash_bin)
 
     assert_equal :edit, trash.required_role
     assert_equal :edit, restore.required_role
@@ -149,6 +219,7 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     assert_equal :trashable, trash.capability
     assert_equal :get, list.http_verb
     assert_equal "Trash - Restore", restore.openapi.fetch(:title)
+    assert_nil trash.serializer
   end
 
   private

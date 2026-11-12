@@ -11,15 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Trash, restore, purge, and list-trash-bin on Recording Studio API as capability actions (`:trashable`). Hosts that already mount the API get them on types that enable Trashable. MCP sees them on the generic `capability_action` path.
-- `trash` and `restore` require `:edit`. `purge` requires `:admin`. `list_trash_bin` requires `:edit`, matching the trash bin screen.
+- Trash, restore, purge, and list-trash-bin on Recording Studio API as capability actions (`:trashable`) named `trashable_trash`, `trashable_restore`, `trashable_purge`, and `trashable_list_trash_bin`. Hosts that already mount the API get them on types that enable Trashable. MCP sees them on the generic `capability_action` path.
+- `trashable_trash` and `trashable_restore` require `:edit`. `trashable_purge` requires `:admin`. `trashable_list_trash_bin` requires `:edit`, matching the trash bin screen, and also calls `RecordingStudioTrashable.authorized?(action: :trash_bin)`.
 - Handlers call `recording_studio_trashable_trash!`, `recording_studio_trashable_restore!`, `recording_studio_trashable_purge!`, and `SubtreeQuery.trashed_recordings_for_query`. Lookup uses `access_grant.accessible_recordings(include_trashed: true)` and `access_grant.authorize!`.
-- Dummy mounts Recording Studio API `v0.21.3` in development and test so those HTTP paths can be exercised.
+- `trashable_list_trash_bin` strips `q`, orders by `trashed_at DESC, id DESC`, and pages with `page` / `per_page` defaulting to 25.
+- Dummy mounts Recording Studio API `v0.21.3` in development and test so those HTTP paths can be exercised. Dummy `recordable_types` keep the host Workspace/Project/Folder/Page list, then add AdminRoot plus Access and API types.
 
 ### Upgrade Notes
 
 - Bump to `0.13.0`. No migration.
-- This gem still does not depend on Recording Studio API. When the API gem is loaded, Trashable registers the actions on every named API.
+- This gem still does not depend on Recording Studio API. When the API gem is loaded, Trashable registers the actions on every named API. Registering twice with the same handler is a no-op. A different handler for the same name raises.
 - Enable the actions on a type by including `RecordingStudio::Capabilities::Trashable.to` and exposing that type on the API (`auto_capability_actions` stays on unless you turn it off).
 - Metrics stay on `:operations` through `RecordingStudioTrashable::Metrics.register!`. This change does not call `RecordingStudioMetrics::Api.register!`.
 
