@@ -164,6 +164,18 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     assert_equal first_ids, default_page.fetch("records").map { |row| row.fetch("id") }
   end
 
+  test "list_trash_bin clamps per_page above 100" do
+    parent = record_page(@workspace, "Clamp Parent")
+    101.times do |index|
+      page = record_page(parent, format("Clamp %03d", index))
+      page.recording_studio_trashable_trash!(actor: @owner)
+    end
+
+    listed = call(:get, "/pages/#{parent.id}/actions/trashable_list_trash_bin", @editor_token, per_page: 1000)
+    assert_response :success, response.body
+    assert_equal 100, listed.fetch("records").size
+  end
+
   test "list_trash_bin honours a host authorization_resolver" do
     previous = RecordingStudioTrashable.configuration.authorization_resolver
     RecordingStudioTrashable.configuration.authorization_resolver = lambda { |**payload|

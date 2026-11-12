@@ -3,7 +3,6 @@
 RecordingStudio.configure do |config|
   config.app_name = "Trashable Demo" if config.respond_to?(:app_name=)
   config.recordable_types = %w[Workspace Project Folder Page]
-  config.recordable_types += %w[AdminRoot]
   config.recordable_types += %w[RecordingStudio::Access] if defined?(RecordingStudioAccessible)
   if defined?(RecordingStudioApi)
     config.recordable_types += %w[

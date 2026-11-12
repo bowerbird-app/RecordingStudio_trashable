@@ -295,7 +295,7 @@ When Recording Studio API is loaded, this gem registers capability actions on ev
 | `trashable_purge` | POST | `:admin` | `recording_studio_trashable_purge!` |
 | `trashable_list_trash_bin` | GET | `:edit` | `SubtreeQuery.trashed_recordings_for_query` |
 
-MCP calls them through the generic `capability_action` path. Authorization is Recording Studio Accessible: API `required_role` plus `access_grant.authorize!` after a lookup on `access_grant.accessible_recordings(include_trashed: true)`. `trashable_list_trash_bin` also calls `RecordingStudioTrashable.authorized?(action: :trash_bin, ...)`, so a host `authorization_resolver` is honoured the same way as the trash bin screen.
+MCP calls them through the generic `capability_action` path. Authorization is Recording Studio Accessible: API `required_role` (Recording Studio API authorizes the grant with `include_trashed: true` before the handler) plus a lookup on `access_grant.accessible_recordings(include_trashed: true)`. `trashable_list_trash_bin` also calls `RecordingStudioTrashable.authorized?(action: :trash_bin, ...)`, so a host `authorization_resolver` is honoured the same way as the trash bin screen.
 
 Enable a type on the API as usual. Types that include `RecordingStudio::Capabilities::Trashable.to` get these actions when `auto_capability_actions` is on:
 
@@ -308,7 +308,7 @@ RecordingStudioApi.register_recordable_type_api(
 )
 ```
 
-`trashable_list_trash_bin` accepts `q` (search, stripped), `page`, and `per_page` (default 25). Results are `trashed_at DESC`, then `id DESC`, matching the HTML trash bin. Site-wide trash metrics stay on the operations API through `RecordingStudioTrashable::Metrics.register!` and are unchanged.
+`trashable_list_trash_bin` accepts `q` (search, stripped), `page`, and `per_page` (default 25, capped at 100). Results are `trashed_at DESC`, then `id DESC`, matching the HTML trash bin. Site-wide trash metrics stay on the operations API through `RecordingStudioTrashable::Metrics.register!` and are unchanged.
 
 ## Mounted UI
 

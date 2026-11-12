@@ -49,7 +49,6 @@ module RecordingStudioTrashable
 
         def call
           recording = Lookup.recording(context)
-          context.access_grant.authorize!(recording: recording, role: :edit, include_trashed: true)
           raise RecordingStudioApi::InvalidActionInputError, already_trashed_message if already_trashed?(recording)
 
           recording.recording_studio_trashable_trash!(actor: context.actor, metadata: metadata("trash"))
@@ -84,7 +83,6 @@ module RecordingStudioTrashable
 
         def call
           recording = Lookup.recording(context)
-          context.access_grant.authorize!(recording: recording, role: :edit, include_trashed: true)
           raise RecordingStudioApi::InvalidActionInputError, not_trashed_message unless trashed?(recording)
 
           recording.recording_studio_trashable_restore!(actor: context.actor, metadata: metadata)
@@ -119,7 +117,6 @@ module RecordingStudioTrashable
 
         def call
           recording = Lookup.recording(context)
-          context.access_grant.authorize!(recording: recording, role: :admin, include_trashed: true)
           recording.recording_studio_trashable_purge!(actor: context.actor, metadata: metadata)
           Payload.wrap(context, { id: recording.id, purged: true })
         end
@@ -135,6 +132,7 @@ module RecordingStudioTrashable
 
       class ListTrashBin
         PAGE_SIZE = 25
+        MAX_PAGE_SIZE = 100
 
         def self.call(context)
           Errors.wrap { new(context).call }
@@ -146,7 +144,6 @@ module RecordingStudioTrashable
 
         def call
           recording = Lookup.recording(context)
-          context.access_grant.authorize!(recording: recording, role: :edit, include_trashed: true)
           authorize_trash_bin!(recording)
           Payload.wrap(context, { records: serialized_records(recording) })
         end
@@ -184,7 +181,7 @@ module RecordingStudioTrashable
         end
 
         def per_page_param
-          positive_integer(context.params[:per_page], default: PAGE_SIZE)
+          [positive_integer(context.params[:per_page], default: PAGE_SIZE), MAX_PAGE_SIZE].min
         end
 
         def positive_integer(value, default:)

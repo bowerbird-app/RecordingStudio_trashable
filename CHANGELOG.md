@@ -13,9 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Trash, restore, purge, and list-trash-bin on Recording Studio API as capability actions (`:trashable`) named `trashable_trash`, `trashable_restore`, `trashable_purge`, and `trashable_list_trash_bin`. Hosts that already mount the API get them on types that enable Trashable. MCP sees them on the generic `capability_action` path.
 - `trashable_trash` and `trashable_restore` require `:edit`. `trashable_purge` requires `:admin`. `trashable_list_trash_bin` requires `:edit`, matching the trash bin screen, and also calls `RecordingStudioTrashable.authorized?(action: :trash_bin)`.
-- Handlers call `recording_studio_trashable_trash!`, `recording_studio_trashable_restore!`, `recording_studio_trashable_purge!`, and `SubtreeQuery.trashed_recordings_for_query`. Lookup uses `access_grant.accessible_recordings(include_trashed: true)` and `access_grant.authorize!`.
-- `trashable_list_trash_bin` strips `q`, orders by `trashed_at DESC, id DESC`, and pages with `page` / `per_page` defaulting to 25.
-- Dummy mounts Recording Studio API `v0.21.3` in development and test so those HTTP paths can be exercised. Dummy `recordable_types` keep the host Workspace/Project/Folder/Page list, then add AdminRoot plus Access and API types.
+- Handlers call `recording_studio_trashable_trash!`, `recording_studio_trashable_restore!`, `recording_studio_trashable_purge!`, and `SubtreeQuery.trashed_recordings_for_query`. Lookup uses `access_grant.accessible_recordings(include_trashed: true)`. Recording Studio API already authorizes the grant at the action `required_role` with `include_trashed: true` before the handler. `trashable_list_trash_bin` also calls `RecordingStudioTrashable.authorized?(action: :trash_bin)`.
+- `trashable_list_trash_bin` strips `q`, orders by `trashed_at DESC, id DESC`, and pages with `page` / `per_page` defaulting to 25 and capped at 100.
+- Dummy mounts Recording Studio API `v0.21.3` in development and test so those HTTP paths can be exercised. Dummy `recordable_types` keep the host Workspace/Project/Folder/Page list, then add Access and API types.
 
 ### Upgrade Notes
 
