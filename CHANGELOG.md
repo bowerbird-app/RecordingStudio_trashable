@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Development Gemfiles pin `recording_studio` to tag `v6.7.0`, `flat_pack` to tag `v0.1.356`, and `recording_studio_metrics` to tag `v0.8.0`. Dummy also pins `recording_studio_accessible` to `v0.31.0`, `recording_studio_admin` to `v2.13.0`, and `recording_studio_api` to `v0.22.1`. `recording_studio_logs` stays `v0.7.4`, `recording_studio_moveable` stays `v4.1.1`, `recording_studio_icons` stays `v0.2.1`, and `recording_studio_internationalization` stays `v0.2.0`. `view_component` stays `4.19.0`. Gemspec floors and `VERSION` stay `0.14.0`.
+- Dummy `RecordingStudio.configure` sets `config.authorize_write` so Recording Studio 6.5+ accepts writes from a present actor.
+
 ## [0.14.0] - 2026-11-12
 
 ### Added

@@ -20,4 +20,8 @@ RecordingStudio.configure do |config|
   config.recordable_dup_strategy = :dup
   config.require_actor = true if config.respond_to?(:require_actor=)
   config.max_metadata_bytes = 16_384 if config.respond_to?(:max_metadata_bytes=)
+  # Recording Studio 6.5+ denies record! unless an authorizer is set.
+  # This dummy grants writes to any present actor, matching its trash
+  # authorization resolver and the seeds/tests that record before access exists.
+  config.authorize_write = ->(actor:, **) { actor.present? } if config.respond_to?(:authorize_write=)
 end
