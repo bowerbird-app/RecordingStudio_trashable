@@ -22,17 +22,17 @@ class RecordingStudioTrashableTest < Minitest::Test
     spec = Gem.loaded_specs.fetch("recording_studio")
     gemspec = File.read(File.expand_path("../recording_studio_trashable.gemspec", __dir__))
 
-    assert spec.version >= Gem::Version.new("6.3.0"),
-           "expected recording_studio >= 6.3.0, got #{spec.version}"
+    assert spec.version >= Gem::Version.new("6.7.0"),
+           "expected recording_studio >= 6.7.0, got #{spec.version}"
     assert_includes gemspec, 'spec.add_dependency "recording_studio", ">= 6.1.0"'
     assert_includes gemspec, 'spec.add_dependency "flat_pack", ">= 0.1.315"'
 
     root_gemfile = File.read(File.expand_path("../Gemfile", __dir__))
     dummy_gemfile = File.read(File.expand_path("dummy/Gemfile", __dir__))
-    assert_includes root_gemfile, 'tag: "v6.3.0"'
-    assert_includes dummy_gemfile, 'tag: "v6.3.0"'
-    assert_includes root_gemfile, 'tag: "v0.1.341"'
-    assert_includes dummy_gemfile, 'tag: "v0.1.341"'
+    assert_includes root_gemfile, 'tag: "v6.7.0"'
+    assert_includes dummy_gemfile, 'tag: "v6.7.0"'
+    assert_includes root_gemfile, 'tag: "v0.1.356"'
+    assert_includes dummy_gemfile, 'tag: "v0.1.356"'
     assert_includes root_gemfile, 'gem "view_component", "4.19.0"'
     assert_includes dummy_gemfile, 'gem "view_component", "4.19.0"'
   end

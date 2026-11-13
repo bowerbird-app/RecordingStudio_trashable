@@ -1,6 +1,6 @@
 # Recording Studio Trashable notes
 
-This addon requires RecordingStudio `>= 6.1.0` (development pin tag `v6.3.0`) and Flatpack `>= 0.1.315` (development pin tag `v0.1.341`). Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
+This addon requires RecordingStudio `>= 6.1.0` (development pin tag `v6.7.0`) and Flatpack `>= 0.1.315` (development pin tag `v0.1.356`). Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
 
 ## Capability registration
 
