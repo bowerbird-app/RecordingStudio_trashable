@@ -13,7 +13,7 @@ class InstallGeneratorTest < Minitest::Test
     )
     template = File.read(template_path)
 
-    assert_includes template, "Recording Studio 6.14.0 or newer, below 7.0"
+    assert_includes template, "Recording Studio 7.0 or newer, below 8.0"
     assert_includes template, "recording_studio_layout"
     assert_includes template, "RecordingStudio::Capabilities::Trashable.to"
   end

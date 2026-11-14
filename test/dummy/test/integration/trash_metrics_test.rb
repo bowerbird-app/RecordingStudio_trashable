@@ -13,7 +13,7 @@ class TrashMetricsTest < ActionDispatch::IntegrationTest
     @member = User.find_by(email: "member@example.com") ||
               User.create!(email: "member@example.com", password: "Password", password_confirmation: "Password")
     @workspace = Workspace.create!(name: "Metrics Workspace #{SecureRandom.hex(4)}")
-    @workspace_recording = RecordingStudio.root_recording_for(@workspace)
+    @workspace_recording = RecordingStudio.create_root_recording!(@workspace, actor: @user)
     @baseline_in_trash = current_trash.count
     @baseline_by_type = current_trash.group(:recordable_type).count
     @baseline_by_day = current_trash.group("DATE(trashed_at)").count

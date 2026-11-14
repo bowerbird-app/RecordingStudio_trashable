@@ -15,7 +15,7 @@ class EnglishFallbackTest < ActionDispatch::IntegrationTest
     Current.actor = @user
     @workspace = Workspace.find_by(name: "English Fallback Workspace") ||
                  Workspace.create!(name: "English Fallback Workspace")
-    @workspace_recording = RecordingStudio.root_recording_for(@workspace)
+    @workspace_recording = RecordingStudio.create_root_recording!(@workspace, actor: @user)
     @previous_locales = I18n.available_locales
     I18n.available_locales = (Array(@previous_locales) + %i[en de fr]).uniq
   end
