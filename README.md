@@ -22,7 +22,7 @@ It extracts trash behavior from RecordingStudio core into addon-owned APIs witho
 
 ## Installation
 
-Add the gems to your host app. This addon requires Recording Studio 6.1.0 or newer and Flatpack 0.1.315 or newer:
+Add the gems to your host app. This addon requires Recording Studio 6.7.1 or newer, below 7.0, and Flatpack 0.1.315 or newer:
 
 ```ruby
 gem "recording_studio"
@@ -430,7 +430,7 @@ Only `recording_studio.trashable.*` keys go through `RecordingStudio.t` / `Copy.
 
 Hosts own other languages. Copy `recording_studio.trashable.*` into `config/locales/<locale>.yml` and list that locale in `config.i18n.available_locales`. Do not add `RecordingStudio_Internationalization` as a dependency of this gem — it is optional on the host (the dummy uses it to switch English/French). Hosts override by defining the same nested keys in their own `config/locales`.
 
-Helper arguments and host translations still win. `Copy.value` and `Copy.defaulted` keep an explicit string when the host passed one, and follow the locale when the host left the English default. Do not hand-copy English `default:` strings that match `en.yml`. Requires Recording Studio `>= 6.1.0`.
+Helper arguments and host translations still win. `Copy.value` and `Copy.defaulted` keep an explicit string when the host passed one, and follow the locale when the host left the English default. Do not hand-copy English `default:` strings that match `en.yml`. Requires Recording Studio `>= 6.7.1`, `< 7.0`.
 
 
 Stored names stay data: recording titles, type names, and other database content are not translated.
@@ -460,7 +460,7 @@ The dummy app demonstrates:
 
 ## Core follow-up assumptions
 
-Recording Studio 6.1 requires every configured recordable type to declare `recording_studio_recordable(...)`. Root creation must use root-declared recordables, and child recordings must be created under an allowed parent recording. This gem requires RecordingStudio `>= 6.1.0` (development pin tag `v6.7.0`) and Flatpack `>= 0.1.315` (development pin tag `v0.1.356`). Host opt-in is `include RecordingStudio::Capabilities::Trashable.to(**opts)`, a thin wrapper around `RecordingStudio::Capabilities.include_for(:trashable, **options)`. Installing this gem does not enable trash on any recordable type. Do not include `RecordingStudio::UsesDefaultLayout` or hard-code `layout "recording_studio/default_layout"`. Set `config.layout` instead.
+Recording Studio 6.1 requires every configured recordable type to declare `recording_studio_recordable(...)`. Root creation must use root-declared recordables, and child recordings must be created under an allowed parent recording. This gem requires RecordingStudio `>= 6.7.1`, `< 7.0` (development pin tag `v6.10.0`) and Flatpack `>= 0.1.315` (development pin tag `v0.1.356`). Recording Studio 6.9.0 and 6.10.0 write `root_recording_id` on events, so copy core migration `20261114090000_add_root_recording_id_to_recording_studio_events` into the host before using those releases. The dummy app includes that copy. Host opt-in is `include RecordingStudio::Capabilities::Trashable.to(**opts)`, a thin wrapper around `RecordingStudio::Capabilities.include_for(:trashable, **options)`. Installing this gem does not enable trash on any recordable type. Do not include `RecordingStudio::UsesDefaultLayout` or hard-code `layout "recording_studio/default_layout"`. Set `config.layout` instead.
 
 This addon:
 

@@ -7,10 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-11-14
+
 ### Changed
 
-- Development Gemfiles pin `recording_studio` to tag `v6.7.0`, `flat_pack` to tag `v0.1.356`, and `recording_studio_metrics` to tag `v0.8.0`. Dummy also pins `recording_studio_accessible` to `v0.31.0`, `recording_studio_admin` to `v2.13.0`, and `recording_studio_api` to `v0.22.1`. `recording_studio_logs` stays `v0.7.4`, `recording_studio_moveable` stays `v4.1.1`, `recording_studio_icons` stays `v0.2.1`, and `recording_studio_internationalization` stays `v0.2.0`. `view_component` stays `4.19.0`. Gemspec floors and `VERSION` stay `0.14.0`.
+- Gemspec requires `recording_studio` `>= 6.7.1`, `< 7.0`. The previous floor was `>= 6.1.0`. Hosts need Recording Studio 6.7.1 so core reloads extensions correctly.
+- Development Gemfiles pin `recording_studio` to tag `v6.10.0`. `flat_pack` stays tag `v0.1.356` and `recording_studio_metrics` stays tag `v0.8.0`. Dummy stays on `recording_studio_accessible` `v0.31.0`, `recording_studio_admin` `v2.13.0`, `recording_studio_api` `v0.22.1`, `recording_studio_logs` `v0.7.4`, `recording_studio_moveable` `v4.1.1`, `recording_studio_icons` `v0.2.1`, and `recording_studio_internationalization` `v0.2.0`. `view_component` stays `4.19.0`.
 - Dummy `RecordingStudio.configure` sets `config.authorize_write` so Recording Studio 6.5+ accepts writes from a present actor.
+
+### Upgrade Notes
+
+- Bump to `0.14.1`. This gem ships no new migration.
+- Require Recording Studio `>= 6.7.1`, `< 7.0`. Development and CI pin tag `v6.10.0`.
+- Recording Studio 6.9.0 and 6.10.0 store `root_recording_id` on `recording_studio_events`. Copy core migration `20261114090000_add_root_recording_id_to_recording_studio_events` into the host app before writing events on those releases. The dummy app includes that copy.
+- Trash, restore, purge, `trash_root`, retention, and the query entry point are unchanged.
 
 ## [0.14.0] - 2026-11-12
 
@@ -380,7 +390,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.14.1...HEAD
+[0.14.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.3...v0.13.0
 [0.12.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.12.2...v0.12.3
