@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Development Gemfiles pin `flat_pack` to tag `v0.1.366`. Dummy pins `recording_studio_accessible` to `v0.37.0`, `recording_studio_api` to `v0.23.1`, and `recording_studio_internationalization` to `v0.2.2`. `recording_studio` stays `v6.10.0`, `recording_studio_metrics` stays `v0.8.0`, `recording_studio_admin` stays `v2.13.0`, `recording_studio_logs` stays `v0.7.4`, `recording_studio_moveable` stays `v4.1.1`, and `recording_studio_icons` stays `v0.2.1`. `view_component` stays `4.19.0`. Gemspec floors and `VERSION` stay `0.15.0`.
+
 ## [0.15.0] - 2026-11-14
 
 ### Changed
