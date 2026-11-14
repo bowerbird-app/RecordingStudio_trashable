@@ -313,11 +313,11 @@ class RetentionPurgeAtTest < ActionDispatch::IntegrationTest
   end
 
   def fetch(recording)
-    RecordingStudio::Recording.recording_studio_trashable_including_trashed.find(recording.id)
+    RecordingStudio::Recording.find(recording.id)
   end
 
   def recording_or_nil(recording)
-    RecordingStudio::Recording.recording_studio_trashable_including_trashed.find_by(id: recording.id)
+    RecordingStudio::Recording.find_by(id: recording.id)
   end
 
   def age(recording, trashed_at)

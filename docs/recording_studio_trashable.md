@@ -1,6 +1,6 @@
 # Recording Studio Trashable notes
 
-This addon requires RecordingStudio `>= 6.7.1`, `< 7.0` (development pin tag `v6.13.0`) and Flatpack `>= 0.1.315` (development pin tag `v0.1.374`). Recording Studio 6.9.0 and later write `root_recording_id` on events. Copy core migration `20261114090000_add_root_recording_id_to_recording_studio_events` into the host before using those releases. The dummy app includes that copy. Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
+This addon requires RecordingStudio `>= 6.14.0`, `< 7.0` (development pin tag `v6.14.0`) and Flatpack `>= 0.1.315` (development pin tag `v0.1.374`). Recording Studio 6.9.0 and later write `root_recording_id` on events. Copy core migration `20261114090000_add_root_recording_id_to_recording_studio_events` into the host before using those releases. The dummy app includes that copy. Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
 
 ## Capability registration
 
@@ -14,32 +14,15 @@ The mounted UI is subtree-scoped. Pass a root recording id to the trash bin rout
 
 Lifecycle actions redirect back by default. In standard form flows the controller can use the request referrer, and callers can still pass `back_path` when they need an explicit return location. Async callers can opt into JSON by sending `async: true` or using a JSON request format.
 
-## Host app query defaults
+## Kept recordings
 
-Trashable does not install a `default_scope` on `RecordingStudio::Recording`, but host apps can add one when they want plain recording queries to stay on active rows:
+Trashable does not install a `default_scope`. The engine initializer registers `RecordingStudio.register_recording_filter(:trashable, ...)`. `RecordingStudio::Recording.kept` and `RecordingStudio.kept_sql` skip rows with `trashed_at` set. Plain `Recording` queries still include those rows. Trash-bin scopes (`recording_studio_trashable_trashed`, `recording_studio_trashable_trash_roots`, `recording_studio_trashable_trash_bin`) unscope `trashed_at` so a caller who started from `.kept` can still list the bin.
 
-```ruby
-# config/initializers/recording_studio_trashable.rb
-RecordingStudio.configuration.hooks.extend_model(:recording) do
-  default_scope { where(trashed_at: nil) }
+Do not register the filter from `to_prepare`. The registry lives outside the reloader, and registering again from that callback is unnecessary. The same name replaces the filter in place.
 
-  scope :not_trashed, -> { recording_studio_trashable_active }
-  scope :with_trashed, -> { recording_studio_trashable_including_trashed }
-end
-```
+A host that has not migrated (no `trashed_at` column), or whose database is unavailable when a query first runs, gets no filter and no error from this check.
 
-Register that block once, when the initializer loads. Do not put it in `to_prepare`. Rails runs that callback on every reload, each call adds another proc, and Recording Studio applies every proc, so the scopes stack.
-
-Use `with_trashed` in setup code, trash-bin screens, restore flows, or admin/debug tooling when you intentionally need trashed rows.
-
-Sibling gems should not read or write `trashed_at` directly. Prefer
-`recording_studio_trashable_active`, `recording_studio_trashable_kept?` /
-`recording_studio_trashable_trashed?`, `recording_studio_trashable_kept_sql`,
-`recording_studio_trashable_trash!`, and `RecordingStudioTrashable.void_recording!`
-(`update_columns`). Gems that only need the query helpers should
-`require "recording_studio_trashable/query"` (see README) instead of the full
-engine. See the README sibling mapping table for call-site replacements,
-`~> 0.13` dependency notes, and column-existence conditionals.
+Sibling gems should not read or write `trashed_at` directly. Prefer `Recording.kept`, `RecordingStudio.kept_sql`, `recording_studio_trashable_kept?` / `recording_studio_trashable_trashed?`, `recording_studio_trashable_trash!`, and `RecordingStudioTrashable.void_recording!` (`update_columns` on the recording and its descendants). Gems that only need the query helpers should `require "recording_studio_trashable/query"` (see README) instead of the full engine. See the README sibling mapping table for call-site replacements, `~> 0.16` dependency notes, and column-existence conditionals. Delete any host default scope on `trashed_at`.
 
 ## Retention persistence
 

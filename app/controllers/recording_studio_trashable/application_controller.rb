@@ -34,7 +34,7 @@ module RecordingStudioTrashable
     end
 
     def find_recording!(recording_id)
-      RecordingStudio::Recording.recording_studio_trashable_including_trashed.find(recording_id)
+      RecordingStudio::Recording.find(recording_id)
     end
 
     def authorize_mounted_page!(action, recording: nil)

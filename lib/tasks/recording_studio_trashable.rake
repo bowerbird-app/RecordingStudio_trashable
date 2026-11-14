@@ -37,7 +37,7 @@ unless defined?(RecordingStudioTrashableRake)
     end
 
     def scope_recordings(ids)
-      RecordingStudio::Recording.recording_studio_trashable_including_trashed.where(id: ids).to_a
+      RecordingStudio::Recording.where(id: ids).to_a
     end
   end
 end

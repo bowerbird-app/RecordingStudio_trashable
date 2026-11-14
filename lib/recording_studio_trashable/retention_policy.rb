@@ -144,9 +144,9 @@ module RecordingStudioTrashable
 
       def parent_from_database(recording, parent_id)
         recording_model = recording.class
-        return unless recording_model.respond_to?(:recording_studio_trashable_including_trashed)
+        return unless recording_model.respond_to?(:find_by)
 
-        recording_model.recording_studio_trashable_including_trashed.find_by(id: parent_id)
+        recording_model.find_by(id: parent_id)
       end
 
       def same_scope?(recording, scope_recording)

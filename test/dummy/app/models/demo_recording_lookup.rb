@@ -9,7 +9,7 @@ class DemoRecordingLookup
 
   class << self
     def workspace_root
-      RecordingStudio::Recording.with_trashed.find_by(
+      RecordingStudio::Recording.find_by(
         recordable_type: "Workspace",
         parent_recording_id: nil
       )
@@ -19,15 +19,15 @@ class DemoRecordingLookup
       type_name = type.to_s
       table = TYPE_TABLES.fetch(type_name)
 
-      RecordingStudio::Recording.with_trashed
-                               .joins("INNER JOIN #{table} ON #{table}.id = recording_studio_recordings.recordable_id")
-                               .find_by("recording_studio_recordings.recordable_type = ? AND #{table}.slug = ?",
-                                        type_name, slug)
+      RecordingStudio::Recording
+        .joins("INNER JOIN #{table} ON #{table}.id = recording_studio_recordings.recordable_id")
+        .find_by("recording_studio_recordings.recordable_type = ? AND #{table}.slug = ?",
+                 type_name, slug)
     end
 
     def recent_projects(root_recording, limit: DEFAULT_HOME_TABLE_LIMIT)
       subtree_relation_for(root_recording)
-        .not_trashed
+        .kept
         .where(recordable_type: "Project")
         .reorder(updated_at: :desc, id: :desc)
         .limit(limit)
@@ -36,7 +36,7 @@ class DemoRecordingLookup
 
     def recent_active_pages(root_recording, limit: DEFAULT_HOME_TABLE_LIMIT)
       subtree_relation_for(root_recording)
-        .not_trashed
+        .kept
         .where(recordable_type: "Page")
         .reorder(updated_at: :desc, id: :desc)
         .limit(limit)
@@ -57,7 +57,7 @@ class DemoRecordingLookup
     def subtree_relation_for(root_recording)
       return RecordingStudio::Recording.none unless root_recording
 
-      RecordingStudio::Recording.with_trashed.where(root_recording_id: root_recording.id)
+      RecordingStudio::Recording.where(root_recording_id: root_recording.id)
     end
   end
 end

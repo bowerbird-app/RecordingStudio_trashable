@@ -22,15 +22,15 @@ class RecordingStudioTrashableTest < Minitest::Test
     spec = Gem.loaded_specs.fetch("recording_studio")
     gemspec = File.read(File.expand_path("../recording_studio_trashable.gemspec", __dir__))
 
-    assert spec.version >= Gem::Version.new("6.13.0"),
-           "expected recording_studio >= 6.13.0, got #{spec.version}"
-    assert_includes gemspec, 'spec.add_dependency "recording_studio", ">= 6.7.1", "< 7.0"'
+    assert spec.version >= Gem::Version.new("6.14.0"),
+           "expected recording_studio >= 6.14.0, got #{spec.version}"
+    assert_includes gemspec, 'spec.add_dependency "recording_studio", ">= 6.14.0", "< 7.0"'
     assert_includes gemspec, 'spec.add_dependency "flat_pack", ">= 0.1.315"'
 
     root_gemfile = File.read(File.expand_path("../Gemfile", __dir__))
     dummy_gemfile = File.read(File.expand_path("dummy/Gemfile", __dir__))
-    assert_includes root_gemfile, 'tag: "v6.13.0"'
-    assert_includes dummy_gemfile, 'tag: "v6.13.0"'
+    assert_includes root_gemfile, 'tag: "v6.14.0"'
+    assert_includes dummy_gemfile, 'tag: "v6.14.0"'
     assert_includes root_gemfile, 'tag: "v0.1.374"'
     assert_includes dummy_gemfile, 'tag: "v0.1.374"'
     assert_includes dummy_gemfile, 'tag: "v0.40.0"'
@@ -302,8 +302,9 @@ class RecordingStudioTrashableTest < Minitest::Test
     end
     relation.define_singleton_method(:to_a) { scope_recordings }
 
-    RecordingStudio.const_set(:Recording, Class.new) unless recording_defined
-    RecordingStudio::Recording.define_singleton_method(:recording_studio_trashable_including_trashed) { relation }
+    stand_in = Class.new
+    stand_in.define_singleton_method(:where) { |conditions| relation.where(conditions) }
+    RecordingStudio.const_set(:Recording, stand_in)
 
     assert_equal scope_recordings, RecordingStudioTrashable.root_scope_recordings
   ensure

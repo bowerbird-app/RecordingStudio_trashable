@@ -21,7 +21,6 @@ module RecordingStudioTrashable
       return RecordingStudioTrashable.root_scope_recordings if scope_recording_ids.blank?
 
       RecordingStudio::Recording
-        .recording_studio_trashable_including_trashed
         .where(id: Array(scope_recording_ids))
         .reorder(created_at: :asc)
         .to_a

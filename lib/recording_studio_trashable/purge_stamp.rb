@@ -59,7 +59,7 @@ module RecordingStudioTrashable
         DEPTH_CAP.times do
           return if missing.empty?
 
-          parents = recording_model.recording_studio_trashable_including_trashed.where(id: missing).to_a
+          parents = recording_model.where(id: missing).to_a
           return if parents.empty?
 
           parents.each { |parent| index[parent.id] = parent }

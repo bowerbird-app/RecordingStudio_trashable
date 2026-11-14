@@ -45,8 +45,9 @@ class RetentionPurgeJobTest < Minitest::Test
     end
     relation.define_singleton_method(:to_a) { scope_recordings }
 
-    RecordingStudio.const_set(:Recording, Class.new) unless recording_defined
-    RecordingStudio::Recording.define_singleton_method(:recording_studio_trashable_including_trashed) { relation }
+    stand_in = Class.new
+    stand_in.define_singleton_method(:where) { |conditions| relation.where(conditions) }
+    RecordingStudio.const_set(:Recording, stand_in)
 
     RecordingStudioTrashable.stub(:purge_due_recordings_for_all_scopes, lambda { |**kwargs|
       captured_arguments = kwargs

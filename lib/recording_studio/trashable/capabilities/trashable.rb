@@ -193,8 +193,7 @@ module RecordingStudio
           end
 
           def recording_studio_trashable_lock_children(parent_ids)
-            rows = self.class.recording_studio_trashable_including_trashed
-                       .where(parent_recording_id: parent_ids)
+            rows = self.class.where(parent_recording_id: parent_ids)
                        .reorder(created_at: :asc, id: :asc)
                        .to_a
             return [] if rows.empty?
@@ -218,8 +217,7 @@ module RecordingStudio
           end
 
           def recording_studio_trashable_lock_each(ids)
-            relation = self.class.recording_studio_trashable_including_trashed
-            ids.sort.map { |recording_id| relation.lock.find(recording_id) }
+            ids.sort.map { |recording_id| self.class.lock.find(recording_id) }
           end
 
           def recording_studio_trashable_trash_root?(recording)
