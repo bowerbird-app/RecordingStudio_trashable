@@ -19,15 +19,16 @@ Lifecycle actions redirect back by default. In standard form flows the controlle
 Trashable does not install a `default_scope` on `RecordingStudio::Recording`, but host apps can add one when they want plain recording queries to stay on active rows:
 
 ```ruby
-Rails.application.config.to_prepare do
-	RecordingStudio::Recording.class_eval do
-		default_scope { where(trashed_at: nil) }
+# config/initializers/recording_studio_trashable.rb
+RecordingStudio.configuration.hooks.extend_model(:recording) do
+  default_scope { where(trashed_at: nil) }
 
-		scope :not_trashed, -> { recording_studio_trashable_active }
-		scope :with_trashed, -> { recording_studio_trashable_including_trashed }
-	end
+  scope :not_trashed, -> { recording_studio_trashable_active }
+  scope :with_trashed, -> { recording_studio_trashable_including_trashed }
 end
 ```
+
+Register that block once, when the initializer loads. Do not put it in `to_prepare`. Rails runs that callback on every reload, each call adds another proc, and Recording Studio applies every proc, so the scopes stack.
 
 Use `with_trashed` in setup code, trash-bin screens, restore flows, or admin/debug tooling when you intentionally need trashed rows.
 

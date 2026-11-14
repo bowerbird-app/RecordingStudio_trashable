@@ -94,8 +94,7 @@ class EngineTest < Minitest::Test
   end
 
   def test_install_recording_capabilities_applies_capabilities_and_scopes_once
-    recording_defined = RecordingStudio.const_defined?(:Recording, false)
-    original_recording = RecordingStudio.const_get(:Recording) if recording_defined
+    capability_methods = Module.new
     recording_class = Class.new do
       class << self
         def scope(name, body)
@@ -107,23 +106,25 @@ class EngineTest < Minitest::Test
     end
     applied_count = 0
 
-    RecordingStudio.const_set(:Recording, recording_class) unless recording_defined
-    RecordingStudio.const_set(:Recording, recording_class) if recording_defined
-
-    RecordingStudio.stub(:apply_capabilities!, -> { applied_count += 1 }) do
-      RecordingStudioTrashable.install_recording_capabilities!
-      RecordingStudioTrashable.install_recording_capabilities!
+    with_recording_doubles(recording_class) do
+      RecordingStudio.stub(:apply_capabilities!, lambda {
+        applied_count += 1
+        recording_class.include(capability_methods)
+      }) do
+        RecordingStudioTrashable.install_recording_capabilities!
+        RecordingStudioTrashable.install_recording_capabilities!
+      end
     end
+
+    ancestors = recording_class.ancestors
+    scopes_index = ancestors.index(RecordingStudioTrashable::RecordingScopes)
+    methods_index = ancestors.index(capability_methods)
 
     assert_equal 2, applied_count
-    assert_includes RecordingStudio::Recording.included_modules, RecordingStudioTrashable::RecordingScopes
-    assert_equal 1, RecordingStudio::Recording.included_modules.count(RecordingStudioTrashable::RecordingScopes)
-  ensure
-    if recording_defined
-      RecordingStudio.const_set(:Recording, original_recording)
-    elsif RecordingStudio.const_defined?(:Recording, false)
-      RecordingStudio.send(:remove_const, :Recording)
-    end
+    refute_nil scopes_index
+    refute_nil methods_index
+    assert_operator scopes_index, :<, methods_index
+    assert_equal 1, recording_class.included_modules.count(RecordingStudioTrashable::RecordingScopes)
   end
 
   def test_load_yaml_config_logs_and_swallows_configuration_errors
@@ -177,6 +178,32 @@ class EngineTest < Minitest::Test
   end
 
   private
+
+  def with_recording_doubles(recording_class)
+    saved = {
+      Recording: saved_constant(:Recording),
+      Event: saved_constant(:Event)
+    }
+    RecordingStudio.const_set(:Recording, recording_class)
+    RecordingStudio.const_set(:Event, Class.new)
+    yield
+  ensure
+    saved.each { |name, original| restore_constant(name, original) }
+  end
+
+  def saved_constant(name)
+    return unless RecordingStudio.const_defined?(name, false)
+
+    [:keep, RecordingStudio.const_get(name)]
+  end
+
+  def restore_constant(name, original)
+    if original
+      RecordingStudio.const_set(name, original.last)
+    elsif RecordingStudio.const_defined?(name, false)
+      RecordingStudio.send(:remove_const, name)
+    end
+  end
 
   def find_initializer(name)
     RecordingStudioTrashable::Engine.initializers.find { |initializer| initializer.name == name }

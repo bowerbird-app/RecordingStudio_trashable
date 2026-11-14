@@ -92,17 +92,15 @@ class ShowcaseController < ApplicationController
           title: "Hide trashed recordings by default",
           anchor_id: "hide-trashed-recordings-by-default",
           subtitle: "Opt into a host-app default scope so ordinary recording queries stay on active rows.",
-          body: "Trashable does not force a global default scope, but host apps can add one on RecordingStudio::Recording when they want ordinary queries to skip trashed rows. This dummy app keeps a not_trashed alias for explicit call sites and a with_trashed escape hatch for trash bins, restore flows, seeds, and admin lookups.",
+          body: "Trashable does not force a global default scope, but host apps can add one on RecordingStudio::Recording when they want ordinary queries to skip trashed rows. Register the extension once when the initializer loads. Do not put it in to_prepare, because each reload would add another proc and the scopes would stack. This dummy app keeps a not_trashed alias for explicit call sites and a with_trashed escape hatch for trash bins, restore flows, seeds, and admin lookups.",
           code_title: "config/initializers/recording_studio_trashable.rb",
           code_language: :ruby,
           code: <<~RUBY
-            Rails.application.config.to_prepare do
-              RecordingStudio::Recording.class_eval do
-                default_scope { where(trashed_at: nil) }
+            RecordingStudio.configuration.hooks.extend_model(:recording) do
+              default_scope { where(trashed_at: nil) }
 
-                scope :not_trashed, -> { recording_studio_trashable_active }
-                scope :with_trashed, -> { recording_studio_trashable_including_trashed }
-              end
+              scope :not_trashed, -> { recording_studio_trashable_active }
+              scope :with_trashed, -> { recording_studio_trashable_including_trashed }
             end
           RUBY
         },

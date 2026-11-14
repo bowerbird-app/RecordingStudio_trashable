@@ -362,8 +362,9 @@ class UiSurfaceTest < Minitest::Test
     assert_includes lookup_source, ".recording_studio_trashable_trash_roots"
     assert_includes trashable_initializer_source,
                     'config.retention_purge_actor_resolver = -> { User.find_by!(email: "system@example.com") }'
-    assert_includes trashable_initializer_source, "Rails.application.config.to_prepare do"
-    assert_includes trashable_initializer_source, "RecordingStudio::Recording.class_eval do"
+    assert_includes trashable_initializer_source, "RecordingStudio.configuration.hooks.extend_model(:recording) do"
+    refute_includes trashable_initializer_source, "Rails.application.config.to_prepare do"
+    refute_includes trashable_initializer_source, "RecordingStudio::Recording.class_eval do"
     assert_includes trashable_initializer_source, "default_scope { where(trashed_at: nil) }"
     assert_includes trashable_initializer_source, "scope :not_trashed"
     assert_includes trashable_initializer_source, "scope :with_trashed"
@@ -585,6 +586,7 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, 'title: "Filter recordings by trash state"'
     assert_includes source, 'title: "Hide trashed recordings by default"'
     assert_includes source, 'anchor_id: "hide-trashed-recordings-by-default"'
+    assert_includes source, "RecordingStudio.configuration.hooks.extend_model(:recording) do"
     assert_includes source, "default_scope { where(trashed_at: nil) }"
     assert_includes source, "scope :not_trashed"
     assert_includes source, "scope :with_trashed"
@@ -719,6 +721,8 @@ class UiSurfaceTest < Minitest::Test
     notes = read_repo_file("../docs/recording_studio_trashable.md")
 
     assert_includes readme, "without forcing a global default scope on host apps"
+    assert_includes readme, "extend_model(:recording)"
+    assert_includes readme, "Do not put this registration in `to_prepare`"
     assert_includes readme, "default_scope { where(trashed_at: nil) }"
     assert_includes readme, "scope :not_trashed"
     assert_includes readme, "scope :with_trashed"
@@ -730,6 +734,8 @@ class UiSurfaceTest < Minitest::Test
     assert_includes readme, 'require "recording_studio_trashable/query"'
     assert_includes readme, "### Sibling gem query-only opt-out"
     assert_includes notes, "## Host app query defaults"
+    assert_includes notes, "extend_model(:recording)"
+    assert_includes notes, "Do not put it in `to_prepare`"
     assert_includes notes, "default_scope { where(trashed_at: nil) }"
     assert_includes notes, "scope :not_trashed"
     assert_includes notes, "scope :with_trashed"

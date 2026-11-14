@@ -7,11 +7,9 @@ RecordingStudioTrashable.configure do |config|
   config.retention_purge_actor_resolver = -> { User.find_by!(email: "system@example.com") }
 end
 
-Rails.application.config.to_prepare do
-  RecordingStudio::Recording.class_eval do
-    default_scope { where(trashed_at: nil) }
+RecordingStudio.configuration.hooks.extend_model(:recording) do
+  default_scope { where(trashed_at: nil) }
 
-    scope :not_trashed, -> { recording_studio_trashable_active }
-    scope :with_trashed, -> { recording_studio_trashable_including_trashed }
-  end
+  scope :not_trashed, -> { recording_studio_trashable_active }
+  scope :with_trashed, -> { recording_studio_trashable_including_trashed }
 end

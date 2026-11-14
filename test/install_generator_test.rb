@@ -13,7 +13,7 @@ class InstallGeneratorTest < Minitest::Test
     )
     template = File.read(template_path)
 
-    assert_includes template, "Recording Studio 6.1.0+"
+    assert_includes template, "Recording Studio 6.7.1 or newer, below 7.0"
     assert_includes template, "recording_studio_layout"
     assert_includes template, "RecordingStudio::Capabilities::Trashable.to"
   end
@@ -25,7 +25,10 @@ class InstallGeneratorTest < Minitest::Test
     )
     template = File.read(template_path)
 
-    assert_includes template, "Optionally hide trashed recordings by default in your host app"
+    assert_includes template, "Optionally hide trashed recordings by default"
+    assert_includes template, "extend_model(:recording)"
+    assert_includes template, "Do not put it in"
+    assert_includes template, "to_prepare"
     assert_includes template, "default_scope { where(trashed_at: nil) }"
     assert_includes template, "scope :not_trashed"
     assert_includes template, "scope :with_trashed"
