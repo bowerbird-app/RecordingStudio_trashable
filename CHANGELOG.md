@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Development Gemfiles pin `recording_studio` to tag `v6.13.0` and `flat_pack` to tag `v0.1.374`. Dummy pins `recording_studio_accessible` to `v0.40.0`, `recording_studio_api` to `v0.23.2`, `recording_studio_logs` to `v0.7.5`, and `recording_studio_moveable` to `v4.2.0`. `recording_studio_metrics` stays `v0.8.0`, `recording_studio_admin` stays `v2.13.0`, `recording_studio_icons` stays `v0.2.1`, and `recording_studio_internationalization` stays `v0.2.2`. `view_component` stays `4.19.0`. Gemspec floors and `VERSION` stay `0.15.0`. Recording Studio 6.11.0 through 6.13.0 add no migration; hosts still need the 6.9 `root_recording_id` events migration already copied into the dummy.
+
 ## [0.15.0] - 2026-11-14
 
 ### Changed

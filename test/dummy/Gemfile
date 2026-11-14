@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
 gem "recording_studio_trashable", path: "../.."
-gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v6.10.0"
+gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v6.13.0"
 gem "recording_studio_metrics", github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.8.0"
 gem "view_component", "4.19.0"
 
@@ -15,11 +15,11 @@ gem "turbo-rails"
 gem "stimulus-rails"
 gem "jbuilder"
 gem "tailwindcss-rails"
-gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.356"
+gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.374"
 
 # Dummy-only language switching. Trashable ships English; hosts own other languages.
 gem "recording_studio_internationalization",
-    github: "bowerbird-app/RecordingStudio_Internationalization", tag: "v0.2.0"
+    github: "bowerbird-app/RecordingStudio_Internationalization", tag: "v0.2.2"
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 gem "solid_cache"
 gem "solid_queue"
@@ -35,11 +35,11 @@ group :development, :test do
   gem "brakeman", require: false
   gem "rubocop-rails-omakase", require: false
 
-  gem "recording_studio_api", github: "bowerbird-app/RecordingStudio_api", tag: "v0.22.1"
-  gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.31.0"
+  gem "recording_studio_api", github: "bowerbird-app/RecordingStudio_api", tag: "v0.23.2"
+  gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.40.0"
   gem "recording_studio_admin", github: "bowerbird-app/RecordingStudio_admin", tag: "v2.13.0"
-  gem "recording_studio_logs", github: "bowerbird-app/RecordingStudio_logs", tag: "v0.7.4"
-  gem "recording_studio_moveable", github: "bowerbird-app/RecordingStudio_moveable", tag: "v4.1.1"
+  gem "recording_studio_logs", github: "bowerbird-app/RecordingStudio_logs", tag: "v0.7.5"
+  gem "recording_studio_moveable", github: "bowerbird-app/RecordingStudio_moveable", tag: "v4.2.0"
   gem "recording_studio_icons", github: "bowerbird-app/RecordingStudio_icons", tag: "v0.2.1"
   gem "redis", "~> 5.3"
 end
