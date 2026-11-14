@@ -41,6 +41,30 @@ class QueryOptOutAndDefaultSurfaceTest < ActionDispatch::IntegrationTest
   end
 
   test "full engine Recording ancestor order matches main" do
+    cache_classes = Rails.application.config.cache_classes
+    assert_scopes_before_trashable_methods
+    extension_ids = recording_extension_ids
+    default_scope_count = RecordingStudio::Recording.default_scopes.size
+    # Metrics replaces a resource on reload only when cache_classes is false.
+    Rails.application.config.cache_classes = false
+
+    Rails.application.reloader.reload!
+
+    assert_scopes_before_trashable_methods
+    assert_equal extension_ids, recording_extension_ids
+    assert_equal default_scope_count, RecordingStudio::Recording.default_scopes.size
+    assert_operator default_scope_count, :>, 0
+    assert_equal '"child"."trashed_at" IS NULL',
+                 RecordingStudio::Recording.recording_studio_trashable_kept_sql("child")
+    assert RecordingStudio::Recording.respond_to?(:not_trashed)
+    assert RecordingStudio::Recording.respond_to?(:with_trashed)
+  ensure
+    Rails.application.config.cache_classes = cache_classes
+  end
+
+  private
+
+  def assert_scopes_before_trashable_methods
     ancestry = RecordingStudio::Recording.ancestors.map(&:name)
     scopes = "RecordingStudioTrashable::RecordingScopes"
     methods = "RecordingStudio::Trashable::Capabilities::Trashable::RecordingMethods"
@@ -49,9 +73,12 @@ class QueryOptOutAndDefaultSurfaceTest < ActionDispatch::IntegrationTest
 
     refute_nil scopes_index, "expected #{scopes} in Recording ancestors"
     refute_nil methods_index, "expected #{methods} in Recording ancestors"
-    # Main/v0.9.0: apply_capabilities then include scopes => Recording, RecordingScopes, RecordingMethods
     assert_operator scopes_index, :<, methods_index,
-                    "expected RecordingScopes before RecordingMethods, got #{ancestry.first(6).inspect}"
+                    "expected RecordingScopes before RecordingMethods, got #{ancestry.first(8).inspect}"
+  end
+
+  def recording_extension_ids
+    RecordingStudio.configuration.hooks.model_extensions_for(:recording).map(&:object_id)
   end
 end
 

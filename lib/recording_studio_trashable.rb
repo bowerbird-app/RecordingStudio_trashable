@@ -4,7 +4,6 @@ module RecordingStudioTrashable
   class PurgeTargetsNotTrashedError < ArgumentError; end
 end
 
-require "recording_studio_trashable/query"
 require "flat_pack"
 require "pagy"
 require "pagy/backend"
@@ -19,6 +18,7 @@ require "recording_studio_trashable/due_recordings"
 require "recording_studio_trashable/retention_purger"
 require "recording_studio_trashable/retention_purge_job"
 require "recording_studio_trashable/engine"
+require "recording_studio_trashable/query"
 require "recording_studio_trashable/metrics"
 require "recording_studio/trashable/capabilities/trashable"
 
@@ -36,7 +36,7 @@ module RecordingStudioTrashable
       return unless defined?(RecordingStudio::Recording)
 
       RecordingStudio.apply_capabilities!
-      install_query_helpers!
+      RecordingStudio::Engine.apply_model_extensions!
     end
 
     def configuration

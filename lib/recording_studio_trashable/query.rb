@@ -28,25 +28,22 @@ module RecordingStudioTrashable
       recording
     end
 
-    def install_query_helpers!
-      return unless defined?(RecordingStudio::Recording)
-      return if RecordingStudio::Recording.included_modules.include?(RecordingScopes)
+    # One proc for the life of the process. A second registration is a new
+    # object id, and core applies every one.
+    def register_recording_scopes!
+      @recording_scope_extension ||= proc { include RecordingStudioTrashable::RecordingScopes }
+      extensions = RecordingStudio.configuration.hooks.model_extensions_for(:recording)
+      return if extensions.include?(@recording_scope_extension)
 
-      RecordingStudio::Recording.include(RecordingScopes)
+      RecordingStudio.configuration.hooks.extend_model(:recording, &@recording_scope_extension)
     end
   end
 end
 
-RecordingStudioTrashable.install_query_helpers!
+RecordingStudioTrashable.register_recording_scopes!
 
-# RecordingStudio::Recording is Zeitwerk-autoloaded by the Recording Studio
-# engine, so it is usually undefined at Bundler/require time. Re-run after each
-# code reload so sibling query-only hosts keep the scopes installed.
-# Skip when the full Trashable engine is loaded: its to_prepare already calls
-# install_recording_capabilities! (apply_capabilities then install_query_helpers!),
-# and registering this hook first would flip Recording ancestor order.
-if defined?(ActiveSupport::Reloader)
-  ActiveSupport::Reloader.to_prepare do
-    RecordingStudioTrashable.install_query_helpers! unless defined?(RecordingStudioTrashable::Engine)
-  end
+# Query-only hosts have no Trashable engine. Apply now when Recording is already
+# loaded. The full gem applies later, after apply_capabilities!.
+if !defined?(RecordingStudioTrashable::Engine) && defined?(RecordingStudio::Recording)
+  RecordingStudio::Engine.apply_model_extensions!
 end

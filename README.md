@@ -38,20 +38,21 @@ bin/rails generate recording_studio_trashable:migrations
 bin/rails db:migrate
 ```
 
-If your host app wants ordinary recording queries to skip trashed rows by default, add a host-side extension like this:
+If your host app wants ordinary recording queries to skip trashed rows by default, register one Recording extension when the initializer loads:
 
 ```ruby
-Rails.application.config.to_prepare do
-  RecordingStudio::Recording.class_eval do
-    default_scope { where(trashed_at: nil) }
+# config/initializers/recording_studio_trashable.rb
+RecordingStudio.configuration.hooks.extend_model(:recording) do
+  default_scope { where(trashed_at: nil) }
 
-    scope :not_trashed, -> { recording_studio_trashable_active }
-    scope :with_trashed, -> { recording_studio_trashable_including_trashed }
-  end
+  scope :not_trashed, -> { recording_studio_trashable_active }
+  scope :with_trashed, -> { recording_studio_trashable_including_trashed }
 end
 ```
 
-That keeps `RecordingStudio::Recording.all` on active rows while preserving `with_trashed` as an explicit escape hatch for trash bins, restore flows, seeds, and admin lookups.
+That keeps `RecordingStudio::Recording.all` on active rows. `with_trashed` stays the explicit escape hatch for trash bins, restore flows, seeds, and admin lookups.
+
+Do not put this registration in `to_prepare`. Rails runs that callback on every reload, each call adds another proc, and Recording Studio applies every proc, so the scopes stack. Requires Recording Studio `>= 6.7.1`, `< 7.0`.
 
 ## Setup
 
@@ -183,7 +184,7 @@ RecordingStudioTrashable.void_recording!(recording, time: Time.current)
 recording.recording_studio_trashable_void!(time: Time.current)
 ```
 
-If your host app prefers a safer default, add a host-owned `default_scope { where(trashed_at: nil) }` and alias `recording_studio_trashable_active` to an app-facing scope such as `not_trashed`. The addon scopes that need trashed rows already call `unscope(where: :trashed_at)` so they can opt out deliberately.
+If your host app prefers a safer default, register a host-owned `default_scope { where(trashed_at: nil) }` with `extend_model(:recording)` in an initializer (see Installation) and alias `recording_studio_trashable_active` to an app-facing scope such as `not_trashed`. The addon scopes that need trashed rows already call `unscope(where: :trashed_at)` so they can opt out deliberately.
 
 `recording_studio_trashable_trash_roots` returns only explicitly trashed subtree roots.
 
