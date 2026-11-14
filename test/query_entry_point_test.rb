@@ -100,24 +100,23 @@ class QueryEntryPointTest < Minitest::Test
     puts "main_required=#{loaded.any? { |path| path.end_with?('/lib/recording_studio_trashable.rb') } ? 'yes' : 'no'}"
 
     recording = RecordingStudio::Recording
+    puts "trashed_scope=#{recording.respond_to?(:recording_studio_trashable_trashed) ? 'yes' : 'no'}"
     puts "active=#{recording.respond_to?(:recording_studio_trashable_active) ? 'yes' : 'no'}"
     puts "kept_sql_method=#{recording.respond_to?(:recording_studio_trashable_kept_sql) ? 'yes' : 'no'}"
     puts "scopes_included=#{recording.included_modules.include?(RecordingStudioTrashable::RecordingScopes) ? 'yes' : 'no'}"
     puts "extension_count=#{RecordingStudio.configuration.hooks.model_extensions_for(:recording).size}"
-    if recording.respond_to?(:recording_studio_trashable_kept_sql)
-      puts "kept_sql=#{recording.recording_studio_trashable_kept_sql('child')}"
-    end
+    puts "filter_registered=#{RecordingStudio.unregister_recording_filter(:trashable) ? 'yes' : 'no'}"
+    RecordingStudioTrashable::RecordingFilter.register!
 
     Rails.application.reloader.reload!
 
     recording_after = RecordingStudio::Recording
+    puts "after_reload_trashed_scope=#{recording_after.respond_to?(:recording_studio_trashable_trashed) ? 'yes' : 'no'}"
     puts "after_reload_active=#{recording_after.respond_to?(:recording_studio_trashable_active) ? 'yes' : 'no'}"
     puts "after_reload_kept_sql_method=#{recording_after.respond_to?(:recording_studio_trashable_kept_sql) ? 'yes' : 'no'}"
     puts "after_reload_scopes_included=#{recording_after.included_modules.include?(RecordingStudioTrashable::RecordingScopes) ? 'yes' : 'no'}"
     puts "after_reload_extension_count=#{RecordingStudio.configuration.hooks.model_extensions_for(:recording).size}"
-    if recording_after.respond_to?(:recording_studio_trashable_kept_sql)
-      puts "after_reload_kept_sql=#{recording_after.recording_studio_trashable_kept_sql('child')}"
-    end
+    puts "after_reload_filter_registered=#{RecordingStudio.unregister_recording_filter(:trashable) ? 'yes' : 'no'}"
   RUBY
 
   # Boot and load Recording first, then require query. Asserts scopes land from the
@@ -149,19 +148,19 @@ class QueryEntryPointTest < Minitest::Test
     Rails.application.initialize!
 
     recording = RecordingStudio::Recording
-    puts "pre_query_active=#{recording.respond_to?(:recording_studio_trashable_active) ? 'yes' : 'no'}"
+    puts "pre_query_trashed=#{recording.respond_to?(:recording_studio_trashable_trashed) ? 'yes' : 'no'}"
+    puts "pre_query_filter=#{RecordingStudio.unregister_recording_filter(:trashable) ? 'yes' : 'no'}"
 
     require "recording_studio_trashable/query"
 
     loaded = $LOADED_FEATURES.map { |path| path.tr("\\", "/") }
     recording = RecordingStudio::Recording
+    puts "late_require_trashed=#{recording.respond_to?(:recording_studio_trashable_trashed) ? 'yes' : 'no'}"
     puts "late_require_active=#{recording.respond_to?(:recording_studio_trashable_active) ? 'yes' : 'no'}"
     puts "late_require_kept_sql_method=#{recording.respond_to?(:recording_studio_trashable_kept_sql) ? 'yes' : 'no'}"
     puts "late_require_scopes_included=#{recording.included_modules.include?(RecordingStudioTrashable::RecordingScopes) ? 'yes' : 'no'}"
     puts "late_require_extension_count=#{RecordingStudio.configuration.hooks.model_extensions_for(:recording).size}"
-    if recording.respond_to?(:recording_studio_trashable_kept_sql)
-      puts "late_require_kept_sql=#{recording.recording_studio_trashable_kept_sql('child')}"
-    end
+    puts "late_require_filter=#{RecordingStudio.unregister_recording_filter(:trashable) ? 'yes' : 'no'}"
     puts "engine=#{defined?(RecordingStudioTrashable::Engine) ? 'yes' : 'no'}"
     puts "capability=#{RecordingStudio.registered_capabilities.key?(:trashable) ? 'yes' : 'no'}"
     puts "flat_pack=#{defined?(FlatPack) ? 'yes' : 'no'}"
@@ -197,7 +196,10 @@ class QueryEntryPointTest < Minitest::Test
       puts "#{prefix}_methods_index=#{methods_index}"
       puts "#{prefix}_scopes_included=#{recording.included_modules.include?(RecordingStudioTrashable::RecordingScopes) ? 'yes' : 'no'}"
       puts "#{prefix}_active=#{recording.respond_to?(:recording_studio_trashable_active) ? 'yes' : 'no'}"
-      puts "#{prefix}_kept_sql=#{recording.recording_studio_trashable_kept_sql('child')}"
+      puts "#{prefix}_trashed=#{recording.respond_to?(:recording_studio_trashable_trashed) ? 'yes' : 'no'}"
+      registered = RecordingStudio.unregister_recording_filter(:trashable)
+      RecordingStudioTrashable::RecordingFilter.register!
+      puts "#{prefix}_filter=#{registered ? 'yes' : 'no'}"
       puts "#{prefix}_extension_count=#{RecordingStudio.configuration.hooks.model_extensions_for(:recording).size}"
     end
   RUBY
@@ -218,7 +220,7 @@ class QueryEntryPointTest < Minitest::Test
     Rails.application.initialize!
 
     recording = RecordingStudio::Recording
-    puts "pre_scopes_included=\#{recording.respond_to?(:recording_studio_trashable_active) ? 'yes' : 'no'}"
+    puts "pre_scopes_included=\#{recording.respond_to?(:recording_studio_trashable_trashed) ? 'yes' : 'no'}"
 
     require "recording_studio_trashable"
 
@@ -270,16 +272,18 @@ class QueryEntryPointTest < Minitest::Test
       assert_equal "no", probe_value(output, "trashable_metrics_mod"), output
       assert_equal "no", probe_value(output, "engine_required"), output
       assert_equal "no", probe_value(output, "main_required"), output
-      assert_equal "yes", probe_value(output, "active"), output
-      assert_equal "yes", probe_value(output, "kept_sql_method"), output
+      assert_equal "yes", probe_value(output, "trashed_scope"), output
+      assert_equal "no", probe_value(output, "active"), output
+      assert_equal "no", probe_value(output, "kept_sql_method"), output
       assert_equal "yes", probe_value(output, "scopes_included"), output
       assert_equal "1", probe_value(output, "extension_count"), output
-      assert_equal '"child"."trashed_at" IS NULL', probe_value(output, "kept_sql"), output
-      assert_equal "yes", probe_value(output, "after_reload_active"), output
-      assert_equal "yes", probe_value(output, "after_reload_kept_sql_method"), output
+      assert_equal "yes", probe_value(output, "filter_registered"), output
+      assert_equal "yes", probe_value(output, "after_reload_trashed_scope"), output
+      assert_equal "no", probe_value(output, "after_reload_active"), output
+      assert_equal "no", probe_value(output, "after_reload_kept_sql_method"), output
       assert_equal "yes", probe_value(output, "after_reload_scopes_included"), output
       assert_equal "1", probe_value(output, "after_reload_extension_count"), output
-      assert_equal '"child"."trashed_at" IS NULL', probe_value(output, "after_reload_kept_sql"), output
+      assert_equal "yes", probe_value(output, "after_reload_filter_registered"), output
     end
   end
 
@@ -288,12 +292,14 @@ class QueryEntryPointTest < Minitest::Test
       output, status = run_query_host_probe(LATE_REQUIRE_QUERY_HOST_PROBE, eager_load: eager_load)
 
       assert_predicate status, :success?, "eager_load=#{eager_load}\n#{output}"
-      assert_equal "no", probe_value(output, "pre_query_active"), output
-      assert_equal "yes", probe_value(output, "late_require_active"), output
-      assert_equal "yes", probe_value(output, "late_require_kept_sql_method"), output
+      assert_equal "no", probe_value(output, "pre_query_trashed"), output
+      assert_equal "no", probe_value(output, "pre_query_filter"), output
+      assert_equal "yes", probe_value(output, "late_require_trashed"), output
+      assert_equal "no", probe_value(output, "late_require_active"), output
+      assert_equal "no", probe_value(output, "late_require_kept_sql_method"), output
       assert_equal "yes", probe_value(output, "late_require_scopes_included"), output
       assert_equal "1", probe_value(output, "late_require_extension_count"), output
-      assert_equal '"child"."trashed_at" IS NULL', probe_value(output, "late_require_kept_sql"), output
+      assert_equal "yes", probe_value(output, "late_require_filter"), output
       assert_equal "no", probe_value(output, "engine"), output
       assert_equal "no", probe_value(output, "capability"), output
       assert_equal "no", probe_value(output, "flat_pack"), output
@@ -313,6 +319,9 @@ class QueryEntryPointTest < Minitest::Test
     refute_includes source, "to_prepare"
     assert_includes source, "if !defined?(RecordingStudioTrashable::Engine) && defined?(RecordingStudio::Recording)"
     assert_includes source, "RecordingStudio::Engine.apply_model_extensions!"
+    assert_includes source, "RecordingStudioTrashable::RecordingFilter.register!"
+    assert_includes source, "Rails.application.initialized?"
+    refute_includes source, "to_prepare"
     assert_operator(
       main.index('require "recording_studio_trashable/engine"'),
       :<,
@@ -370,32 +379,6 @@ class QueryEntryPointTest < Minitest::Test
     assert_includes methods.instance_methods, :recording_studio_trashable_purge!
   end
 
-  def test_query_and_default_sql_helpers_match
-    scoped = Class.new do
-      class << self
-        def table_name = "recording_studio_recordings"
-
-        def connection
-          @connection ||= Class.new do
-            def quote_table_name(name) = %("#{name}")
-            def quote_column_name(name) = %("#{name}")
-          end.new
-        end
-
-        def scope(name, body)
-          define_singleton_method(name) { |*args| instance_exec(*args, &body) }
-        end
-      end
-
-      include RecordingStudioTrashable::RecordingScopes
-    end
-
-    assert_equal '"child"."trashed_at" IS NULL',
-                 scoped.recording_studio_trashable_kept_sql("child")
-    assert_equal '"child"."trashed_at" IS NOT NULL',
-                 scoped.recording_studio_trashable_trashed_sql("child")
-  end
-
   private
 
   def run_probe(script, gemfile:, env: {})
@@ -432,8 +415,9 @@ class QueryEntryPointTest < Minitest::Test
 
     assert_operator scopes_index, :<, methods_index, output
     assert_equal "yes", probe_value(output, "#{prefix}_scopes_included"), output
-    assert_equal "yes", probe_value(output, "#{prefix}_active"), output
-    assert_equal '"child"."trashed_at" IS NULL', probe_value(output, "#{prefix}_kept_sql"), output
+    assert_equal "no", probe_value(output, "#{prefix}_active"), output
+    assert_equal "yes", probe_value(output, "#{prefix}_trashed"), output
+    assert_equal "yes", probe_value(output, "#{prefix}_filter"), output
   end
 
   def probe_value(output, key)

@@ -89,19 +89,15 @@ class ShowcaseController < ApplicationController
           RUBY
         },
         {
-          title: "Hide trashed recordings by default",
-          anchor_id: "hide-trashed-recordings-by-default",
-          subtitle: "Opt into a host-app default scope so ordinary recording queries stay on active rows.",
-          body: "Trashable does not force a global default scope, but host apps can add one on RecordingStudio::Recording when they want ordinary queries to skip trashed rows. Register the extension once when the initializer loads. Do not put it in to_prepare, because each reload would add another proc and the scopes would stack. This dummy app keeps a not_trashed alias for explicit call sites and a with_trashed escape hatch for trash bins, restore flows, seeds, and admin lookups.",
-          code_title: "config/initializers/recording_studio_trashable.rb",
+          title: "Read kept recordings",
+          anchor_id: "read-kept-recordings",
+          subtitle: "Recording.kept skips trashed rows. Ordinary queries still see them.",
+          body: "Trashable registers a recording filter named trashable when the engine boots. Recording.kept and RecordingStudio.kept_sql use that filter. There is no default scope. A host that has not added the trashed_at column gets no filter and no error. Do not register the filter from to_prepare.",
+          code_title: "Kept recordings",
           code_language: :ruby,
           code: <<~RUBY
-            RecordingStudio.configuration.hooks.extend_model(:recording) do
-              default_scope { where(trashed_at: nil) }
-
-              scope :not_trashed, -> { recording_studio_trashable_active }
-              scope :with_trashed, -> { recording_studio_trashable_including_trashed }
-            end
+            RecordingStudio::Recording.kept
+            RecordingStudio.kept_sql("child")
           RUBY
         },
         {
@@ -379,14 +375,13 @@ class ShowcaseController < ApplicationController
           RUBY
         },
         {
-          title: "Query active recordings",
-          anchor_id: "query-active-recordings",
-          name: "recording_studio_trashable_active",
+          title: "Query kept recordings",
+          anchor_id: "query-kept-recordings",
+          name: "kept",
           code_title: "Usage",
           code: <<~RUBY
-            # Return only active recordings for this recordable.
-            # Host apps often expose this as not_trashed and pair it with a default_scope.
-            project.recordings.not_trashed
+            # Return recordings the registered filters still consider kept.
+            project.recordings.kept
           RUBY
         },
         {
@@ -401,14 +396,13 @@ class ShowcaseController < ApplicationController
           RUBY
         },
         {
-          title: "Query active and trashed recordings",
-          anchor_id: "query-active-and-trashed-recordings",
-          name: "recording_studio_trashable_including_trashed",
+          title: "Query kept and trashed recordings",
+          anchor_id: "query-kept-and-trashed-recordings",
+          name: "recording_studio_trashable_filter(:all)",
           code_title: "Usage",
           code: <<~RUBY
-            # Remove the host app's default trash filter so both active and trashed rows are returned.
-            # Use this when you need a complete view of the recordable's recordings.
-            project.recordings.with_trashed
+            # Drop a kept filter so both kept and trashed rows are returned.
+            project.recordings.recording_studio_trashable_filter(:all)
           RUBY
         },
         {

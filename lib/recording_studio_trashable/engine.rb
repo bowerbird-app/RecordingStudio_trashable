@@ -32,6 +32,11 @@ module RecordingStudioTrashable
       RecordingStudioTrashable.install_recording_capabilities!
     end
 
+    initializer "recording_studio_trashable.recording_filter" do
+      require "recording_studio_trashable/recording_filter"
+      RecordingStudioTrashable::RecordingFilter.register!
+    end
+
     initializer "recording_studio_trashable.before_initialize",
                 before: "recording_studio_trashable.load_config" do |_app|
       RecordingStudioTrashable::Hooks.run(:before_initialize, self)

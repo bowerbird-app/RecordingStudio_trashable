@@ -32,12 +32,16 @@ class QueryOptOutAndDefaultSurfaceTest < ActionDispatch::IntegrationTest
     )
   end
 
-  test "query helpers on Recording match the sibling SQL contract under the default boot" do
-    assert_equal '"child"."trashed_at" IS NULL',
-                 RecordingStudio::Recording.recording_studio_trashable_kept_sql("child")
-    assert_equal '"recording_studio_recordings"."trashed_at" IS NULL',
-                 RecordingStudio::Recording.recording_studio_trashable_kept_sql
+  test "kept_sql on the booted engine quotes the recordings table and a join alias" do
+    quoted_child = RecordingStudio::Recording.connection.quote_table_name("child")
+    quoted_recordings = RecordingStudio::Recording.connection.quote_table_name("recording_studio_recordings")
+
+    assert_equal "(#{quoted_child}.trashed_at IS NULL)", RecordingStudio.kept_sql("child")
+    assert_equal "(#{quoted_recordings}.trashed_at IS NULL)", RecordingStudio.kept_sql
     assert_includes RecordingStudio::Recording.included_modules, RecordingStudioTrashable::RecordingScopes
+    assert_equal RecordingStudio.kept_sql, RecordingStudio::Recording.recording_studio_trashable_kept_sql
+    assert_equal RecordingStudio.kept_sql("child"), RecordingStudio::Recording.recording_studio_trashable_kept_sql("child")
+    refute_respond_to RecordingStudio::Recording, :recording_studio_trashable_active
   end
 
   test "full engine Recording ancestor order matches main" do
@@ -50,14 +54,13 @@ class QueryOptOutAndDefaultSurfaceTest < ActionDispatch::IntegrationTest
 
     Rails.application.reloader.reload!
 
+    quoted_child = RecordingStudio::Recording.connection.quote_table_name("child")
     assert_scopes_before_trashable_methods
     assert_equal extension_ids, recording_extension_ids
     assert_equal default_scope_count, RecordingStudio::Recording.default_scopes.size
-    assert_operator default_scope_count, :>, 0
-    assert_equal '"child"."trashed_at" IS NULL',
-                 RecordingStudio::Recording.recording_studio_trashable_kept_sql("child")
-    assert RecordingStudio::Recording.respond_to?(:not_trashed)
-    assert RecordingStudio::Recording.respond_to?(:with_trashed)
+    assert_equal 0, default_scope_count
+    assert_equal "(#{quoted_child}.trashed_at IS NULL)", RecordingStudio.kept_sql("child")
+    assert_equal 1, RecordingStudio.kept_sql.scan("trashed_at").size
   ensure
     Rails.application.config.cache_classes = cache_classes
   end
@@ -81,4 +84,3 @@ class QueryOptOutAndDefaultSurfaceTest < ActionDispatch::IntegrationTest
     RecordingStudio.configuration.hooks.model_extensions_for(:recording).map(&:object_id)
   end
 end
-

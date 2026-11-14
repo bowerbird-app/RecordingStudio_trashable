@@ -75,7 +75,6 @@ module RecordingStudioTrashable
 
       def child_recordings_for(frontier)
         RecordingStudio::Recording
-          .recording_studio_trashable_including_trashed
           .where(parent_recording_id: frontier)
           .reorder(created_at: :asc)
           .to_a

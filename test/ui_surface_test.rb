@@ -357,17 +357,19 @@ class UiSurfaceTest < Minitest::Test
     assert_includes lookup_source, "DEFAULT_HOME_TABLE_LIMIT = 2"
     assert_includes lookup_source, '.where(recordable_type: "Project")'
     assert_includes lookup_source, '.where(recordable_type: "Page")'
-    assert_includes lookup_source, ".not_trashed"
-    assert_includes lookup_source, "RecordingStudio::Recording.with_trashed"
+    assert_includes lookup_source, ".kept"
+    refute_includes lookup_source, ".not_trashed"
+    refute_includes lookup_source, "with_trashed"
     assert_includes lookup_source, ".recording_studio_trashable_trash_roots"
     assert_includes trashable_initializer_source,
                     'config.retention_purge_actor_resolver = -> { User.find_by!(email: "system@example.com") }'
-    assert_includes trashable_initializer_source, "RecordingStudio.configuration.hooks.extend_model(:recording) do"
+    refute_includes trashable_initializer_source, "RecordingStudio.configuration.hooks.extend_model(:recording) do"
     refute_includes trashable_initializer_source, "Rails.application.config.to_prepare do"
-    refute_includes trashable_initializer_source, "RecordingStudio::Recording.class_eval do"
-    assert_includes trashable_initializer_source, "default_scope { where(trashed_at: nil) }"
-    assert_includes trashable_initializer_source, "scope :not_trashed"
-    assert_includes trashable_initializer_source, "scope :with_trashed"
+    refute_includes trashable_initializer_source, "default_scope { where(trashed_at: nil) }"
+    engine_source = File.read(File.expand_path("../lib/recording_studio_trashable/engine.rb", __dir__))
+    assert_includes engine_source, 'initializer "recording_studio_trashable.recording_filter"'
+    assert_includes engine_source, "RecordingStudioTrashable::RecordingFilter.register!"
+    refute_includes engine_source, "recording_filter.to_prepare"
     assert_includes routes_source, 'post "purge_due", to: "home#purge_due", as: :purge_due_recordings'
     assert_includes seeds_source, "slug: \"session-archive\""
     assert_includes seeds_source, "slug: \"release-checklist\""
@@ -584,12 +586,11 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, "methods: ["
     assert_includes source, 'title: "Trash a recording"'
     assert_includes source, 'title: "Filter recordings by trash state"'
-    assert_includes source, 'title: "Hide trashed recordings by default"'
-    assert_includes source, 'anchor_id: "hide-trashed-recordings-by-default"'
-    assert_includes source, "RecordingStudio.configuration.hooks.extend_model(:recording) do"
-    assert_includes source, "default_scope { where(trashed_at: nil) }"
-    assert_includes source, "scope :not_trashed"
-    assert_includes source, "scope :with_trashed"
+    assert_includes source, 'title: "Read kept recordings"'
+    assert_includes source, 'anchor_id: "read-kept-recordings"'
+    assert_includes source, "RecordingStudio::Recording.kept"
+    assert_includes source, 'RecordingStudio.kept_sql("child")'
+    refute_includes source, "default_scope { where(trashed_at: nil) }"
     assert_includes source, 'anchor_id: "filter-recordings-by-trash-state"'
     assert_includes(
       source,
@@ -598,10 +599,10 @@ class UiSurfaceTest < Minitest::Test
     assert_includes source, "project.recordings.recording_studio_trashable_filter(:trashed)"
     assert_includes source, 'anchor_id: "trash-a-recording"'
     assert_includes source, "# Soft delete the recording, cascade to descendants, and record who performed the action."
-    assert_includes source, "# Remove the host app's default trash filter so both active and trashed rows are returned."
-    assert_includes source, "recording_studio_trashable_active"
-    assert_includes source, "project.recordings.not_trashed"
-    assert_includes source, "project.recordings.with_trashed"
+    assert_includes source, "# Drop a kept filter so both kept and trashed rows are returned."
+    assert_includes source, "project.recordings.kept"
+    assert_includes source, "project.recordings.recording_studio_trashable_filter(:all)"
+    refute_includes source, "recording_studio_trashable_active"
     assert_includes source, "recording_studio_trashable_trash_roots"
     assert_includes source, "recording_studio_trashable_trash_bin"
     assert_includes source, 'metadata: { source: "bulk-cleanup" }'
@@ -716,31 +717,29 @@ class UiSurfaceTest < Minitest::Test
     assert_includes overview_section, "does not trash Recording Studio event rows"
   end
 
-  def test_readme_and_notes_document_optional_host_default_scope
+  def test_readme_and_notes_document_kept_recordings
     readme = read_repo_file("../README.md")
     notes = read_repo_file("../docs/recording_studio_trashable.md")
 
     assert_includes readme, "without forcing a global default scope on host apps"
-    assert_includes readme, "extend_model(:recording)"
-    assert_includes readme, "Do not put this registration in `to_prepare`"
-    assert_includes readme, "default_scope { where(trashed_at: nil) }"
-    assert_includes readme, "scope :not_trashed"
-    assert_includes readme, "scope :with_trashed"
-    assert_includes readme, "The addon does not introduce a new default scope."
+    assert_includes readme, "Do not register it from `to_prepare`"
+    assert_includes readme, "There is no `default_scope`."
+    assert_includes readme, "RecordingStudio::Recording.kept"
+    assert_includes readme, "RecordingStudio.kept_sql"
     assert_includes readme, "### Sibling gem `trashed_at` mapping"
     assert_includes readme, "RecordingStudioTrashable.void_recording!"
     assert_includes readme, "update_columns"
-    assert_includes readme, 'spec.add_dependency "recording_studio_trashable", "~> 0.13"'
+    assert_includes readme, 'spec.add_dependency "recording_studio_trashable", "~> 0.16"'
     assert_includes readme, 'require "recording_studio_trashable/query"'
     assert_includes readme, "### Sibling gem query-only opt-out"
-    assert_includes notes, "## Host app query defaults"
-    assert_includes notes, "extend_model(:recording)"
-    assert_includes notes, "Do not put it in `to_prepare`"
-    assert_includes notes, "default_scope { where(trashed_at: nil) }"
-    assert_includes notes, "scope :not_trashed"
-    assert_includes notes, "scope :with_trashed"
+    refute_includes readme, "recording_studio_trashable_active"
+    refute_includes readme, "recording_studio_trashable_kept_sql"
+    assert_includes notes, "## Kept recordings"
+    assert_includes notes, "register_recording_filter(:trashable"
+    assert_includes notes, "Do not register the filter from `to_prepare`"
     assert_includes notes, "RecordingStudioTrashable.void_recording!"
     assert_includes notes, "update_columns"
+    refute_includes notes, "default_scope { where(trashed_at: nil) }"
   end
 
   private

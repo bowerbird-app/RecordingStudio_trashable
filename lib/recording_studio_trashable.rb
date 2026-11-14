@@ -148,7 +148,6 @@ module RecordingStudioTrashable
       return [] unless defined?(RecordingStudio::Recording)
 
       RecordingStudio::Recording
-        .recording_studio_trashable_including_trashed
         .where(parent_recording_id: nil)
         .reorder(created_at: :asc)
         .to_a

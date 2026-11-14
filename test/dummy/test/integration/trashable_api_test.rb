@@ -49,7 +49,7 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     purged = call(:post, "/pages/#{@page.id}/actions/trashable_purge", @admin_token)
     assert_response :success, response.body
     assert_equal true, purged.fetch("purged")
-    assert_nil RecordingStudio::Recording.recording_studio_trashable_including_trashed.find_by(id: @page.id)
+    assert_nil RecordingStudio::Recording.find_by(id: @page.id)
   end
 
   test "unauthenticated calls are 401" do

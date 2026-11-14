@@ -3,26 +3,8 @@
 require "test_helper"
 
 class SiblingTrashedAtApiTest < Minitest::Test
-  class FakeConnection
-    def quote_table_name(name)
-      %("#{name}")
-    end
-
-    def quote_column_name(name)
-      %("#{name}")
-    end
-  end
-
   class ScopedRecording
     class << self
-      def table_name
-        "recording_studio_recordings"
-      end
-
-      def connection
-        @connection ||= FakeConnection.new
-      end
-
       def scope(name, body)
         define_singleton_method(name) do |*args|
           instance_exec(*args, &body)
@@ -53,43 +35,25 @@ class SiblingTrashedAtApiTest < Minitest::Test
     end
   end
 
-  def test_kept_and_trashed_sql_fragments_quote_table_or_alias
-    assert_equal '"recording_studio_recordings"."trashed_at" IS NULL',
-                 ScopedRecording.recording_studio_trashable_kept_sql
-    assert_equal '"child"."trashed_at" IS NULL',
-                 ScopedRecording.recording_studio_trashable_kept_sql("child")
-    assert_equal '"recording_studio_recordings"."trashed_at" IS NOT NULL',
-                 ScopedRecording.recording_studio_trashable_trashed_sql
-    assert_equal '"child"."trashed_at" IS NOT NULL',
-                 ScopedRecording.recording_studio_trashable_trashed_sql("child")
-  end
+  def test_void_recording_cascades_update_columns_and_skips_rows_already_trashed
+    time = Time.utc(2026, 10, 13, 15, 30, 0)
+    earlier = Time.utc(2026, 10, 1, 0, 0, 0)
+    parent = ScopedRecording.new(trashed_at: nil)
+    child = ScopedRecording.new(trashed_at: nil)
+    grandchild = ScopedRecording.new(trashed_at: earlier)
+    parent.define_singleton_method(:descendants) { [child, grandchild] }
 
-  def test_sql_helpers_quote_schema_qualified_identifiers_with_one_dot
-    assert_equal '"public"."recording_studio_recordings"."trashed_at" IS NULL',
-                 ScopedRecording.recording_studio_trashable_kept_sql("public.recording_studio_recordings")
-    assert_equal '"public"."recording_studio_recordings"."trashed_at" IS NOT NULL',
-                 ScopedRecording.recording_studio_trashable_trashed_sql("public.recording_studio_recordings")
-  end
+    result = RecordingStudioTrashable.void_recording!(parent, time: time)
 
-  def test_sql_helpers_reject_nil_and_invalid_identifiers
-    error = assert_raises(ArgumentError) { ScopedRecording.recording_studio_trashable_kept_sql(nil) }
-    assert_equal "table is required", error.message
-
-    error = assert_raises(ArgumentError) { ScopedRecording.recording_studio_trashable_trashed_sql(nil) }
-    assert_equal "table is required", error.message
-
-    error = assert_raises(ArgumentError) { ScopedRecording.recording_studio_trashable_kept_sql("child; drop") }
-    assert_includes error.message, "invalid table"
-
-    error = assert_raises(ArgumentError) do
-      ScopedRecording.recording_studio_trashable_kept_sql("a.b.c")
-    end
-    assert_includes error.message, "invalid table"
-
-    error = assert_raises(ArgumentError) do
-      ScopedRecording.recording_studio_trashable_kept_sql("public.bad-name")
-    end
-    assert_includes error.message, "invalid table"
+    assert_same parent, result
+    assert_equal time, parent.trashed_at
+    assert_equal({ trashed_at: time, updated_at: time }, parent.updated_with)
+    assert_equal time, child.trashed_at
+    assert_equal({ trashed_at: time, updated_at: time }, child.updated_with)
+    assert_equal earlier, grandchild.trashed_at
+    assert_nil grandchild.updated_with
+    refute parent.update_bang_called
+    refute child.update_bang_called
   end
 
   def test_trashed_and_kept_predicates
@@ -121,7 +85,9 @@ class SiblingTrashedAtApiTest < Minitest::Test
 
     refute_nil method_source
     assert_includes method_source, "update_columns(trashed_at: time, updated_at: time)"
+    assert_includes method_source, "void_targets"
     refute_includes method_source, "update!("
+    assert_includes source, "recording.descendants"
   end
 
   def test_void_recording_is_idempotent_when_already_trashed
@@ -153,15 +119,18 @@ class SiblingTrashedAtApiTest < Minitest::Test
     readme = File.read(File.expand_path("../README.md", __dir__))
 
     assert_includes readme, "### Sibling gem `trashed_at` mapping"
-    assert_includes readme, 'spec.add_dependency "recording_studio_trashable", "~> 0.13"'
+    assert_includes readme, 'spec.add_dependency "recording_studio_trashable", "~> 0.16"'
     assert_includes readme, 'require "recording_studio_trashable/query"'
     assert_includes readme, "column-existence"
-    assert_includes readme, "recording_studio_trashable_active"
+    assert_includes readme, "RecordingStudio::Recording.kept"
+    assert_includes readme, "RecordingStudio.kept_sql"
     assert_includes readme, "recording_studio_trashable_kept?"
     assert_includes readme, "recording_studio_trashable_trashed?"
-    assert_includes readme, "recording_studio_trashable_kept_sql"
+    refute_includes readme, "recording_studio_trashable_active"
+    refute_includes readme, "recording_studio_trashable_kept_sql"
     assert_includes readme, "RecordingStudioTrashable.void_recording!"
     assert_includes readme, "update_columns"
+    assert_includes readme, "descendants"
     assert_includes readme, "void_oauth_authorization"
     assert_includes readme, "accessible_recording_scope"
     assert_includes readme, "support_section"
@@ -170,15 +139,13 @@ class SiblingTrashedAtApiTest < Minitest::Test
     assert_includes readme, "credits.rb"
     assert_includes readme, "section_recording_resolver"
     assert_includes readme, "oauth_clients_controller"
-    assert_includes readme, "unscoped.recording_studio_trashable_active"
-    assert_includes readme, "drops earlier"
+    assert_includes readme, "RecordingStudio::Recording.kept.find_by"
+    assert_includes readme, "does not unscope"
     assert_includes readme, "unqualified `trashed_at IS NULL`"
-    assert_includes readme, "lowercase"
-    assert_includes readme, "case-sensitive"
     assert_includes readme, "api_access_clients_query"
     assert_includes readme, "quote_order"
     assert_includes readme, "quote_images_controller"
     assert_includes readme, "pages/lookups"
-    assert_includes readme, "**(conditional)** | When Trashable is loaded: `RecordingStudioTrashable.void_recording!"
+    assert_includes readme, "descendants are voided too"
   end
 end

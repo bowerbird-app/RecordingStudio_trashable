@@ -63,8 +63,8 @@ class TrashableCapabilitiesTest < Minitest::Test
         record
       end
 
-      def recording_studio_trashable_including_trashed
-        FakeRelation.new(records.values)
+      def where(conditions)
+        FakeRelation.new(records.values).where(conditions)
       end
     end
 
@@ -165,13 +165,14 @@ class TrashableCapabilitiesTest < Minitest::Test
     capability_path = "../lib/recording_studio/trashable/capabilities/trashable.rb"
     capability_source = File.read(File.expand_path(capability_path, __dir__))
 
-    assert_includes source, "scope :recording_studio_trashable_active"
+    refute_includes source, "scope :recording_studio_trashable_active"
     assert_includes source, "scope :recording_studio_trashable_trashed"
-    assert_includes source, "scope :recording_studio_trashable_including_trashed"
+    refute_includes source, "scope :recording_studio_trashable_including_trashed"
     assert_includes source, "scope :recording_studio_trashable_trash_roots"
     assert_includes source, "scope :recording_studio_trashable_filter"
     assert_includes source, "scope :recording_studio_trashable_trash_bin"
-    assert_includes source, "def recording_studio_trashable_kept_sql"
+    refute_includes source, "def recording_studio_trashable_kept_sql"
+    assert_includes source, "when :active then kept"
     assert_includes source, "def recording_studio_trashable_trashed?"
     assert_includes source, "def recording_studio_trashable_void!"
     refute_includes capability_source, "scope :recording_studio_trashable_active"
@@ -191,9 +192,13 @@ class TrashableCapabilitiesTest < Minitest::Test
       include RecordingStudioTrashable::RecordingScopes
     end
 
-    scoped_model.define_singleton_method(:recording_studio_trashable_active) { :active_relation }
+    scoped_model.define_singleton_method(:kept) { :active_relation }
     scoped_model.define_singleton_method(:recording_studio_trashable_trashed) { :trashed_relation }
-    scoped_model.define_singleton_method(:recording_studio_trashable_including_trashed) { :all_relation }
+    scoped_model.define_singleton_method(:unscope) do |where:|
+      raise "unexpected unscope #{where.inspect}" unless where == :trashed_at
+
+      :all_relation
+    end
 
     assert_equal :active_relation, scoped_model.recording_studio_trashable_filter(:active)
     assert_equal :trashed_relation, scoped_model.recording_studio_trashable_filter("trashed")
