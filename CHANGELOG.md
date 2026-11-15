@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-11-15
+
+### Changed
+
+- Allow recording_studio < 8.0 (core 7 phase 1). The floor stays `>= 6.14.0`. Development Gemfiles still pin tag `v6.14.0`.
+
+### Upgrade Notes
+
+- Bump to `0.16.1`. No new migration. Hosts may depend on Recording Studio 7. This gem's test app stays on core 6.14.0.
+
 ## [0.16.0] - 2026-11-14
 
 ### Removed
