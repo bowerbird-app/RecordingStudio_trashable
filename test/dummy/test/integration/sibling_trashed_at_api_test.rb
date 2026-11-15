@@ -12,7 +12,7 @@ class SiblingTrashedAtApiIntegrationTest < ActiveSupport::TestCase
     assert_equal "(#{quoted_child}.trashed_at IS NULL)", RecordingStudio.kept_sql("child")
 
     workspace = Workspace.create!(name: "Sibling API workspace #{SecureRandom.hex(4)}")
-    recording = RecordingStudio.root_recording_for(workspace)
+    recording = RecordingStudio.create_root_recording!(workspace, actor: actor)
 
     assert recording.recording_studio_trashable_kept?
     refute recording.recording_studio_trashable_trashed?
@@ -31,7 +31,7 @@ class SiblingTrashedAtApiIntegrationTest < ActiveSupport::TestCase
 
   test "void_recording! uses update_columns and skips validations and callbacks" do
     workspace = Workspace.create!(name: "Void pin workspace #{SecureRandom.hex(4)}")
-    recording = RecordingStudio.root_recording_for(workspace)
+    recording = RecordingStudio.create_root_recording!(workspace, actor: actor)
     recording.update_columns(updated_at: Time.utc(2026, 1, 1, 12, 0, 0))
     recording.reload
 
@@ -61,5 +61,12 @@ class SiblingTrashedAtApiIntegrationTest < ActiveSupport::TestCase
         assert_equal value, actual, "unexpected write to #{column}"
       end
     end
+  end
+
+  private
+
+  def actor
+    User.find_by(email: "admin@admin.com") ||
+      User.create!(email: "admin@admin.com", password: "Password", password_confirmation: "Password")
   end
 end

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-11-15
+
+### Changed
+
+- Gemspec requires `recording_studio` `>= 7.0`, `< 8.0`. `recording_studio_metrics` stays `>= 0.3.0`, `< 1.0`.
+- Development Gemfiles pin `recording_studio` tag `v7.0.0`, `recording_studio_metrics` tag `v0.9.0`, and `flat_pack` tag `v0.1.376`.
+- Dummy pins that rejected Recording Studio 7 move to releases that allow it: `recording_studio_accessible` `v0.43.1`, `recording_studio_admin` `v2.16.0`, and `recording_studio_internationalization` `v0.3.0`. `recording_studio_api` stays `v0.23.4`, `recording_studio_logs` stays `v0.7.5`, `recording_studio_moveable` stays `v4.2.0`, `recording_studio_icons` stays `v0.2.1`, and `view_component` stays `4.19.0`.
+- Dummy seeds and tests that created a workspace root with `RecordingStudio.root_recording_for` now call `RecordingStudio.create_root_recording!`.
+- The dummy app sets `config.authorize_write` to allow a write when an actor is present. It does not set `allow_unauthorized_writes`.
+
+### Upgrade Notes
+
+- Bump to `0.17.0`. No new Trashable migration.
+- Require Recording Studio `>= 7.0`, `< 8.0`. `root_recording_for` only finds a root. Create one with `RecordingStudio.create_root_recording!(recordable, actor:)`.
+- Set `config.authorize_write` and pass an actor. `create_root_recording!` calls the authorizer with `root_recording` nil. Do not set `allow_unauthorized_writes`.
+- Hosts that install the dummy's companion set should use the tags above. Metrics development pin is `v0.9.0`.
+
 ## [0.16.1] - 2026-11-15
 
 ### Changed
@@ -436,7 +453,9 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.16.1...v0.17.0
+[0.16.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.14.1...v0.15.0
 [0.14.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.14.0...v0.14.1

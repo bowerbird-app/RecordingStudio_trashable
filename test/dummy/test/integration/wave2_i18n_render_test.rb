@@ -12,7 +12,7 @@ class Wave2I18nRenderTest < ActionDispatch::IntegrationTest
     Current.actor = @user
     @workspace = Workspace.find_by(name: "Wave2 I18n Workspace") ||
                  Workspace.create!(name: "Wave2 I18n Workspace")
-    @workspace_recording = RecordingStudio.root_recording_for(@workspace)
+    @workspace_recording = RecordingStudio.create_root_recording!(@workspace, actor: @user)
   end
 
   test "overview authorization dt labels render english action names via Copy.action_name" do
@@ -32,7 +32,7 @@ class Wave2I18nRenderTest < ActionDispatch::IntegrationTest
   test "trash empty and retention pages render literal english" do
     sign_in @user
     empty_workspace = Workspace.create!(name: "Wave2 Empty #{SecureRandom.hex(4)}")
-    empty_recording = RecordingStudio.root_recording_for(empty_workspace)
+    empty_recording = RecordingStudio.create_root_recording!(empty_workspace, actor: @user)
 
     get "/recording_studio_trashable/recordings/#{empty_recording.id}/trash_bin"
 

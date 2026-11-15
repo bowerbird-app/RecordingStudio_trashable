@@ -298,7 +298,7 @@ class RetentionPurgeAtTest < ActionDispatch::IntegrationTest
 
   def workspace_root(name)
     workspace = Workspace.create!(name: "#{name} #{SecureRandom.hex(4)}")
-    RecordingStudio.root_recording_for(workspace)
+    RecordingStudio.create_root_recording!(workspace, actor: @user)
   end
 
   def record_page(parent, title)

@@ -8,7 +8,7 @@ class CustomerI18nTest < ActionDispatch::IntegrationTest
             User.create!(email: "admin@admin.com", password: "Password", password_confirmation: "Password")
     Current.actor = @user
     @workspace = Workspace.find_by(name: "I18n Workspace") || Workspace.create!(name: "I18n Workspace")
-    @workspace_recording = RecordingStudio.root_recording_for(@workspace)
+    @workspace_recording = RecordingStudio.create_root_recording!(@workspace, actor: @user)
   end
 
   test "home top nav has sign out and no language selector" do
@@ -50,7 +50,7 @@ class CustomerI18nTest < ActionDispatch::IntegrationTest
   test "empty trash screen stays English by default" do
     sign_in @user
     empty_workspace = Workspace.create!(name: "Empty I18n Workspace")
-    empty_recording = RecordingStudio.root_recording_for(empty_workspace)
+    empty_recording = RecordingStudio.create_root_recording!(empty_workspace, actor: @user)
 
     get "/recording_studio_trashable/recordings/#{empty_recording.id}/trash_bin"
 
@@ -123,7 +123,7 @@ class CustomerI18nTest < ActionDispatch::IntegrationTest
   test "dummy French locale renders empty trash copy" do
     sign_in @user
     empty_workspace = Workspace.create!(name: "Empty French Workspace")
-    empty_recording = RecordingStudio.root_recording_for(empty_workspace)
+    empty_recording = RecordingStudio.create_root_recording!(empty_workspace, actor: @user)
 
     switch_to_french
     get "/recording_studio_trashable/recordings/#{empty_recording.id}/trash_bin"
@@ -140,7 +140,7 @@ class CustomerI18nTest < ActionDispatch::IntegrationTest
     sign_in @user
     switch_to_french
     empty_workspace = Workspace.create!(name: "Override Workspace")
-    empty_recording = RecordingStudio.root_recording_for(empty_workspace)
+    empty_recording = RecordingStudio.create_root_recording!(empty_workspace, actor: @user)
 
     get "/recording_studio_trashable/recordings/#{empty_recording.id}/trash_bin"
 

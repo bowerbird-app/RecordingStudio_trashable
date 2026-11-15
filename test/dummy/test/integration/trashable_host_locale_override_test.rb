@@ -35,7 +35,7 @@ class TrashableHostLocaleOverrideTest < ActionDispatch::IntegrationTest
 
     sign_in @user
     workspace = Workspace.create!(name: "Boot Override #{SecureRandom.hex(4)}")
-    root = RecordingStudio.root_recording_for(workspace)
+    root = RecordingStudio.create_root_recording!(workspace, actor: @user)
 
     previous_allow = RecordingStudioTrashable.configuration.allow_user_retention_settings
     RecordingStudioTrashable.configuration.allow_user_retention_settings = false
@@ -68,7 +68,7 @@ class TrashableHostLocaleOverrideTest < ActionDispatch::IntegrationTest
     assert_equal HOST_RETENTION_MANAGED, I18n.t(OVERRIDE_KEY)
 
     workspace = Workspace.create!(name: "Host Override Empty #{SecureRandom.hex(4)}")
-    root = RecordingStudio.root_recording_for(workspace)
+    root = RecordingStudio.create_root_recording!(workspace, actor: @user)
 
     get "/recording_studio_trashable/recordings/#{root.id}/trash_bin"
     assert_response :success

@@ -110,7 +110,7 @@ class RecordingFilterTest < ActiveSupport::TestCase
 
   def workspace_root
     workspace = Workspace.create!(name: "Filter workspace #{SecureRandom.hex(4)}")
-    RecordingStudio.root_recording_for(workspace)
+    RecordingStudio.create_root_recording!(workspace, actor: @user)
   end
 
   def record_page(parent, title)

@@ -13,7 +13,7 @@ trashed_demo_page_count = 100
 Current.actor = user
 
 workspace = Workspace.find_or_create_by!(name: "Studio Workspace")
-workspace_recording = RecordingStudio.root_recording_for(workspace)
+workspace_recording = RecordingStudio.create_root_recording!(workspace, actor: user)
 
 project_recording = DemoRecordingLookup.by_slug(type: "Project", slug: "album-launch")
 unless project_recording

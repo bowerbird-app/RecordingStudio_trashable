@@ -3,7 +3,7 @@
 Next steps:
 
 1. Review config/initializers/recording_studio_trashable.rb
-   (requires Recording Studio 6.14.0 or newer, below 7.0, and Flatpack 0.1.315+)
+   (requires Recording Studio 7.0 or newer, below 8.0, and Flatpack 0.1.315+)
 2. Run bin/rails generate recording_studio_trashable:migrations
 3. Run bin/rails db:migrate
 4. Opt recordables in explicitly with:
