@@ -24,7 +24,7 @@ class RecordingStudioTrashableTest < Minitest::Test
 
     assert spec.version >= Gem::Version.new("6.14.0"),
            "expected recording_studio >= 6.14.0, got #{spec.version}"
-    assert_includes gemspec, 'spec.add_dependency "recording_studio", ">= 6.14.0", "< 7.0"'
+    assert_includes gemspec, 'spec.add_dependency "recording_studio", ">= 6.14.0", "< 8.0"'
     assert_includes gemspec, 'spec.add_dependency "flat_pack", ">= 0.1.315"'
 
     root_gemfile = File.read(File.expand_path("../Gemfile", __dir__))
