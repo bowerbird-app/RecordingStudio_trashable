@@ -118,7 +118,7 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     assert_response :success, response.body
 
     call(:post, "/pages/#{@page.id}/actions/trashable_trash", @editor_token)
-    assert_response :unprocessable_entity, response.body
+    assert_response :not_found, response.body
 
     call(:get, "/pages/#{@page.id}/actions/trashable_list_trash_bin", @editor_token, per_page: "nope")
     assert_response :unprocessable_entity, response.body
@@ -228,6 +228,18 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     assert_equal :edit, restore.required_role
     assert_equal :admin, purge.required_role
     assert_equal :edit, list.required_role
+    assert_equal false, trash.include_trashed
+    assert_nil trash.trashed_semantics
+    assert_equal true, restore.include_trashed
+    assert_equal :restore, restore.trashed_semantics
+    assert_equal true, purge.include_trashed
+    assert_equal :destroy, purge.trashed_semantics
+    assert_equal true, list.include_trashed
+    assert_nil list.trashed_semantics
+
+    page_handler = RecordingStudioApi.resource_handler_registration("Page", :trashable_restore)
+    assert_equal true, page_handler.include_trashed
+    assert_equal :restore, page_handler.trashed_semantics
     assert_equal :trashable, trash.capability
     assert_equal :get, list.http_verb
     assert_equal "Trash - Restore", restore.openapi.fetch(:title)

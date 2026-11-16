@@ -33,15 +33,15 @@ class RecordingStudioTrashableTest < Minitest::Test
     root_gemfile = File.read(File.expand_path("../Gemfile", __dir__))
     dummy_gemfile = File.read(File.expand_path("dummy/Gemfile", __dir__))
     assert_includes root_gemfile, 'tag: "v7.0.0"'
-    assert_includes dummy_gemfile, 'tag: "v7.0.0"'
+    assert_includes dummy_gemfile, 'tag: "v7.3.0"'
     assert_includes root_gemfile, 'tag: "v0.1.376"'
-    assert_includes dummy_gemfile, 'tag: "v0.1.376"'
-    assert_includes dummy_gemfile, 'tag: "v0.43.1"'
-    assert_includes dummy_gemfile, 'tag: "v0.23.4"'
-    assert_includes dummy_gemfile, 'tag: "v2.16.0"'
+    assert_includes dummy_gemfile, 'tag: "v0.1.377"'
+    assert_includes dummy_gemfile, 'tag: "v0.45.1"'
+    assert_includes dummy_gemfile, 'tag: "v1.2.1"'
+    assert_includes dummy_gemfile, 'tag: "v2.18.0"'
     assert_includes dummy_gemfile, 'tag: "v0.3.0"'
-    assert_includes dummy_gemfile, 'tag: "v0.7.5"'
-    assert_includes dummy_gemfile, 'tag: "v4.2.0"'
+    assert_includes dummy_gemfile, 'tag: "v0.8.0"'
+    assert_includes dummy_gemfile, 'tag: "v6.0.0"'
     assert_includes root_gemfile, 'gem "view_component", "4.19.0"'
     assert_includes dummy_gemfile, 'gem "view_component", "4.19.0"'
 
