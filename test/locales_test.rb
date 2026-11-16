@@ -197,7 +197,7 @@ class LocalesTest < Minitest::Test
 
     assert_includes dummy_gemfile, "recording_studio_internationalization"
     assert_includes dummy_gemfile, "RecordingStudio_Internationalization"
-    assert_includes dummy_gemfile, 'tag: "v0.1.376"'
+    assert_includes dummy_gemfile, 'tag: "v0.1.377"'
     assert_includes dummy_gemfile, 'tag: "v0.3.0"'
   end
 

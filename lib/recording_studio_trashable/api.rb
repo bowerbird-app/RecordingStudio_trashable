@@ -33,6 +33,7 @@ module RecordingStudioTrashable
     def action_options(api_name, name)
       spec = Catalog::ACTIONS.fetch(name)
       spec.slice(:http_verb, :required_role, :handler).merge(
+        **scope_options(name),
         capability: :trashable,
         version: Catalog::ACTION_VERSION,
         serializer: nil,
@@ -40,6 +41,20 @@ module RecordingStudioTrashable
         openapi: Catalog.openapi_for(name),
         api: api_name
       )
+    end
+
+    # API 0.26+ hides trashed rows unless the action opts in. Trash stays on kept rows.
+    def scope_options(name)
+      case name
+      when :trashable_restore
+        { include_trashed: true, trashed_semantics: :restore }
+      when :trashable_purge
+        { include_trashed: true, trashed_semantics: :destroy }
+      when :trashable_list_trash_bin
+        { include_trashed: true }
+      else
+        {}
+      end
     end
 
     def register_resource_handlers(api_name)
@@ -53,7 +68,9 @@ module RecordingStudioTrashable
         raise_mismatched_registration!(name, api_name, existing, handler, recordable_type:) if existing
         next if existing
 
-        RecordingStudioApi.register_resource_handler(recordable_type, name, api: api_name, handler:)
+        RecordingStudioApi.register_resource_handler(
+          recordable_type, name, api: api_name, handler:, **scope_options(name)
+        )
       end
     end
 
