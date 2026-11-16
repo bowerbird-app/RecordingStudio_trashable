@@ -25,23 +25,21 @@ class ConfigurationTest < Minitest::Test
   end
 
   def test_merge_ignores_unknown_keys
-    @configuration.merge!(unknown_key: "ignored")
+    @configuration.merge!(unknown_key: "ignored", hooks: "nope")
 
     refute_respond_to @configuration, :unknown_key
+    refute_respond_to @configuration, :hooks
     assert_equal true, @configuration.use_recording_studio_accessible
   end
 
-  def test_to_h_reports_hook_counts
-    @configuration.hooks.before_initialize { nil }
-    @configuration.hooks.after_initialize { nil }
-
+  def test_to_h_omits_the_removed_hook_registry
     result = @configuration.to_h
 
     assert_equal false, result.fetch(:allow_user_retention_settings)
     assert_equal false, result.fetch(:allow_unconfigured_authorization)
     assert_nil result.fetch(:retention_purge_actor_resolver)
     assert_nil result.fetch(:retention_purge_impersonator_resolver)
-    assert_equal 1, result.fetch(:hooks_registered).fetch(:before_initialize)
-    assert_equal 1, result.fetch(:hooks_registered).fetch(:after_initialize)
+    refute result.key?(:hooks_registered)
+    refute_respond_to @configuration, :hooks
   end
 end

@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "hooks"
-
 module RecordingStudioTrashable
   class Configuration
     DEFAULTS = {
@@ -36,14 +34,13 @@ module RecordingStudioTrashable
                   :mounted_page_authorizer,
                   :default_purge_after_days,
                   :allow_user_retention_settings
-    attr_reader :hooks, :layout
+    attr_reader :layout
 
     def initialize
       DEFAULTS.each do |name, value|
         instance_variable_set("@#{name}", value)
       end
       @authorization_roles = DEFAULT_AUTHORIZATION_ROLES.dup
-      @hooks = Hooks.new
     end
 
     def layout=(value)
@@ -64,7 +61,7 @@ module RecordingStudioTrashable
     end
 
     def to_h
-      configuration_values.merge(hooks_registered: hooks_registered)
+      configuration_values
     end
 
     def merge!(hash)
@@ -94,10 +91,6 @@ module RecordingStudioTrashable
         retention_purge_actor_resolver: retention_purge_actor_resolver,
         retention_purge_impersonator_resolver: retention_purge_impersonator_resolver
       }
-    end
-
-    def hooks_registered
-      hooks.instance_variable_get(:@registry).transform_values(&:size)
     end
 
     def normalize_hash(value)

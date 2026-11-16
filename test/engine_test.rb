@@ -43,18 +43,15 @@ class EngineTest < Minitest::Test
     RecordingStudioTrashable.instance_variable_set(:@configuration, @original_configuration)
   end
 
-  def test_before_and_after_initialize_initializers_run_hooks
-    before_called = false
-    after_called = false
+  def test_engine_does_not_boot_a_local_hook_registry
+    names = RecordingStudioTrashable::Engine.initializers.map(&:name)
 
-    RecordingStudioTrashable.configuration.hooks.before_initialize { before_called = true }
-    RecordingStudioTrashable.configuration.hooks.after_initialize { after_called = true }
-
-    find_initializer("recording_studio_trashable.before_initialize").block.call(Object.new)
-    find_initializer("recording_studio_trashable.after_initialize").block.call(Object.new)
-
-    assert before_called
-    assert after_called
+    refute_includes names, "recording_studio_trashable.before_initialize"
+    refute_includes names, "recording_studio_trashable.after_initialize"
+    assert_includes names, "recording_studio_trashable.load_config"
+    assert_includes names, "recording_studio_trashable.api"
+    refute RecordingStudioTrashable.const_defined?(:Hooks, false)
+    refute_respond_to RecordingStudioTrashable.configuration, :hooks
   end
 
   def test_load_config_merges_yaml_and_x_configuration

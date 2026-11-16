@@ -6,6 +6,12 @@ This addon requires RecordingStudio `>= 7.0`, `< 8.0` (development pin tag `v7.0
 
 The engine registers `:trashable` at boot with `RecordingStudio.register_capability`. Hosts enable it on each recordable with `include RecordingStudio::Capabilities::Trashable.to(**opts)`, which wraps `RecordingStudio::Capabilities.include_for(:trashable, **options)`. Installing the gem does not enable the capability. Parent rules stay on `recording_studio_recordable`.
 
+## Hooks
+
+This gem does not ship a hook registry. `RecordingStudioTrashable.configuration` has no `hooks` reader, and `to_h` does not include `:hooks_registered`. The engine does not run `:before_initialize`, `:on_configuration`, or `:after_initialize`.
+
+Register host hooks on `RecordingStudio.configuration.hooks`. Core runs that registry. Trash, restore, and purge do not. Recording scope registration still uses Core `extend_model(:recording)`.
+
 ## Mounted UI
 
 Mounted screens use Recording Studio core's default layout. `RecordingStudioTrashable::ApplicationController` calls `recording_studio_layout { RecordingStudioTrashable.configuration.layout }`. `config.layout` is `nil` by default, so the host's `RecordingStudio.configuration.layout` wins, then `"recording_studio/default_layout"`. Assign a String, `false`, or a `controller:` callable. The shell owns back/close, page actions, flash alerts, and the page title. Views set `content_for :title` (and `:subtitle` when the page has one), call `flat_pack_page_nav` for back and close, and `register_page_nav` for a page action. Do not draw a second `<h1>` in the view body.
@@ -22,7 +28,7 @@ Do not register the filter from `to_prepare`. The registry lives outside the rel
 
 A host that has not migrated (no `trashed_at` column), or whose database is unavailable when a query first runs, gets no filter and no error from this check.
 
-Sibling gems should not read or write `trashed_at` directly. Prefer `Recording.kept`, `RecordingStudio.kept_sql`, `recording_studio_trashable_kept?` / `recording_studio_trashable_trashed?`, `recording_studio_trashable_trash!`, and `RecordingStudioTrashable.void_recording!` (`update_columns` on the recording and its descendants). Gems that only need the query helpers should `require "recording_studio_trashable/query"` (see README) instead of the full engine. See the README sibling mapping table for call-site replacements, `~> 0.16` dependency notes, and column-existence conditionals. Delete any host default scope on `trashed_at`.
+Sibling gems should not read or write `trashed_at` directly. Prefer `Recording.kept`, `RecordingStudio.kept_sql`, `recording_studio_trashable_kept?` / `recording_studio_trashable_trashed?`, `recording_studio_trashable_trash!`, and `RecordingStudioTrashable.void_recording!` (`update_columns` on the recording and its descendants). Gems that only need the query helpers should `require "recording_studio_trashable/query"` (see README) instead of the full engine. See the README sibling mapping table for call-site replacements, `~> 1.0` dependency notes, and column-existence conditionals. Delete any host default scope on `trashed_at`.
 
 ## Retention persistence
 

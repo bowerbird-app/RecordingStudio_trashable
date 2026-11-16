@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-16
+
+### Removed
+
+- `RecordingStudioTrashable::Hooks`.
+- `RecordingStudioTrashable.configuration.hooks`.
+- The `:hooks_registered` key on `RecordingStudioTrashable.configuration.to_h`.
+- Engine initializers `recording_studio_trashable.before_initialize` and `recording_studio_trashable.after_initialize`.
+- The `:on_configuration` run inside `recording_studio_trashable.load_config`.
+
+### Upgrade Notes
+
+- Bump to `1.0.0`. No migration.
+- Delete references to `RecordingStudioTrashable::Hooks` and `RecordingStudioTrashable.configuration.hooks`.
+- Register those hooks on `RecordingStudio.configuration.hooks`. Core runs that registry. This gem does not call it at boot.
+- Stop reading `:hooks_registered` from `RecordingStudioTrashable.configuration.to_h`.
+- Sibling gemspecs that only need the query helpers should depend on `recording_studio_trashable`, `"~> 1.0"`.
+- Accessible `v0.45.0` still requires `>= 0.17.0, < 1.0`. Admin `v2.16.0` still requires `>= 0.16.1, < 1.0`. Those releases cannot be installed with Trashable `1.0.0`.
+- Trash, restore, purge, trashed rows, and `purge_at` are unchanged.
+
 ## [0.17.0] - 2026-11-15
 
 ### Changed
@@ -453,7 +473,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.17.0...v1.0.0
 [0.17.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.16.1...v0.17.0
 [0.16.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.15.0...v0.16.0

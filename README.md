@@ -95,6 +95,8 @@ RecordingStudioTrashable.configure do |config|
 end
 ```
 
+This gem does not keep a hook registry. Register host hooks on `RecordingStudio.configuration.hooks`. Trash, restore, and purge do not run those hooks.
+
 ## Adding to a recordable
 
 Recordables stay opt-in. Include the capability only on the recordable models that should be trashable:
@@ -182,7 +184,7 @@ Sibling gems that only need trash scopes, predicates, or `void_recording!` shoul
 In the sibling gemspec:
 
 ```ruby
-spec.add_dependency "recording_studio_trashable", "~> 0.16"
+spec.add_dependency "recording_studio_trashable", "~> 1.0"
 ```
 
 In the sibling library (not the host Gemfile auto-require):
@@ -204,7 +206,7 @@ If the sibling ships as a Bundler Gemfile entry that would otherwise auto-requir
 
 Trashable owns `trashed_at` reads and writes for sibling gems. Replace raw `trashed_at: nil` filters with `Recording.kept` or `RecordingStudio.kept_sql`. Keep each gem's column-existence check so a host without Trashable still boots. `Recording.kept` adds `trashed_at IS NULL`. It does not unscope an earlier `trashed_at` condition.
 
-**Dependencies:** `accessible`, `api`, `Embeddable`, `admin`, `Oauth`, `support`, and `presskits` should add `recording_studio_trashable`, `"~> 0.16"` and `require "recording_studio_trashable/query"` when they only need the filter, predicates, or `void_recording!`.
+**Dependencies:** `accessible`, `api`, `Embeddable`, `admin`, `Oauth`, `support`, and `presskits` should add `recording_studio_trashable`, `"~> 1.0"` and `require "recording_studio_trashable/query"` when they only need the filter, predicates, or `void_recording!`.
 
 | Sibling call site | Replace with |
 | --- | --- |

@@ -119,7 +119,7 @@ class SiblingTrashedAtApiTest < Minitest::Test
     readme = File.read(File.expand_path("../README.md", __dir__))
 
     assert_includes readme, "### Sibling gem `trashed_at` mapping"
-    assert_includes readme, 'spec.add_dependency "recording_studio_trashable", "~> 0.16"'
+    assert_includes readme, 'spec.add_dependency "recording_studio_trashable", "~> 1.0"'
     assert_includes readme, 'require "recording_studio_trashable/query"'
     assert_includes readme, "column-existence"
     assert_includes readme, "RecordingStudio::Recording.kept"
