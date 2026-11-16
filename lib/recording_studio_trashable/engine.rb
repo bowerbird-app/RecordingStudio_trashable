@@ -37,23 +37,12 @@ module RecordingStudioTrashable
       RecordingStudioTrashable::RecordingFilter.register!
     end
 
-    initializer "recording_studio_trashable.before_initialize",
-                before: "recording_studio_trashable.load_config" do |_app|
-      RecordingStudioTrashable::Hooks.run(:before_initialize, self)
-    end
-
     initializer "recording_studio_trashable.load_config" do |app|
       RecordingStudioTrashable::Engine.send(:load_yaml_config, app)
       if app.config.respond_to?(:x) && app.config.x.respond_to?(:recording_studio_trashable)
         RecordingStudioTrashable::Engine.send(:load_x_config,
                                               app.config.x.recording_studio_trashable)
       end
-      RecordingStudioTrashable::Hooks.run(:on_configuration, RecordingStudioTrashable.configuration)
-    end
-
-    initializer "recording_studio_trashable.after_initialize",
-                after: "recording_studio_trashable.load_config" do |_app|
-      RecordingStudioTrashable::Hooks.run(:after_initialize, self)
     end
 
     initializer "recording_studio_trashable.metrics" do
