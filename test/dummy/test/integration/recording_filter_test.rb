@@ -106,6 +106,34 @@ class RecordingFilterTest < ActiveSupport::TestCase
     refute called
   end
 
+  test "an ActiveRecord error other than a missing database raises from kept_sql and kept_relation" do
+    recordings = RecordingStudio::Recording.all
+    statement_error = ActiveRecord::StatementInvalid.new("statement invalid")
+    connection_error = ActiveRecord::ConnectionNotEstablished.new("connection not established")
+
+    with_trashed_at_column(proc { raise statement_error }) do
+      assert_raises(ActiveRecord::StatementInvalid) do
+        RecordingStudioTrashable::RecordingFilter.kept_sql("parents")
+      end
+      assert_raises(ActiveRecord::StatementInvalid) { RecordingStudio.kept_sql("parents") }
+      assert_raises(ActiveRecord::StatementInvalid) do
+        RecordingStudioTrashable::RecordingFilter.kept_relation(recordings)
+      end
+      assert_raises(ActiveRecord::StatementInvalid) do
+        RecordingStudio::Recording.kept.where(id: @parent.id).to_sql
+      end
+    end
+
+    with_trashed_at_column(proc { raise connection_error }) do
+      assert_raises(ActiveRecord::ConnectionNotEstablished) do
+        RecordingStudioTrashable::RecordingFilter.kept_sql("parents")
+      end
+      assert_raises(ActiveRecord::ConnectionNotEstablished) do
+        RecordingStudioTrashable::RecordingFilter.kept_relation(recordings)
+      end
+    end
+  end
+
   private
 
   def workspace_root

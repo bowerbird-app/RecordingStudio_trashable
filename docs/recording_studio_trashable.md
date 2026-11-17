@@ -26,7 +26,7 @@ Trashable does not install a `default_scope`. The engine initializer registers `
 
 Do not register the filter from `to_prepare`. The registry lives outside the reloader, and registering again from that callback is unnecessary. The same name replaces the filter in place.
 
-A host that has not migrated (no `trashed_at` column), or whose database is unavailable when a query first runs, gets no filter and no error from this check.
+A host that has not migrated (no `trashed_at` column) gets no filter and no error from this check. `ActiveRecord::NoDatabaseError`, when the database does not exist yet, does the same. Other ActiveRecord errors raise.
 
 Sibling gems should not read or write `trashed_at` directly. Prefer `Recording.kept`, `RecordingStudio.kept_sql`, `recording_studio_trashable_kept?` / `recording_studio_trashable_trashed?`, `recording_studio_trashable_trash!`, and `RecordingStudioTrashable.void_recording!` (`update_columns` on the recording and its descendants). Gems that only need the query helpers should `require "recording_studio_trashable/query"` (see README) instead of the full engine. See the README sibling mapping table for call-site replacements, `~> 1.0` dependency notes, and column-existence conditionals. Delete any host default scope on `trashed_at`.
 
