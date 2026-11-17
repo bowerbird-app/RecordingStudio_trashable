@@ -12,7 +12,7 @@ module RecordingStudioTrashable
             type: :string,
             required: false,
             allow_blank: true,
-            description: "Search trash by name, type, or id"
+            description: "Search text you pass. Matches name, title, type, or id."
           },
           page: {
             type: :integer,
@@ -32,6 +32,72 @@ module RecordingStudioTrashable
         trashable_purge: "Purging requires the item to already be in the trash.",
         trashable_list_trash_bin: "Search or page is not valid."
       }.freeze
+      TRASH_DESCRIPTION = "Moves this item to the trash. " \
+                          "It also moves everything under the item to the trash. " \
+                          "Use this when the delete should be recoverable. " \
+                          "Restore can undo it. " \
+                          "Use Purge after the item is already in the trash, when you want it deleted permanently. " \
+                          "Set action to trashable_trash. " \
+                          "Pass the recording id of a kept item. " \
+                          "Take that id from a list or show of that item. " \
+                          "That recording id is the only input. " \
+                          "You need the edit role on this item. " \
+                          "Returns the recording resource for the item. " \
+                          "The fields are id, type, parent_id, root_id, created_at, and updated_at, " \
+                          "plus any serializer output keys, fields, and relationships " \
+                          "that type's API registration declares. " \
+                          "id, parent_id, and root_id are strings. " \
+                          "parent_id and root_id are null when the item has no parent or root. " \
+                          "created_at and updated_at are ISO 8601 strings. " \
+                          "trashed_at is not a field in this JSON."
+      RESTORE_DESCRIPTION = "Brings this item back from the trash. " \
+                            "It also brings back the items that were trashed with it. " \
+                            "Nested items that were trashed separately stay trashed, " \
+                            "and so does everything under those items. " \
+                            "Use this to undo Trash. " \
+                            "It cannot undo Purge. " \
+                            "Call List trash bin first. " \
+                            "Set action to trashable_restore. " \
+                            "Copy id from a record in the records array. " \
+                            "That recording id is the only input. " \
+                            "You need the edit role on this item. " \
+                            "Returns the recording resource for the restored item, with the same fields Trash returns."
+      PURGE_DESCRIPTION = "Permanently deletes this trashed item and everything trashed under it. " \
+                          "This cannot be undone. " \
+                          "It only works on an item that is already in the trash. " \
+                          "Use this when you want the item deleted permanently. " \
+                          "Restore brings the item back. " \
+                          "Trash the item first if it is still active. " \
+                          "Call List trash bin first. " \
+                          "The id comes from List trash bin. " \
+                          "Set action to trashable_purge. " \
+                          "Copy id from a record in the records array. " \
+                          "That recording id is the only input. " \
+                          "You need the admin role on this item. " \
+                          "If something under the item is not in the trash, the purge fails and nothing is deleted. " \
+                          "Returns id and purged. " \
+                          "purged is true. " \
+                          "id is the recording id you passed."
+      LIST_TRASH_BIN_DESCRIPTION = "Lists the trash in this item's subtree. " \
+                                   "It returns only top-level trashed items, newest first. " \
+                                   "A top-level trashed item is one someone trashed directly. " \
+                                   "Items that were trashed only because a parent was trashed stay off the list. " \
+                                   "This item is included when someone trashed it directly. " \
+                                   "Use this to get an id for Restore or Purge. " \
+                                   "Set action to trashable_list_trash_bin. " \
+                                   "Pass the recording id of the item whose trash you want to see. " \
+                                   "Optional q searches name, title, type, or id. " \
+                                   "q is the search text you pass. The match ignores case. " \
+                                   "Optional page starts at 1. " \
+                                   "Optional per_page defaults to 25 and is capped at 100. " \
+                                   "Pass q, page, and per_page as the action input. " \
+                                   "Ordering is trashed_at descending, then id descending. " \
+                                   "You need the edit role on this item. " \
+                                   "Returns records for that page. " \
+                                   "Each record has the same fields Trash returns. " \
+                                   "The response has no page number and no total count. " \
+                                   "Pass the next page number to see more. " \
+                                   "An empty records array means that page has no rows."
       ACTIONS = {
         trashable_trash: {
           http_verb: :post,
@@ -39,7 +105,7 @@ module RecordingStudioTrashable
           handler: Actions::Trash,
           title: "Trash - Trash",
           summary: "Move to trash",
-          description: "Soft-deletes this item and everything nested under it. Same as Trash on the page."
+          description: TRASH_DESCRIPTION
         }.freeze,
         trashable_restore: {
           http_verb: :post,
@@ -47,7 +113,7 @@ module RecordingStudioTrashable
           handler: Actions::Restore,
           title: "Trash - Restore",
           summary: "Restore from trash",
-          description: "Brings this item back. Nested items that were trashed on their own stay in the trash."
+          description: RESTORE_DESCRIPTION
         }.freeze,
         trashable_purge: {
           http_verb: :post,
@@ -55,7 +121,7 @@ module RecordingStudioTrashable
           handler: Actions::Purge,
           title: "Trash - Purge",
           summary: "Delete forever",
-          description: "Permanently deletes this trashed item and its nested trash. Active items must be trashed first."
+          description: PURGE_DESCRIPTION
         }.freeze,
         trashable_list_trash_bin: {
           http_verb: :get,
@@ -63,7 +129,7 @@ module RecordingStudioTrashable
           handler: Actions::ListTrashBin,
           title: "Trash - List trash bin",
           summary: "List trash in this branch",
-          description: "Lists items people moved to trash under this item. Cascade-trashed children stay hidden."
+          description: LIST_TRASH_BIN_DESCRIPTION
         }.freeze
       }.freeze
 

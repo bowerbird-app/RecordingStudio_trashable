@@ -26,6 +26,7 @@ Metrics/ClassLength:
 Metrics/ModuleLength:
   Exclude:
     - 'lib/recording_studio_trashable.rb'
+    - 'lib/recording_studio_trashable/api/catalog.rb'
 
 Metrics/MethodLength:
   Exclude:
