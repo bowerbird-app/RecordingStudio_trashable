@@ -7,13 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-17
+
 ### Fixed
 
 - `Recording.kept` and `RecordingStudio.kept_sql` no longer treat a database error as a missing `trashed_at` column. That used to apply no filter (`1=1`), so trashed rows stayed in kept results. A missing `trashed_at` column still applies no filter. `ActiveRecord::NoDatabaseError` still applies no filter, so `db:create` and `assets:precompile` work before the database exists. Other ActiveRecord errors, including `ConnectionNotEstablished` and `StatementInvalid`, raise.
 
 ### Upgrade Notes
 
-- No migration. A host with no `trashed_at` column still gets no kept filter and no error. A missing database still gets no filter and no error. A connection failure or a bad statement now raises instead of showing trashed rows as kept.
+- Bump to `1.1.1`. No migration. A host with no `trashed_at` column still gets no kept filter and no error. A missing database still gets no filter and no error. A connection failure or a bad statement now raises instead of showing trashed rows as kept.
 
 ## [1.1.0] - 2026-11-17
 
