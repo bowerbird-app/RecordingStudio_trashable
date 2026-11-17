@@ -9,6 +9,24 @@ class ApiCatalogDescriptionTest < Minitest::Test
     trashable_purge
     trashable_list_trash_bin
   ].freeze
+  TITLES = {
+    trashable_trash: "Trash",
+    trashable_restore: "Restore",
+    trashable_purge: "Purge",
+    trashable_list_trash_bin: "List trash bin"
+  }.freeze
+
+  def test_openapi_titles_are_plain_names
+    TITLES.each do |name, title|
+      assert_equal title, openapi(name).fetch(:title), name.to_s
+    end
+  end
+
+  def test_openapi_tag_suffix_is_trash
+    NAMES.each do |name|
+      assert_equal "Trash", openapi(name).fetch(:tag_suffix), name.to_s
+    end
+  end
 
   def test_each_action_description_says_what_it_returns
     NAMES.each do |name|
@@ -40,7 +58,11 @@ class ApiCatalogDescriptionTest < Minitest::Test
 
   private
 
+  def openapi(name)
+    RecordingStudioTrashable::Api::Catalog.openapi_for(name)
+  end
+
   def description(name)
-    RecordingStudioTrashable::Api::Catalog.openapi_for(name).fetch(:description)
+    openapi(name).fetch(:description)
   end
 end

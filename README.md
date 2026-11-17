@@ -281,6 +281,8 @@ When Recording Studio API is loaded, this gem registers capability actions on ev
 | `trashable_purge` | POST | `:admin` | `recording_studio_trashable_purge!` |
 | `trashable_list_trash_bin` | GET | `:edit` | `SubtreeQuery.trashed_recordings_for_query` |
 
+OpenAPI titles are Trash, Restore, Purge, and List trash bin. Each action's OpenAPI metadata includes `tag_suffix: "Trash"`. MCP uses that suffix to group a type's actions under a heading such as Video Trash.
+
 MCP calls them through the generic `capability_action` path. Recording Studio API resolves the recording before the handler. `trashable_trash` sees kept recordings only, so trashing an item that is already in the trash is not found. `trashable_restore` and `trashable_purge` pass `include_trashed: true` with `trashed_semantics` `:restore` and `:destroy`, then authorize `:edit` and `:admin`. `trashable_list_trash_bin` passes `include_trashed: true` so the bin can be opened on a trashed parent, then authorizes `:edit`. It also calls `RecordingStudioTrashable.authorized?(action: :trash_bin, ...)`, so a host `authorization_resolver` is honoured the same way as the trash bin screen. Handlers still look the recording up on `access_grant.accessible_recordings(include_trashed: true)`.
 
 Enable a type on the API as usual. Types that include `RecordingStudio::Capabilities::Trashable.to` get these actions when `auto_capability_actions` is on:

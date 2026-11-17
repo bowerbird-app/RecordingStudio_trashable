@@ -4,6 +4,7 @@ module RecordingStudioTrashable
   module Api
     module Catalog
       ACTION_VERSION = "1.0.0"
+      TAG_SUFFIX = "Trash"
       EMPTY_CONTRACT = { reject_unknown: false, fields: {} }.freeze
       LIST_TRASH_BIN_CONTRACT = {
         reject_unknown: false,
@@ -103,7 +104,7 @@ module RecordingStudioTrashable
           http_verb: :post,
           required_role: :edit,
           handler: Actions::Trash,
-          title: "Trash - Trash",
+          title: "Trash",
           summary: "Move to trash",
           description: TRASH_DESCRIPTION
         }.freeze,
@@ -111,7 +112,7 @@ module RecordingStudioTrashable
           http_verb: :post,
           required_role: :edit,
           handler: Actions::Restore,
-          title: "Trash - Restore",
+          title: "Restore",
           summary: "Restore from trash",
           description: RESTORE_DESCRIPTION
         }.freeze,
@@ -119,7 +120,7 @@ module RecordingStudioTrashable
           http_verb: :post,
           required_role: :admin,
           handler: Actions::Purge,
-          title: "Trash - Purge",
+          title: "Purge",
           summary: "Delete forever",
           description: PURGE_DESCRIPTION
         }.freeze,
@@ -127,7 +128,7 @@ module RecordingStudioTrashable
           http_verb: :get,
           required_role: :edit,
           handler: Actions::ListTrashBin,
-          title: "Trash - List trash bin",
+          title: "List trash bin",
           summary: "List trash in this branch",
           description: LIST_TRASH_BIN_DESCRIPTION
         }.freeze
@@ -145,6 +146,7 @@ module RecordingStudioTrashable
           title: spec.fetch(:title),
           summary: spec.fetch(:summary),
           description: spec.fetch(:description),
+          tag_suffix: TAG_SUFFIX,
           responses: responses_for(name, spec.fetch(:summary))
         }
       end
