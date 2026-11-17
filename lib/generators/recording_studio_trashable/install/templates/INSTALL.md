@@ -14,6 +14,7 @@ Next steps:
    Joins use RecordingStudio.kept_sql("child"). The engine registers the
    :trashable filter once. Do not register it from to_prepare.
    Until trashed_at exists, kept applies no filter and does not raise.
+   A missing database (ActiveRecord::NoDatabaseError) does the same. Other database errors raise.
 
 6. Mount path: <%= options[:mount_path] %>
 

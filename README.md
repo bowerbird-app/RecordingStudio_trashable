@@ -41,7 +41,7 @@ bin/rails db:migrate
 
 Ordinary `Recording` queries still return trashed rows. Call `RecordingStudio::Recording.kept` when the query should skip them. The engine registers that filter once, at boot. Do not register it from `to_prepare`. That callback runs on every reload. Requires Recording Studio `>= 7.0`, `< 8.0`.
 
-A host that has not run Trashable's migration has no `trashed_at` column. `kept` and `kept_sql` then leave the relation alone and do not raise, including when the database or the recordings table is missing at boot.
+A host that has not run Trashable's migration has no `trashed_at` column. `kept` and `kept_sql` then leave the relation alone and do not raise. The same is true when the database does not exist yet (`ActiveRecord::NoDatabaseError`), which covers `db:create` and `assets:precompile`. Any other ActiveRecord error raises.
 
 ## Setup
 

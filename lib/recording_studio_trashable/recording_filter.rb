@@ -2,7 +2,8 @@
 
 module RecordingStudioTrashable
   # One :trashable answer for Recording.kept. Registration does not connect.
-  # A host with no trashed_at column, or no database yet, gets no filter.
+  # A missing trashed_at column, or ActiveRecord::NoDatabaseError, gets no filter.
+  # Other ActiveRecord errors raise so a kept query cannot fail open.
   module RecordingFilter
     class << self
       def register!
@@ -28,7 +29,7 @@ module RecordingStudioTrashable
 
         recording = RecordingStudio::Recording
         recording.connection.column_exists?(recording.table_name, :trashed_at)
-      rescue ActiveRecord::ActiveRecordError
+      rescue ActiveRecord::NoDatabaseError
         false
       end
     end
