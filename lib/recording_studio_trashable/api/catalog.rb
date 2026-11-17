@@ -6,6 +6,17 @@ module RecordingStudioTrashable
       ACTION_VERSION = "1.0.0"
       TAG_SUFFIX = "Trash"
       EMPTY_CONTRACT = { reject_unknown: false, fields: {} }.freeze
+      RECORDING_ID_CONTRACT = {
+        reject_unknown: false,
+        fields: {
+          recording_id: {
+            type: :string,
+            required: false,
+            allow_blank: true,
+            description: "Recording id from a List trash bin record."
+          }
+        }
+      }.freeze
       LIST_TRASH_BIN_CONTRACT = {
         reject_unknown: false,
         fields: {
@@ -50,7 +61,10 @@ module RecordingStudioTrashable
                           "id, parent_id, and root_id are strings. " \
                           "parent_id and root_id are null when the item has no parent or root. " \
                           "created_at and updated_at are ISO 8601 strings. " \
-                          "trashed_at is not a field in this JSON."
+                          "trashed_at is not a field in this JSON. " \
+                          "List trash bin records also include label and recordable_type. " \
+                          "Restore and Purge can target one of those records with recording_id " \
+                          "when called on the parent."
       RESTORE_DESCRIPTION = "Brings this item back from the trash. " \
                             "It also brings back the items that were trashed with it. " \
                             "Nested items that were trashed separately stay trashed, " \
@@ -59,9 +73,12 @@ module RecordingStudioTrashable
                             "It cannot undo Purge. " \
                             "Call List trash bin first. " \
                             "Set action to trashable_restore. " \
-                            "Copy id from a record in the records array. " \
-                            "That recording id is the only input. " \
+                            "List trash bin records include label and recordable_type. " \
+                            "Pass optional recording_id from one of those records to restore that item " \
+                            "when this action is called on the parent. " \
+                            "Without recording_id, this restores the item in the path. " \
                             "You need the edit role on this item. " \
+                            "When recording_id is set, you also need the edit role on that item. " \
                             "Returns the recording resource for the restored item, with the same fields Trash returns."
       PURGE_DESCRIPTION = "Permanently deletes this trashed item and everything trashed under it. " \
                           "This cannot be undone. " \
@@ -72,9 +89,12 @@ module RecordingStudioTrashable
                           "Call List trash bin first. " \
                           "The id comes from List trash bin. " \
                           "Set action to trashable_purge. " \
-                          "Copy id from a record in the records array. " \
-                          "That recording id is the only input. " \
+                          "List trash bin records include label and recordable_type. " \
+                          "Pass optional recording_id from one of those records to purge that item " \
+                          "when this action is called on the parent. " \
+                          "Without recording_id, this purges the item in the path. " \
                           "You need the admin role on this item. " \
+                          "When recording_id is set, you also need the admin role on that item. " \
                           "If something under the item is not in the trash, the purge fails and nothing is deleted. " \
                           "Returns id and purged. " \
                           "purged is true. " \
@@ -95,7 +115,11 @@ module RecordingStudioTrashable
                                    "Ordering is trashed_at descending, then id descending. " \
                                    "You need the edit role on this item. " \
                                    "Returns records for that page. " \
-                                   "Each record has the same fields Trash returns. " \
+                                   "Each record has the same fields Trash returns, plus label and recordable_type. " \
+                                   "label is the title, then the name, " \
+                                   "then the type and the first 8 characters of the id. " \
+                                   "Restore and Purge can target a record with recording_id " \
+                                   "when called on the parent. " \
                                    "The response has no page number and no total count. " \
                                    "Pass the next page number to see more. " \
                                    "An empty records array means that page has no rows."
@@ -137,7 +161,14 @@ module RecordingStudioTrashable
       module_function
 
       def contract_for(name)
-        name == :trashable_list_trash_bin ? LIST_TRASH_BIN_CONTRACT : EMPTY_CONTRACT
+        case name
+        when :trashable_list_trash_bin
+          LIST_TRASH_BIN_CONTRACT
+        when :trashable_restore, :trashable_purge
+          RECORDING_ID_CONTRACT
+        else
+          EMPTY_CONTRACT
+        end
       end
 
       def openapi_for(name)

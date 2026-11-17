@@ -252,6 +252,202 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     assert_nil trash.serializer
   end
 
+  test "list trash bin records include label and recordable type" do
+    parent = trashable_project("Label Parent")
+    titled = record_page(parent, "Launch Notes")
+    named = record_folder(parent, "Reference Assets")
+    blank = record_page(parent, "Placeholder")
+    Page.where(id: blank.recordable_id).update_all(title: "")
+    titled.recording_studio_trashable_trash!(actor: @owner)
+    blank.recording_studio_trashable_trash!(actor: @owner)
+    mark_trash_root(named)
+
+    listed = call(:get, "/projects/#{parent.id}/actions/trashable_list_trash_bin", @editor_token)
+    assert_response :success, response.body
+    rows = listed.fetch("records").index_by { |row| row.fetch("id") }
+
+    assert_equal "Launch Notes", rows.fetch(titled.id).fetch("label")
+    assert_equal "Page", rows.fetch(titled.id).fetch("recordable_type")
+    assert_equal "Reference Assets", rows.fetch(named.id).fetch("label")
+    assert_equal "Folder", rows.fetch(named.id).fetch("recordable_type")
+    assert_equal "Page ##{blank.id.to_s.first(8)}", rows.fetch(blank.id).fetch("label")
+    assert_equal "Page", rows.fetch(blank.id).fetch("recordable_type")
+  end
+
+  test "recording_id restores and purges a trash root in the subtree" do
+    parent = trashable_project("Action Parent")
+    child = record_page(parent, "Nested Page")
+    folder = record_folder(parent, "Nested Folder")
+    child.recording_studio_trashable_trash!(actor: @owner)
+    assert_raises(RecordingStudio::CapabilityDisabled) do
+      folder.recording_studio_trashable_trash!(actor: @owner)
+    end
+    mark_trash_root(folder)
+
+    restored = call(
+      :post,
+      "/projects/#{parent.id}/actions/trashable_restore",
+      @editor_token,
+      recording_id: child.id
+    )
+    assert_response :success, response.body
+    assert child.reload.recording_studio_trashable_kept?
+    assert_equal child.id, restored.fetch("id")
+
+    mark_trash_root(folder)
+    restored_folder = call(
+      :post,
+      "/projects/#{parent.id}/actions/trashable_restore",
+      @editor_token,
+      recording_id: folder.id
+    )
+    assert_response :success, restored_folder.inspect
+    assert folder.reload.recording_studio_trashable_kept?
+
+    child.recording_studio_trashable_trash!(actor: @owner)
+    purged = call(
+      :post,
+      "/projects/#{parent.id}/actions/trashable_purge",
+      @admin_token,
+      recording_id: child.id
+    )
+    assert_response :success, response.body
+    assert_equal true, purged.fetch("purged")
+    assert_nil RecordingStudio::Recording.find_by(id: child.id)
+
+    mark_trash_root(folder)
+    purged_folder = call(
+      :post,
+      "/projects/#{parent.id}/actions/trashable_purge",
+      @admin_token,
+      recording_id: folder.id
+    )
+    assert_response :success, purged_folder.inspect
+    assert_nil RecordingStudio::Recording.find_by(id: folder.id)
+  end
+
+  test "recording_id restore and purge are denied without permission on the nested item" do
+    parent = record_page(@workspace, "Denied Parent")
+    child = record_page(parent, "Denied Child")
+    child.recording_studio_trashable_trash!(actor: @owner)
+    previous = RecordingStudioTrashable.configuration.authorization_resolver
+    RecordingStudioTrashable.configuration.authorization_resolver = lambda { |**payload|
+      payload.fetch(:recording).id == child.id ? false : nil
+    }
+
+    call(:post, "/pages/#{parent.id}/actions/trashable_restore", @editor_token, recording_id: child.id)
+    assert_response :forbidden, response.body
+    assert child.reload.recording_studio_trashable_trashed?
+
+    call(:post, "/pages/#{parent.id}/actions/trashable_purge", @admin_token, recording_id: child.id)
+    assert_response :forbidden, response.body
+    assert child.reload.recording_studio_trashable_trashed?
+    assert RecordingStudio::Recording.find_by(id: child.id)
+  ensure
+    RecordingStudioTrashable.configuration.authorization_resolver = previous
+  end
+
+  test "recording_id outside the subtree is not found" do
+    parent = record_page(@workspace, "Scope Parent")
+    outside = record_page(@workspace, "Outside Page")
+    outside.recording_studio_trashable_trash!(actor: @owner)
+
+    call(:post, "/pages/#{parent.id}/actions/trashable_restore", @editor_token, recording_id: outside.id)
+    assert_response :not_found, response.body
+    assert_includes response.body, "Resource was not found in this API scope"
+    assert outside.reload.recording_studio_trashable_trashed?
+  end
+
+  test "recording_id in the subtree is not found unless it is a trash root" do
+    parent = record_page(@workspace, "Subtree Parent")
+    kept = record_page(parent, "Kept Child")
+    branch = record_page(parent, "Trashed Branch")
+    leaf = record_page(branch, "Cascade Leaf")
+    branch.recording_studio_trashable_trash!(actor: @owner)
+
+    call(:post, "/pages/#{parent.id}/actions/trashable_restore", @editor_token, recording_id: kept.id)
+    assert_response :not_found, response.body
+    assert_includes response.body, "Resource was not found in this API scope"
+    assert kept.reload.recording_studio_trashable_kept?
+
+    call(:post, "/pages/#{parent.id}/actions/trashable_purge", @admin_token, recording_id: leaf.id)
+    assert_response :not_found, response.body
+    assert_includes response.body, "Resource was not found in this API scope"
+    assert leaf.reload.recording_studio_trashable_trashed?
+    refute leaf.trash_root?
+  end
+
+  test "restore by recording_id leaves a nested trash root trashed" do
+    parent = record_page(@workspace, "Cascade Parent")
+    branch = record_page(parent, "Cascade Branch")
+    nested = record_page(branch, "Nested Root")
+    nested.recording_studio_trashable_trash!(actor: @owner)
+    branch.recording_studio_trashable_trash!(actor: @owner)
+
+    call(:post, "/pages/#{parent.id}/actions/trashable_restore", @editor_token, recording_id: branch.id)
+    assert_response :success, response.body
+    assert branch.reload.recording_studio_trashable_kept?
+    assert nested.reload.recording_studio_trashable_trashed?
+    assert nested.trash_root?
+  end
+
+  test "purge by recording_id deletes only trashed rows leaf first" do
+    RecordingStudio::Event.class_eval do
+      def remember_purged_recording
+        return unless action == "purged"
+
+        Thread.current[:purged_recording_ids] << recording_id
+      end
+    end
+    RecordingStudio::Event.after_create :remember_purged_recording
+    Thread.current[:purged_recording_ids] = []
+
+    parent = record_page(@workspace, "Purge Parent")
+    branch = record_page(parent, "Purge Branch")
+    branch.recording_studio_trashable_trash!(actor: @owner)
+    leaf = record_page(branch, "Purge Leaf")
+
+    call(:post, "/pages/#{parent.id}/actions/trashable_purge", @admin_token, recording_id: branch.id)
+    assert_response :unprocessable_entity, response.body
+    assert_includes response.body, "already be trashed"
+    assert branch.reload.recording_studio_trashable_trashed?
+    assert leaf.reload.recording_studio_trashable_kept?
+
+    leaf.recording_studio_trashable_trash!(actor: @owner)
+    branch_id = branch.id
+    leaf_id = leaf.id
+    purged = call(:post, "/pages/#{parent.id}/actions/trashable_purge", @admin_token, recording_id: branch.id)
+    assert_response :success, response.body
+    assert_equal true, purged.fetch("purged")
+    assert_nil RecordingStudio::Recording.find_by(id: branch_id)
+    assert_nil RecordingStudio::Recording.find_by(id: leaf_id)
+
+    assert_equal [leaf_id, branch_id], Thread.current[:purged_recording_ids]
+  ensure
+    RecordingStudio::Event.skip_callback(:create, :after, :remember_purged_recording)
+    Thread.current[:purged_recording_ids] = nil
+  end
+
+  test "restore and purge without recording_id still target the path recording" do
+    page = record_page(@workspace, "Plain Page")
+    other = record_page(@workspace, "Plain Other")
+    page.recording_studio_trashable_trash!(actor: @owner)
+    other.recording_studio_trashable_trash!(actor: @owner)
+
+    restored = call(:post, "/pages/#{page.id}/actions/trashable_restore", @editor_token, recording_id: "")
+    assert_response :success, response.body
+    assert page.reload.recording_studio_trashable_kept?
+    assert other.reload.recording_studio_trashable_trashed?
+    assert_equal page.id, restored.fetch("id")
+
+    page.recording_studio_trashable_trash!(actor: @owner)
+    purged = call(:post, "/pages/#{page.id}/actions/trashable_purge", @admin_token)
+    assert_response :success, response.body
+    assert_equal true, purged.fetch("purged")
+    assert_nil RecordingStudio::Recording.find_by(id: page.id)
+    assert other.reload.recording_studio_trashable_trashed?
+  end
+
   private
 
   def user(name)
@@ -302,6 +498,36 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
       page.slug = "#{title.parameterize}-#{SecureRandom.hex(4)}"
       page.body = "API demo page"
     end
+  end
+
+  def record_folder(parent, name, actor: @owner)
+    parent.record(Folder, actor: actor, parent_recording: parent) do |folder|
+      folder.name = name
+      folder.slug = "#{name.parameterize}-#{SecureRandom.hex(4)}"
+    end
+  end
+
+  def trashable_project(name)
+    enable_project_trashable!
+    @workspace.record(Project, actor: @owner, parent_recording: @workspace) do |project|
+      project.name = name
+      project.slug = "#{name.parameterize}-#{SecureRandom.hex(4)}"
+    end
+  end
+
+  def enable_project_trashable!
+    return if RecordingStudio.capability_enabled?(:trashable, for: "Project")
+
+    Project.include RecordingStudio::Capabilities::Trashable.to
+    if RecordingStudioApi.recordable_registration_for("Project").nil?
+      RecordingStudioApi.register_recordable_type_api("Project", operations: %i[show])
+    end
+    RecordingStudioTrashable::Api.register!
+  end
+
+  def mark_trash_root(recording)
+    recording.update_columns(trashed_at: Time.current, trash_root: true, purge_at: nil, updated_at: Time.current)
+    recording.reload
   end
 
   def call(method, path, token, params = {})

@@ -285,6 +285,8 @@ OpenAPI titles are Trash, Restore, Purge, and List trash bin. Each action's Open
 
 MCP calls them through the generic `capability_action` path. Recording Studio API resolves the recording before the handler. `trashable_trash` sees kept recordings only, so trashing an item that is already in the trash is not found. `trashable_restore` and `trashable_purge` pass `include_trashed: true` with `trashed_semantics` `:restore` and `:destroy`, then authorize `:edit` and `:admin`. `trashable_list_trash_bin` passes `include_trashed: true` so the bin can be opened on a trashed parent, then authorizes `:edit`. It also calls `RecordingStudioTrashable.authorized?(action: :trash_bin, ...)`, so a host `authorization_resolver` is honoured the same way as the trash bin screen. Handlers still look the recording up on `access_grant.accessible_recordings(include_trashed: true)`.
 
+`trashable_restore` and `trashable_purge` take an optional `recording_id`. That id comes from a List trash bin record. When you pass it, the action resolves it only among trash roots in the path recording's subtree (the same set List trash bin returns) and runs restore or purge on that item. The route role on the parent still applies, and `RecordingStudioTrashable.authorized?` must allow `:edit` for restore or `:admin` for purge on the resolved item. An id outside that set is not found. Omit `recording_id` to restore or purge the recording in the path. Restore and purge run on a recording that is already trashed even when that type does not opt into trashable. Trash still requires the capability.
+
 Enable a type on the API as usual. Types that include `RecordingStudio::Capabilities::Trashable.to` get these actions when `auto_capability_actions` is on:
 
 ```ruby
@@ -296,7 +298,7 @@ RecordingStudioApi.register_recordable_type_api(
 )
 ```
 
-`trashable_list_trash_bin` accepts `q` (search, stripped), `page`, and `per_page` (default 25, capped at 100). Results are `trashed_at DESC`, then `id DESC`, matching the HTML trash bin. Site-wide trash metrics stay on the operations API through `RecordingStudioTrashable::Metrics.register!` and are unchanged.
+`trashable_list_trash_bin` accepts `q` (search, stripped), `page`, and `per_page` (default 25, capped at 100). Results are `trashed_at DESC`, then `id DESC`, matching the HTML trash bin. Each record includes `label` and `recordable_type`. `label` is the recordable title, then its name, then `"<Type> #<first 8 of id>"`. Site-wide trash metrics stay on the operations API through `RecordingStudioTrashable::Metrics.register!` and are unchanged.
 
 ## Mounted UI
 

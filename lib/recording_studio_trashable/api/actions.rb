@@ -15,6 +15,37 @@ module RecordingStudioTrashable
 
           recording
         end
+
+        def action_recording(context, action)
+          scope = recording(context)
+          requested_id = requested_recording_id(context)
+          return scope if requested_id.nil?
+
+          target = trash_root_in_subtree(scope, requested_id)
+          raise RecordingStudioApi::NotFoundError, "Resource was not found in this API scope" if target.nil?
+
+          authorize_target!(context, target, action)
+          target
+        end
+
+        def requested_recording_id(context)
+          text = context.params[:recording_id].to_s.strip
+          text unless text.empty?
+        end
+
+        def trash_root_in_subtree(scope, recording_id)
+          RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for_query(scope).find_by(id: recording_id)
+        end
+
+        def authorize_target!(context, recording, action)
+          return if RecordingStudioTrashable.authorized?(action: action, actor: context.actor, recording: recording)
+
+          raise RecordingStudioApi::AuthorizationError, RecordingStudioTrashable::Copy.t(
+            "errors.not_authorized",
+            action: RecordingStudioTrashable::Copy.action_name(action),
+            type: recording.recordable_type
+          )
+        end
       end
 
       module Payload
@@ -34,6 +65,13 @@ module RecordingStudioTrashable
           RecordingStudioApi::Serializers::ResourceRecordingSerializer.call(
             recording,
             api: context.api_key
+          )
+        end
+
+        def trash_bin_record(context, recording)
+          serialize(context, recording).merge(
+            "label" => RecordingStudioTrashable::RecordingLabel.for(recording),
+            "recordable_type" => recording.recordable_type
           )
         end
       end
@@ -82,7 +120,7 @@ module RecordingStudioTrashable
         end
 
         def call
-          recording = Lookup.recording(context)
+          recording = Lookup.action_recording(context, :restore)
           raise RecordingStudioApi::InvalidActionInputError, not_trashed_message unless trashed?(recording)
 
           recording.recording_studio_trashable_restore!(actor: context.actor, metadata: metadata)
@@ -116,7 +154,7 @@ module RecordingStudioTrashable
         end
 
         def call
-          recording = Lookup.recording(context)
+          recording = Lookup.action_recording(context, :purge)
           recording.recording_studio_trashable_purge!(actor: context.actor, metadata: metadata)
           Payload.wrap(context, { id: recording.id, purged: true })
         end
@@ -172,7 +210,7 @@ module RecordingStudioTrashable
             query: context.params[:q].to_s.strip
           ).reorder(trashed_at: :desc, id: :desc)
           relation.offset((page - 1) * per_page).limit(per_page).map do |trashed|
-            Payload.serialize(context, trashed)
+            Payload.trash_bin_record(context, trashed)
           end
         end
 

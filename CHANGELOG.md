@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-17
+
+### Added
+
+- Trash bin records include `label` and `recordable_type`. `label` is the recordable title, then its name, then `"<Type> #<first 8 of id>"`. The trash bin screen uses the same rule.
+- `trashable_restore` and `trashable_purge` accept an optional `recording_id` from a List trash bin record. Pass it when the action is called on the parent to restore or purge that nested trash root.
+- Restore and purge of a recording that is already trashed no longer require that type to opt into trashable. Trash still does.
+
+### Upgrade Notes
+
+- Bump to `1.1.0`. No migration. Leave `recording_id` out and restore and purge keep the previous behavior.
+- Trash bin records still include the fields they had. `label` and `recordable_type` are added on each record.
+- Call restore or purge on the parent and pass `recording_id` to target a nested trash root whose type does not register those actions. The id has to be a trash root in that parent's subtree. Anything else is not found.
+- A type that does not include trashable can still be restored or purged once it is already in the trash. Trashing that type still requires the capability.
+
 ## [1.0.4] - 2026-11-17
 
 ### Changed

@@ -50,10 +50,28 @@ class ApiCatalogDescriptionTest < Minitest::Test
 
     assert_includes trash, "everything under the item"
     assert_includes trash, "Restore can undo it."
+    assert_includes trash, "label and recordable_type"
     assert_includes restore, "stay trashed"
+    assert_includes restore, "recording_id"
+    assert_includes restore, "called on the parent"
+    assert_includes description(:trashable_purge), "recording_id"
+    assert_includes description(:trashable_purge), "label and recordable_type"
     assert_includes list, "top-level trashed items"
     assert_includes list, "newest first"
     assert_includes list, "per_page"
+    assert_includes list, "label and recordable_type"
+    assert_includes list, "recording_id"
+  end
+
+  def test_restore_and_purge_contracts_take_a_list_trash_bin_recording_id
+    %i[trashable_restore trashable_purge].each do |name|
+      field = RecordingStudioTrashable::Api::Catalog.contract_for(name).fetch(:fields).fetch(:recording_id)
+
+      assert_equal false, field.fetch(:required), name.to_s
+      assert_includes field.fetch(:description), "List trash bin"
+    end
+
+    assert_empty RecordingStudioTrashable::Api::Catalog.contract_for(:trashable_trash).fetch(:fields)
   end
 
   private
