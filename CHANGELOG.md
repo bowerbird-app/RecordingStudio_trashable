@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-11-17
+
+### Changed
+
+- API and MCP descriptions for trash, restore, purge, and list trash bin now say what each action does, when to choose it, where the recording id comes from, and the JSON it returns.
+
+### Upgrade Notes
+
+- Bump to `1.0.3`. No migration. Handlers, inputs, roles, and response bodies are unchanged.
+
 ## [1.0.2] - 2026-11-17
 
 ### Changed
@@ -500,7 +510,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.17.0...v1.0.0
