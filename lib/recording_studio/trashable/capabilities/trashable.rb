@@ -35,7 +35,7 @@ module RecordingStudio
           end
 
           def recording_studio_trashable_restore!(actor: nil, impersonator: nil, metadata: {})
-            recording_studio_trashable_assert_capability!
+            recording_studio_trashable_assert_capability_unless_trashed!
             recording_studio_trashable_authorize!(:restore, actor: actor)
             recording_studio_trashable_with_locked_targets(mode: :restore) do |targets|
               targets.each do |recording|
@@ -54,7 +54,7 @@ module RecordingStudio
           end
 
           def recording_studio_trashable_purge!(actor: nil, impersonator: nil, metadata: {})
-            recording_studio_trashable_assert_capability!
+            recording_studio_trashable_assert_capability_unless_trashed!
             recording_studio_trashable_with_locked_targets do |targets|
               recording_studio_trashable_authorize!(:purge, actor: actor)
               recording_studio_trashable_assert_purge_targets!(targets)
@@ -123,6 +123,10 @@ module RecordingStudio
 
           def recording_studio_trashable_assert_capability!
             assert_capability!(:trashable)
+          end
+
+          def recording_studio_trashable_assert_capability_unless_trashed!
+            recording_studio_trashable_assert_capability! if trashed_at.blank?
           end
 
           def recording_studio_trashable_authorize!(action, actor: nil)

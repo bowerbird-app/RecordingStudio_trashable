@@ -228,9 +228,11 @@ class ControllerBehaviorTest < Minitest::Test
   def test_recording_label_falls_back_to_name_then_type_and_id
     controller = build_controller(RecordingStudioTrashable::ApplicationController)
 
+    titled = FakeRecording.new(title: "Launch Notes", name: "Reference Assets", recordable_type: "Page")
     named = FakeRecording.new(name: "Reference Assets", recordable_type: "Folder")
     unnamed = FakeRecording.new(id: "1234567890", recordable_type: "Folder")
 
+    assert_equal "Launch Notes", controller.send(:recording_studio_trashable_recording_label, titled)
     assert_equal "Reference Assets", controller.send(:recording_studio_trashable_recording_label, named)
     assert_equal "Folder #12345678", controller.send(:recording_studio_trashable_recording_label, unnamed)
   end
