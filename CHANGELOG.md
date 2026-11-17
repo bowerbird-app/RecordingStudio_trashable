@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Development Gemfiles pin `recording_studio` tag `v7.4.0`, `flat_pack` tag `v0.1.377`, and `recording_studio_metrics` tag `v0.9.1`.
+- Dummy pins `recording_studio_accessible` `v0.46.0`, `recording_studio_api` `v1.3.0`, and `recording_studio_icons` `v0.4.1`. The dummy Flatpack pin was already `v0.1.377`.
+- The dummy app does not copy Recording Studio 7.4.0's optional index migration for `index_rs_recordings_on_root_type_created_at_id`.
+
+### Upgrade Notes
+
+- No version bump and no Trashable migration. The gemspec floor stays `recording_studio >= 7.0`, `< 8.0`.
+- Development and CI now install Recording Studio `v7.4.0`. Hosts that want the optional `(root_recording_id, recordable_type, created_at, id)` index copy that core migration themselves.
+- API `v1.3.0` omits list `meta.total_count` unless the request passes `include_total=true`. This dummy does not read `meta.total_count`.
+
 ## [1.0.1] - 2026-11-16
 
 ### Changed
