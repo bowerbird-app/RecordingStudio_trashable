@@ -242,7 +242,13 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     assert_equal :restore, page_handler.trashed_semantics
     assert_equal :trashable, trash.capability
     assert_equal :get, list.http_verb
-    assert_equal "Trash - Restore", restore.openapi.fetch(:title)
+    assert_equal "Trash", trash.openapi.fetch(:title)
+    assert_equal "Restore", restore.openapi.fetch(:title)
+    assert_equal "Purge", purge.openapi.fetch(:title)
+    assert_equal "List trash bin", list.openapi.fetch(:title)
+    [trash, restore, purge, list].each do |action|
+      assert_equal "Trash", action.openapi.fetch(:tag_suffix)
+    end
     assert_nil trash.serializer
   end
 

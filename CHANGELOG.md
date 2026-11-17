@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-11-17
+
+### Changed
+
+- OpenAPI titles for trash, restore, purge, and list trash bin are `Trash`, `Restore`, `Purge`, and `List trash bin`.
+- Those four actions set `tag_suffix` to `Trash` in the same OpenAPI metadata. MCP can group a type's actions under a heading such as `Video Trash`.
+
+### Upgrade Notes
+
+- Bump to `1.0.4`. No migration. Action names, descriptions, inputs, roles, and response bodies are unchanged.
+- Match the new titles if a client compared the old `Trash - ` titles. `tag_suffix` is metadata for that grouping. This gem does not depend on the MCP gem.
+
 ## [1.0.3] - 2026-11-17
 
 ### Changed
