@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-11-17
+
 ### Changed
 
 - Development Gemfiles pin `recording_studio` tag `v7.4.0`, `flat_pack` tag `v0.1.377`, and `recording_studio_metrics` tag `v0.9.1`.
@@ -15,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Upgrade Notes
 
-- No version bump and no Trashable migration. The gemspec floor stays `recording_studio >= 7.0`, `< 8.0`.
+- Bump to `1.0.2`. No Trashable migration. The gemspec floor stays `recording_studio >= 7.0`, `< 8.0`.
 - Development and CI now install Recording Studio `v7.4.0`. Hosts that want the optional `(root_recording_id, recordable_type, created_at, id)` index copy that core migration themselves.
 - API `v1.3.0` omits list `meta.total_count` unless the request passes `include_total=true`. This dummy does not read `meta.total_count`.
 
@@ -498,7 +500,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.17.0...v1.0.0
 [0.17.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v0.16.1...v0.17.0
