@@ -281,7 +281,22 @@ When Recording Studio API is loaded, this gem registers capability actions on ev
 | `trashable_purge` | POST | `:admin` | `recording_studio_trashable_purge!` |
 | `trashable_list_trash_bin` | GET | `:edit` | `SubtreeQuery.trashed_recordings_for_query` |
 
-OpenAPI titles are Trash, Restore, Purge, and List trash bin. Each action's OpenAPI metadata includes `tag_suffix: "Trash"`. MCP uses that suffix to group a type's actions under a heading such as Video Trash.
+Capability OpenAPI titles stay Trash, Restore, Purge, and List trash bin. Each action's OpenAPI metadata includes `tag_suffix: "Trash"`. MCP uses that suffix to group a type's actions under a heading such as Video Trash.
+
+MCP reads a per-type title from `openapi_for(type:, action:)`. The title is the verb plus the recordable label, lowercased. A page is "Trash page", "Restore page", "Purge page", and "List page trash bin". A press center is "Trash press center" and "List press center trash bin". A type that is not in `recordable_types` returns nil, and MCP keeps the capability title.
+
+Replace the title and description for one type when the derived words are wrong. The override wins. Other types keep the derived title. The capability title stays the short verb.
+
+```ruby
+RecordingStudioTrashable::Api.override_openapi(
+  type: "Page",
+  action: :trashable_trash,
+  title: "Bin this page",
+  description: "Moves this page, and everything under it, to the trash."
+)
+
+RecordingStudioTrashable::Api.openapi_for(type: "Page", action: :trashable_trash)
+```
 
 MCP calls them through the generic `capability_action` path. Recording Studio API resolves the recording before the handler. `trashable_trash` sees kept recordings only, so trashing an item that is already in the trash is not found. `trashable_restore` and `trashable_purge` pass `include_trashed: true` with `trashed_semantics` `:restore` and `:destroy`, then authorize `:edit` and `:admin`. `trashable_list_trash_bin` passes `include_trashed: true` so the bin can be opened on a trashed parent, then authorizes `:edit`. It also calls `RecordingStudioTrashable.authorized?(action: :trash_bin, ...)`, so a host `authorization_resolver` is honoured the same way as the trash bin screen. Handlers still look the recording up on `access_grant.accessible_recordings(include_trashed: true)`.
 

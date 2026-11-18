@@ -26,7 +26,10 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     @page = record_page(@workspace, "Live Page")
   end
 
-  teardown { Current.actor = @previous_actor }
+  teardown do
+    Current.actor = @previous_actor
+    RecordingStudioTrashable::Api::OpenapiOverrides.reset!
+  end
 
   test "trash restore purge and list_trash_bin succeed for the roles the screens use" do
     trashed = call(:post, "/pages/#{@page.id}/actions/trashable_trash", @editor_token)
@@ -246,10 +249,61 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     assert_equal "Restore", restore.openapi.fetch(:title)
     assert_equal "Purge", purge.openapi.fetch(:title)
     assert_equal "List trash bin", list.openapi.fetch(:title)
+    assert_equal "Trash page", trash.openapi_for(type: "Page", action: :trashable_trash).fetch(:title)
+    assert_equal "List page trash bin", list.openapi_for(type: "Page", action: :trashable_list_trash_bin).fetch(:title)
     [trash, restore, purge, list].each do |action|
       assert_equal "Trash", action.openapi.fetch(:tag_suffix)
     end
     assert_nil trash.serializer
+  end
+
+  test "trash handlers register for trashable types only" do
+    actions = %i[trashable_trash trashable_restore trashable_purge trashable_list_trash_bin]
+
+    RecordingStudioApi.configuration.each_api do |api|
+      RecordingStudio.configuration.recordable_types.each do |type|
+        actions.each do |action|
+          handler = RecordingStudioApi.resource_handler(type, action, api: api.name)
+          if RecordingStudio.capability_enabled?(:trashable, for: type)
+            assert handler, "#{api.name} #{type} #{action}"
+          else
+            assert_nil handler, "#{api.name} #{type} #{action}"
+          end
+        end
+      end
+    end
+  end
+
+  test "per-type trash titles follow the recordable label and an override wins" do
+    trash = RecordingStudioApi.capability_action(:trashable_trash)
+    restore = RecordingStudioApi.capability_action(:trashable_restore)
+    purge = RecordingStudioApi.capability_action(:trashable_purge)
+    list = RecordingStudioApi.capability_action(:trashable_list_trash_bin)
+
+    assert_equal "Trash page", trash.openapi_for(type: "Page", action: :trashable_trash).fetch(:title)
+    assert_equal "Restore folder", restore.openapi_for(type: "Folder", action: :trashable_restore).fetch(:title)
+    assert_equal "Purge project", purge.openapi_for(type: "Project", action: :trashable_purge).fetch(:title)
+    assert_equal "List workspace trash bin", list.openapi_for(type: "Workspace", action: :trashable_list_trash_bin).fetch(:title)
+    assert_equal "Trash", trash.openapi_for(type: "NotARecordable", action: :trashable_trash).fetch(:title)
+    assert_equal "Trash", trash.openapi.fetch(:title)
+
+    RecordingStudioTrashable::Api.override_openapi(
+      type: "Page",
+      action: :trashable_trash,
+      title: "Bin this page",
+      description: "Custom page trash copy."
+    )
+
+    page = trash.openapi_for(type: "Page", action: :trashable_trash)
+    folder = trash.openapi_for(type: "Folder", action: :trashable_trash)
+
+    assert_equal "Bin this page", page.fetch(:title)
+    assert_equal "Custom page trash copy.", page.fetch(:description)
+    assert_equal "Trash", page.fetch(:tag_suffix)
+    assert_equal "Trash folder", folder.fetch(:title)
+    assert_equal "Trash", trash.openapi.fetch(:title)
+  ensure
+    RecordingStudioTrashable::Api::OpenapiOverrides.reset!
   end
 
   test "list trash bin records include label and recordable type" do
