@@ -69,6 +69,25 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     assert_equal @page.recordable.slug, restored.fetch("slug")
   end
 
+  test "serialization without an access grant does not raise" do
+    register_access_role_field!
+    context = RecordingStudioApi::ActionContext.new(
+      recording: @page,
+      api_client: nil,
+      credential: nil,
+      access_recording: nil,
+      access_grant: nil,
+      root_recording: @page.root_recording,
+      params: {}
+    )
+
+    payload = RecordingStudioTrashable::Api::Actions::Payload.serialize(context, @page)
+
+    assert_equal @page.recordable.title, payload.fetch(:title)
+    assert_equal @page.recordable.slug, payload.fetch(:slug)
+    refute payload.key?(:access_role)
+  end
+
   test "trash restore purge and list_trash_bin succeed for the roles the screens use" do
     trashed = call(:post, "/pages/#{@page.id}/actions/trashable_trash", @editor_token)
     assert_response :success, response.body
