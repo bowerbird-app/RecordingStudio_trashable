@@ -9,7 +9,7 @@ class QueryOptOutAndDefaultSurfaceTest < ActionDispatch::IntegrationTest
     sign_in @user
   end
 
-  test "default engine path keeps live_search importmap pin and modulepreload" do
+  test "default engine path pins live_search and does not modulepreload it" do
     importmap_paths = Rails.application.config.importmap.paths.map(&:to_s)
     asset_paths = Rails.application.config.assets.paths.map(&:to_s)
     engine_importmap = RecordingStudioTrashable::Engine.root.join("config/importmap.rb").to_s
@@ -26,7 +26,7 @@ class QueryOptOutAndDefaultSurfaceTest < ActionDispatch::IntegrationTest
 
     body = response.body
     assert_includes body, "controllers/recording_studio_trashable/live_search_controller"
-    assert_match(
+    refute_match(
       %r{rel="modulepreload"[^>]+recording_studio_trashable/controllers/live_search_controller},
       body
     )
