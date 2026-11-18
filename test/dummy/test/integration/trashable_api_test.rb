@@ -26,7 +26,10 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     @page = record_page(@workspace, "Live Page")
   end
 
-  teardown { Current.actor = @previous_actor }
+  teardown do
+    Current.actor = @previous_actor
+    RecordingStudioTrashable::Api::OpenapiOverrides.reset!
+  end
 
   test "trash restore purge and list_trash_bin succeed for the roles the screens use" do
     trashed = call(:post, "/pages/#{@page.id}/actions/trashable_trash", @editor_token)
@@ -255,15 +258,18 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
   end
 
   test "trash handlers register for trashable types only" do
-    RecordingStudioApi.configuration.each_api do |api|
-      assert RecordingStudioApi.resource_handler("Page", :trashable_trash, api: api.name), api.name.to_s
-      assert RecordingStudioApi.resource_handler("Page", :trashable_restore, api: api.name)
-      assert RecordingStudioApi.resource_handler("Page", :trashable_purge, api: api.name)
-      assert RecordingStudioApi.resource_handler("Page", :trashable_list_trash_bin, api: api.name)
+    actions = %i[trashable_trash trashable_restore trashable_purge trashable_list_trash_bin]
 
-      %w[Workspace Project Folder].each do |type|
-        assert_nil RecordingStudioApi.resource_handler(type, :trashable_trash, api: api.name), "#{api.name} #{type}"
-        assert_nil RecordingStudioApi.resource_handler(type, :trashable_purge, api: api.name), "#{api.name} #{type}"
+    RecordingStudioApi.configuration.each_api do |api|
+      RecordingStudio.configuration.recordable_types.each do |type|
+        actions.each do |action|
+          handler = RecordingStudioApi.resource_handler(type, action, api: api.name)
+          if RecordingStudio.capability_enabled?(:trashable, for: type)
+            assert handler, "#{api.name} #{type} #{action}"
+          else
+            assert_nil handler, "#{api.name} #{type} #{action}"
+          end
+        end
       end
     end
   end
