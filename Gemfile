@@ -2,9 +2,9 @@
 
 source "https://rubygems.org"
 
-gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.377"
-gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v7.4.0"
-gem "recording_studio_metrics", github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.9.1"
+gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.378"
+gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v7.7.1"
+gem "recording_studio_metrics", github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.9.2"
 gem "view_component", "4.19.0"
 
 gemspec

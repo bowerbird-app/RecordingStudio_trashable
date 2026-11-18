@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-11-18
+
+### Changed
+
+- Development Gemfiles pin `recording_studio` tag `v7.7.1`, `flat_pack` tag `v0.1.378`, and `recording_studio_metrics` tag `v0.9.2`.
+- Dummy pins `recording_studio_accessible` `v0.54.1`, `recording_studio_api` `v1.16.0`, `recording_studio_admin` `v2.19.0`, `recording_studio_logs` `v0.8.1`, `recording_studio_moveable` `v6.0.2`, `recording_studio_icons` `v0.4.2`, and `recording_studio_internationalization` `v0.3.1`.
+- The dummy app adds `config/recording_studio_api.yml` (`shared: {}`) and copies API migration `20261117000024_add_owner_to_recording_studio_api_api_clients`. It does not copy the Recording Studio 7.4, 7.5, or 7.7 migrations.
+
+### Upgrade Notes
+
+- Bump to `1.2.3`. No Trashable migration. The gemspec floors stay `recording_studio >= 7.0`, `< 8.0` and `recording_studio_metrics >= 0.3.0`, `< 1.0`.
+- Hosts moving to Recording Studio 7.7 must run the Recording Studio 7.4, 7.5, and 7.7 migrations. The dummy app leaves those three out.
+- A host that mounts Recording Studio API 1.12 or newer needs `config/recording_studio_api.yml`. `shared: {}` is enough. API 1.16 `ProvisionApiClient` writes `owner`, so copy `20261117000024_add_owner_to_recording_studio_api_api_clients` before provisioning clients.
+
 ## [1.2.2] - 2026-11-18
 
 ### Fixed
@@ -581,7 +595,14 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.3...HEAD
+[1.2.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.2...v1.2.3
+[1.2.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.1...v1.2.2
+[1.2.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.1.1...v1.2.0
+[1.1.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.4...v1.1.0
+[1.0.4]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.0.0...v1.0.1
