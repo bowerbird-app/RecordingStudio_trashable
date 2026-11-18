@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-18
+
+### Fixed
+
+- `trashable_trash`, `trashable_restore`, and each `trashable_list_trash_bin` record serialize with the caller's API version, API key, and relationship context. Declared fields that need that grant are filled, matching show for the same recording. Trash-bin records still add `label` and `recordable_type`. `trashable_purge` still returns `id` and `purged`.
+
+### Upgrade Notes
+
+- Bump to `1.2.1`. No migration. No host change. Trash, restore, and trash-bin JSON now include the same declared resource fields as show. Purge is unchanged. A caller with no access grant still gets the previous payload and no error.
+
 ## [1.2.0] - 2026-11-18
 
 ### Fixed

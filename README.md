@@ -313,7 +313,7 @@ RecordingStudioApi.register_recordable_type_api(
 )
 ```
 
-`trashable_list_trash_bin` accepts `q` (search, stripped), `page`, and `per_page` (default 25, capped at 100). Results are `trashed_at DESC`, then `id DESC`, matching the HTML trash bin. Each record includes `label` and `recordable_type`. `label` is the recordable title, then its name, then `"<Type> #<first 8 of id>"`. Site-wide trash metrics stay on the operations API through `RecordingStudioTrashable::Metrics.register!` and are unchanged.
+`trashable_list_trash_bin` accepts `q` (search, stripped), `page`, and `per_page` (default 25, capped at 100). Results are `trashed_at DESC`, then `id DESC`, matching the HTML trash bin. `trashable_trash` and `trashable_restore` return the same declared resource fields as show for that recording, including fields that depend on the caller's grant. Each trash-bin record is that same resource, plus `label` and `recordable_type`. `label` is the recordable title, then its name, then `"<Type> #<first 8 of id>"`. `trashable_purge` returns `id` and `purged`. Site-wide trash metrics stay on the operations API through `RecordingStudioTrashable::Metrics.register!` and are unchanged.
 
 ## Mounted UI
 

@@ -61,18 +61,98 @@ module RecordingStudioTrashable
           wrap(context, serialize(context, recording))
         end
 
-        def serialize(context, recording)
+        def serialize(context, recording, relationship_context: nil, reuse_context: false)
+          context_for_recording = reuse_context ? relationship_context : relationship_context_for(context, [recording])
           RecordingStudioApi::Serializers::ResourceRecordingSerializer.call(
             recording,
-            api: context.api_key
+            **serializer_arguments(context, context_for_recording)
           )
         end
 
-        def trash_bin_record(context, recording)
-          serialize(context, recording).merge(
+        def trash_bin_records(context, recordings)
+          relationship_context = relationship_context_for(context, recordings)
+          recordings.map do |recording|
+            trash_bin_record(context, recording, relationship_context: relationship_context)
+          end
+        end
+
+        def trash_bin_record(context, recording, relationship_context:)
+          serialize(context, recording, relationship_context: relationship_context, reuse_context: true).merge(
             "label" => RecordingStudioTrashable::RecordingLabel.for(recording),
             "recordable_type" => recording.recordable_type
           )
+        end
+
+        def serializer_arguments(context, relationship_context)
+          arguments = { api: api_key_for(context) }
+          return arguments if relationship_context.nil?
+
+          arguments.merge(version: api_version_for(context), context: relationship_context)
+        end
+
+        def relationship_context_for(context, recordings)
+          grant = access_grant_for(context)
+          return if grant.nil?
+
+          RecordingStudioApi::RelationshipContext.for(
+            recordings: recordings, include_values: include_values_for(context),
+            scoped_recordings: grant.accessible_recordings, api_key: api_key_for(context),
+            api_version: api_version_for(context), access_grant: grant, params: request_params(context)
+          )
+        end
+
+        def access_grant_for(context)
+          return unless defined?(RecordingStudioApi::RelationshipContext)
+          return unless context.respond_to?(:access_grant)
+
+          grant = context.access_grant
+          grant if grant.respond_to?(:accessible_recordings)
+        end
+
+        def api_key_for(context)
+          return context.api_key if context.respond_to?(:api_key)
+
+          :public
+        end
+
+        def api_version_for(context)
+          explicit = explicit_api_version(context)
+          return explicit if explicit.present?
+
+          default_api_version(context)
+        end
+
+        def explicit_api_version(context)
+          version = context.api_version if context.respond_to?(:api_version)
+          return version if version.present?
+
+          param_value(request_params(context), :api_version)
+        end
+
+        def default_api_version(context)
+          return unless RecordingStudioApi.respond_to?(:default_api_version)
+
+          RecordingStudioApi.default_api_version(api: api_key_for(context))
+        rescue StandardError
+          nil
+        end
+
+        def include_values_for(context)
+          param_value(request_params(context), :include)
+        end
+
+        def request_params(context)
+          return {} unless context.respond_to?(:params)
+
+          context.params || {}
+        end
+
+        def param_value(params, name)
+          return unless params.respond_to?(:key?)
+          return params[name] if params.key?(name)
+
+          string_name = name.to_s
+          params[string_name] if params.key?(string_name)
         end
       end
 
@@ -203,15 +283,16 @@ module RecordingStudioTrashable
         end
 
         def serialized_records(recording)
+          Payload.trash_bin_records(context, trash_bin_page(recording))
+        end
+
+        def trash_bin_page(recording)
           page = page_param
           per_page = per_page_param
-          relation = RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for_query(
+          RecordingStudioTrashable::SubtreeQuery.trashed_recordings_for_query(
             recording,
             query: context.params[:q].to_s.strip
-          ).reorder(trashed_at: :desc, id: :desc)
-          relation.offset((page - 1) * per_page).limit(per_page).map do |trashed|
-            Payload.trash_bin_record(context, trashed)
-          end
+          ).reorder(trashed_at: :desc, id: :desc).offset((page - 1) * per_page).limit(per_page).to_a
         end
 
         def page_param

@@ -31,6 +31,63 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     RecordingStudioTrashable::Api::OpenapiOverrides.reset!
   end
 
+  test "trash restore and trash bin rows match show fields" do
+    register_access_role_field!
+
+    shown = call(:get, "/pages/#{@page.id}", @editor_token)
+    assert_response :success, response.body
+    assert_equal "edit", shown.fetch("access_role")
+    expected = resource_fields(shown)
+
+    call(:post, "/pages/#{@page.id}/actions/trashable_trash", @viewer_token)
+    assert_response :forbidden, response.body
+
+    trashed = call(:post, "/pages/#{@page.id}/actions/trashable_trash", @editor_token)
+    assert_response :success, response.body
+    assert_equal expected, resource_fields(trashed)
+
+    call(:get, "/pages/#{@page.id}/actions/trashable_list_trash_bin", @viewer_token)
+    assert_response :forbidden, response.body
+
+    listed = call(:get, "/pages/#{@page.id}/actions/trashable_list_trash_bin", @editor_token)
+    assert_response :success, response.body
+    row = listed.fetch("records").fetch(0)
+    assert_equal expected, resource_fields(row)
+    assert_equal "Live Page", row.fetch("label")
+    assert_equal "Page", row.fetch("recordable_type")
+
+    call(:post, "/pages/#{@page.id}/actions/trashable_restore", @viewer_token)
+    assert_response :forbidden, response.body
+
+    restored = call(:post, "/pages/#{@page.id}/actions/trashable_restore", @editor_token)
+    assert_response :success, response.body
+    shown_again = call(:get, "/pages/#{@page.id}", @editor_token)
+    assert_response :success, response.body
+    assert_equal resource_fields(shown_again), resource_fields(restored)
+    assert_equal "edit", restored.fetch("access_role")
+    assert_equal @page.reload.recordable.title, restored.fetch("title")
+    assert_equal @page.recordable.slug, restored.fetch("slug")
+  end
+
+  test "serialization without an access grant does not raise" do
+    register_access_role_field!
+    context = RecordingStudioApi::ActionContext.new(
+      recording: @page,
+      api_client: nil,
+      credential: nil,
+      access_recording: nil,
+      access_grant: nil,
+      root_recording: @page.root_recording,
+      params: {}
+    )
+
+    payload = RecordingStudioTrashable::Api::Actions::Payload.serialize(context, @page)
+
+    assert_equal @page.recordable.title, payload.fetch(:title)
+    assert_equal @page.recordable.slug, payload.fetch(:slug)
+    refute payload.key?(:access_role)
+  end
+
   test "trash restore purge and list_trash_bin succeed for the roles the screens use" do
     trashed = call(:post, "/pages/#{@page.id}/actions/trashable_trash", @editor_token)
     assert_response :success, response.body
@@ -582,6 +639,27 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
   def mark_trash_root(recording)
     recording.update_columns(trashed_at: Time.current, trash_root: true, purge_at: nil, updated_at: Time.current)
     recording.reload
+  end
+
+  RESOURCE_FIELDS = %w[id type parent_id root_id title slug access_role].freeze
+
+  def resource_fields(payload)
+    RESOURCE_FIELDS.index_with { |key| payload.fetch(key) }
+  end
+
+  def register_access_role_field!
+    registration = RecordingStudioApi.recordable_registration_for("Page")
+    return if registration&.fields&.key?("access_role")
+
+    RecordingStudioApi.register_recordable_type_api(
+      "Page",
+      fields: {
+        access_role: {
+          include: true,
+          resolver: ->(field_context) { field_context.access_grant.role.to_s }
+        }
+      }
+    )
   end
 
   def call(method, path, token, params = {})
