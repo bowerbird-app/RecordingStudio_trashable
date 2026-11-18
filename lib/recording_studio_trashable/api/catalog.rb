@@ -182,6 +182,12 @@ module RecordingStudioTrashable
         }
       end
 
+      def type_title(name, phrase)
+        return "List #{phrase} trash bin" if name == :trashable_list_trash_bin
+
+        "#{ACTIONS.fetch(name).fetch(:title)} #{phrase}"
+      end
+
       def responses_for(name, summary)
         {
           "200" => { description: "#{summary} succeeded." },

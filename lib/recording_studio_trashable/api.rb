@@ -3,6 +3,7 @@
 require_relative "api/access"
 require_relative "api/actions"
 require_relative "api/catalog"
+require_relative "api/openapi_overrides"
 
 module RecordingStudioTrashable
   module Api
@@ -38,9 +39,25 @@ module RecordingStudioTrashable
         version: Catalog::ACTION_VERSION,
         serializer: nil,
         input_contract: Catalog.contract_for(name),
-        openapi: Catalog.openapi_for(name),
+        openapi: Catalog.openapi_for(name), openapi_for: ->(type:, action:) { openapi_for(type:, action:) },
         api: api_name
       )
+    end
+
+    def override_openapi(type:, action:, title:, description:)
+      OpenapiOverrides.store(type: type, action: action, title: title, description: description)
+    end
+
+    def openapi_for(type:, action:)
+      name = OpenapiOverrides.normalized_action!(action)
+      document = Catalog.openapi_for(name).deep_dup
+      overlay = OpenapiOverrides.fetch(type, name)
+      return document.merge(overlay) if overlay
+
+      phrase = type_phrase(type)
+      return if phrase.nil?
+
+      document.merge(title: Catalog.type_title(name, phrase))
     end
 
     # API 0.26+ hides trashed rows unless the action opts in. Trash stays on kept rows.
@@ -95,5 +112,19 @@ module RecordingStudioTrashable
         RecordingStudio.capability_enabled?(:trashable, for: type)
       end
     end
+
+    def type_phrase(type)
+      type_name = type.to_s
+      return if type_name.blank?
+      return unless declared_recordable?(type_name)
+
+      phrase = RecordingStudio.recordable_type_label(type_name).to_s.squish.downcase
+      phrase.presence
+    end
+
+    def declared_recordable?(type_name)
+      Array(RecordingStudio.configuration.recordable_types).map(&:to_s).include?(type_name)
+    end
+    private_class_method :type_phrase, :declared_recordable?
   end
 end
