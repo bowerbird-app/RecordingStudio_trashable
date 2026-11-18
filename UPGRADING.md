@@ -1,5 +1,11 @@
 # Upgrading
 
+## 1.2.2
+
+Bump to 1.2.2. No host action is needed. No migration.
+
+Hosts that eager-load `controllers/` still get the trash bin live search controller. Lazy-load hosts fetch it on first use. Landing pages no longer modulepreload that controller.
+
 ## 1.0.0
 
 Install `recording_studio_trashable` 1.0.0. No migration. There is no alias and no compatibility shim.

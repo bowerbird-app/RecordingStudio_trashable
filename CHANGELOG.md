@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-11-18
+
+### Fixed
+
+- The trash bin live search controller is pinned with `preload: false`. Host pages no longer modulepreload `controllers/recording_studio_trashable/live_search_controller`.
+
+### Upgrade Notes
+
+- Bump to `1.2.2`. No host action. No migration. Hosts that eager-load `controllers/` still get the controller. Lazy-load hosts fetch it on first use. Landing pages no longer modulepreload it.
+
 ## [1.2.1] - 2026-11-18
 
 ### Fixed

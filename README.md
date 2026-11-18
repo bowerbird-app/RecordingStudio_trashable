@@ -326,6 +326,8 @@ Mounted routes:
 
 The mounted views are FlatPack-first and intentionally light on custom markup.
 
+The trash bin search field uses the Stimulus controller `recording-studio-trashable--live-search`. That file is pinned under `controllers/recording_studio_trashable` with `preload: false`. Host pages do not modulepreload it. A host that eager-loads `controllers/` still registers the controller. A host that lazy-loads controllers fetches the file on first use.
+
 The trash bin lists only `trash_root` recordings in the selected subtree. Descendants trashed by cascade stay hidden until their nearest explicit trash root is restored or purged.
 
 ### Lifecycle responses
