@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.2] - 2026-11-18
+## [1.2.0] - 2026-11-18
 
 ### Fixed
 
@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Upgrade Notes
 
-- Bump to `1.1.2`. No migration. No host change. Declared recordable types get the derived titles. Call `override_openapi` only when one type needs different words. Action names, handlers, roles, inputs, and response bodies are unchanged.
+- Bump to `1.2.0`. No migration. No host change. Declared recordable types get the derived titles. Call `override_openapi` only when one type needs different words. Action names, handlers, roles, inputs, and response bodies are unchanged.
 
 ## [1.1.1] - 2026-11-17
 
