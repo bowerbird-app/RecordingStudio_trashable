@@ -465,7 +465,7 @@ The dummy app demonstrates:
 
 ## Core follow-up assumptions
 
-Recording Studio 6.1 requires every configured recordable type to declare `recording_studio_recordable(...)`. Root creation must use root-declared recordables, and child recordings must be created under an allowed parent recording. Create a missing root with `RecordingStudio.create_root_recording!`. `root_recording_for` only finds one. This gem requires RecordingStudio `>= 7.0`, `< 8.0` (development pin tag `v7.4.0`) and Flatpack `>= 0.1.315` (development pin tag `v0.1.377`). Recording Studio 6.9.0 and later write `root_recording_id` on events, so copy core migration `20261114090000_add_root_recording_id_to_recording_studio_events` into the host before using those releases. The dummy app includes that copy. Recording Studio 7.4.0 also adds optional index `index_rs_recordings_on_root_type_created_at_id`. The dummy app does not copy that migration. Host opt-in is `include RecordingStudio::Capabilities::Trashable.to(**opts)`, a thin wrapper around `RecordingStudio::Capabilities.include_for(:trashable, **options)`. Installing this gem does not enable trash on any recordable type. Do not include `RecordingStudio::UsesDefaultLayout` or hard-code `layout "recording_studio/default_layout"`. Set `config.layout` instead.
+Recording Studio 6.1 requires every configured recordable type to declare `recording_studio_recordable(...)`. Root creation must use root-declared recordables, and child recordings must be created under an allowed parent recording. Create a missing root with `RecordingStudio.create_root_recording!`. `root_recording_for` only finds one. This gem requires RecordingStudio `>= 7.0`, `< 8.0` (development pin tag `v7.7.1`) and Flatpack `>= 0.1.315` (development pin tag `v0.1.378`). Recording Studio 6.9.0 and later write `root_recording_id` on events, so copy core migration `20261114090000_add_root_recording_id_to_recording_studio_events` into the host before using those releases. The dummy app includes that copy. Hosts moving to Recording Studio 7.7 must run the Recording Studio 7.4, 7.5, and 7.7 migrations. The dummy app does not copy those three. Host opt-in is `include RecordingStudio::Capabilities::Trashable.to(**opts)`, a thin wrapper around `RecordingStudio::Capabilities.include_for(:trashable, **options)`. Installing this gem does not enable trash on any recordable type. Do not include `RecordingStudio::UsesDefaultLayout` or hard-code `layout "recording_studio/default_layout"`. Set `config.layout` instead.
 
 This addon:
 
@@ -542,4 +542,4 @@ tools do not take a time window.
 Purged items are deleted, so these are current-trash totals and
 trashed-over-time of still-existing items only. There is no extra event log.
 
-Add `recording_studio_metrics` at tag `v0.9.1` (`>= 0.3.0, < 1.0`).
+Add `recording_studio_metrics` at tag `v0.9.2` (`>= 0.3.0, < 1.0`).

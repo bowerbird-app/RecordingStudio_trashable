@@ -32,22 +32,36 @@ class RecordingStudioTrashableTest < Minitest::Test
 
     root_gemfile = File.read(File.expand_path("../Gemfile", __dir__))
     dummy_gemfile = File.read(File.expand_path("dummy/Gemfile", __dir__))
-    assert_includes root_gemfile, 'tag: "v7.4.0"'
-    assert_includes dummy_gemfile, 'tag: "v7.4.0"'
-    assert_includes root_gemfile, 'tag: "v0.1.377"'
-    assert_includes dummy_gemfile, 'tag: "v0.1.377"'
-    assert_includes dummy_gemfile, 'tag: "v0.46.0"'
-    assert_includes dummy_gemfile, 'tag: "v1.3.0"'
-    assert_includes dummy_gemfile, 'tag: "v2.18.0"'
-    assert_includes dummy_gemfile, 'tag: "v0.3.0"'
-    assert_includes dummy_gemfile, 'tag: "v0.8.0"'
-    assert_includes dummy_gemfile, 'tag: "v6.0.0"'
+    assert_includes root_gemfile, 'tag: "v7.7.1"'
+    assert_includes dummy_gemfile, 'tag: "v7.7.1"'
+    assert_includes root_gemfile, 'tag: "v0.1.378"'
+    assert_includes dummy_gemfile, 'tag: "v0.1.378"'
+    assert_includes dummy_gemfile, 'tag: "v0.54.1"'
+    assert_includes dummy_gemfile, 'tag: "v1.16.0"'
+    assert_includes dummy_gemfile, 'tag: "v2.19.0"'
+    assert_includes dummy_gemfile, 'tag: "v0.3.1"'
+    assert_includes dummy_gemfile, 'tag: "v0.8.1"'
+    assert_includes dummy_gemfile, 'tag: "v6.0.2"'
+    assert_includes dummy_gemfile, 'tag: "v0.4.2"'
     assert_includes root_gemfile, 'gem "view_component", "4.19.0"'
     assert_includes dummy_gemfile, 'gem "view_component", "4.19.0"'
 
     initializer = File.read(File.expand_path("dummy/config/initializers/recording_studio.rb", __dir__))
     assert_includes initializer, "config.authorize_write = ->(actor:, **) { actor.present? }"
     refute_includes initializer, "allow_unauthorized_writes ="
+
+    readme = File.read(File.expand_path("../README.md", __dir__))
+    upgrading = File.read(File.expand_path("../UPGRADING.md", __dir__))
+    api_config = File.read(File.expand_path("dummy/config/recording_studio_api.yml", __dir__))
+    owner_migration = File.expand_path(
+      "dummy/db/migrate/20261117000024_add_owner_to_recording_studio_api_api_clients.rb",
+      __dir__
+    )
+
+    assert_includes readme, "must run the Recording Studio 7.4, 7.5, and 7.7 migrations"
+    assert_includes upgrading, "must run the Recording Studio 7.4, 7.5, and 7.7 migrations"
+    assert_includes api_config, "shared: {}"
+    assert File.file?(owner_migration), "dummy must copy the API owner migration"
   end
 
   def test_version_matches_latest_changelog_release
