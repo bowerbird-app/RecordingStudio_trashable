@@ -1,14 +1,20 @@
 # Upgrading
 
-## 1.2.2
+## 1.2.3
 
-Install `recording_studio_trashable` 1.2.2. No Trashable migration. The gemspec still requires `recording_studio >= 7.0`, `< 8.0` and `recording_studio_metrics >= 0.3.0`, `< 1.0`.
+Install `recording_studio_trashable` 1.2.3. No Trashable migration. The gemspec still requires `recording_studio >= 7.0`, `< 8.0` and `recording_studio_metrics >= 0.3.0`, `< 1.0`.
 
 Hosts moving to Recording Studio 7.7 must run the Recording Studio 7.4, 7.5, and 7.7 migrations. The dummy app does not copy those three.
 
 Development Gemfiles pin Recording Studio `v7.7.1`, FlatPack `v0.1.378`, and Metrics `v0.9.2`. The dummy also pins Accessible `v0.54.1`, API `v1.16.0`, Admin `v2.19.0`, Logs `v0.8.1`, Moveable `v6.0.2`, Icons `v0.4.2`, and Internationalization `v0.3.1`.
 
 A host that mounts Recording Studio API 1.12 or newer needs `config/recording_studio_api.yml`. `shared: {}` is enough. Copy API migration `20261117000024_add_owner_to_recording_studio_api_api_clients` before `ProvisionApiClient` writes `owner`. The dummy copies that migration. It does not add Accessible access-request migrations.
+
+## 1.2.2
+
+Bump to 1.2.2. No host action is needed. No migration.
+
+Hosts that eager-load `controllers/` still get the trash bin live search controller. Lazy-load hosts fetch it on first use. Landing pages no longer modulepreload that controller.
 
 ## 1.0.0
 

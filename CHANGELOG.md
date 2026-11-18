@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.2.2] - 2026-11-18
+## [1.2.3] - 2026-11-18
 
 ### Changed
 
@@ -17,9 +17,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Upgrade Notes
 
-- Bump to `1.2.2`. No Trashable migration. The gemspec floors stay `recording_studio >= 7.0`, `< 8.0` and `recording_studio_metrics >= 0.3.0`, `< 1.0`.
+- Bump to `1.2.3`. No Trashable migration. The gemspec floors stay `recording_studio >= 7.0`, `< 8.0` and `recording_studio_metrics >= 0.3.0`, `< 1.0`.
 - Hosts moving to Recording Studio 7.7 must run the Recording Studio 7.4, 7.5, and 7.7 migrations. The dummy app leaves those three out.
 - A host that mounts Recording Studio API 1.12 or newer needs `config/recording_studio_api.yml`. `shared: {}` is enough. API 1.16 `ProvisionApiClient` writes `owner`, so copy `20261117000024_add_owner_to_recording_studio_api_api_clients` before provisioning clients.
+
+## [1.2.2] - 2026-11-18
+
+### Fixed
+
+- The trash bin live search controller is pinned with `preload: false`. Host pages no longer modulepreload `controllers/recording_studio_trashable/live_search_controller`.
+
+### Upgrade Notes
+
+- Bump to `1.2.2`. No host action. No migration. Hosts that eager-load `controllers/` still get the controller. Lazy-load hosts fetch it on first use. Landing pages no longer modulepreload it.
 
 ## [1.2.1] - 2026-11-18
 
@@ -585,7 +595,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.2...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.3...HEAD
+[1.2.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.1.1...v1.2.0
