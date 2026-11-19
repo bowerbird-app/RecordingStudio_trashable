@@ -363,6 +363,50 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     RecordingStudioTrashable::Api::OpenapiOverrides.reset!
   end
 
+  test "capability actions expose this gem's MCP copy" do
+    catalog = RecordingStudioTrashable::Api::Catalog
+    trash = RecordingStudioApi.capability_action(:trashable_trash)
+    restore = RecordingStudioApi.capability_action(:trashable_restore)
+    purge = RecordingStudioApi.capability_action(:trashable_purge)
+    list = RecordingStudioApi.capability_action(:trashable_list_trash_bin)
+
+    assert_equal catalog::ACTIONS.fetch(:trashable_trash)[:summary], trash.openapi.fetch(:summary)
+    assert_equal catalog::ACTIONS.fetch(:trashable_trash)[:description], trash.openapi.fetch(:description)
+    assert_equal catalog::ACTIONS.fetch(:trashable_trash)[:title], trash.openapi.fetch(:title)
+    assert_includes trash.openapi.fetch(:description), "already in the trash is rejected as not found"
+
+    assert_equal catalog::ACTIONS.fetch(:trashable_restore)[:summary], restore.openapi.fetch(:summary)
+    assert_includes restore.openapi.fetch(:description), "trashed on their own stay in the trash"
+
+    assert_equal catalog::ACTIONS.fetch(:trashable_purge)[:summary], purge.openapi.fetch(:summary)
+    assert_includes purge.openapi.fetch(:description), "nested trash"
+
+    assert_equal catalog::ACTIONS.fetch(:trashable_list_trash_bin)[:summary], list.openapi.fetch(:summary)
+    assert_includes list.openapi.fetch(:description), "stay hidden"
+    fields = list.input_contract.as_json.fetch(:fields)
+    assert_includes fields.fetch(:q).fetch(:description), "name, title, type, or id"
+    assert_includes fields.fetch(:page).fetch(:description), "counting from 1"
+    assert_includes fields.fetch(:per_page).fetch(:description), "capped at 100"
+
+    blobs = [trash, restore, purge, list].map do |action|
+      [
+        action.openapi.fetch(:title),
+        action.openapi.fetch(:summary),
+        action.openapi.fetch(:description),
+        action.openapi.fetch(:responses).values.map { |response| response[:description] }
+      ].join(" ")
+    end
+    blobs << fields.values.map { |field| field[:description] }.join(" ")
+    restore_fields = restore.input_contract.as_json.fetch(:fields)
+    blobs << restore_fields.fetch(:recording_id).fetch(:description)
+    blobs.each do |blob|
+      refute_match(/\bAccess\b/, blob)
+      refute_match(/\brole\b/i, blob)
+      refute_match(/\badmin\b/i, blob)
+      refute_includes blob, ":edit"
+    end
+  end
+
   test "list trash bin records include label and recordable type" do
     parent = trashable_project("Label Parent")
     titled = record_page(parent, "Launch Notes")

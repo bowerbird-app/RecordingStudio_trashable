@@ -18,7 +18,7 @@ Mounted screens use Recording Studio core's default layout. `RecordingStudioTras
 
 The trash bin search controller is pinned with `preload: false`. Host pages do not modulepreload it. A host that eager-loads `controllers/` still registers the controller. A lazy-load host fetches the file on first use.
 
-The mounted UI is subtree-scoped. Pass a root recording id to the trash bin route and the addon will list trashed `trash_root` recordings in that subtree ordered by `trashed_at DESC, id DESC`, while cascade-trashed descendants stay hidden behind their nearest explicit trash root. The Recording Studio API action `trashable_list_trash_bin` uses the same query, order, stripped `q`, and `page` / `per_page` (default 25, capped at 100).
+The mounted UI is subtree-scoped. Pass a root recording id to the trash bin route and the addon will list trashed `trash_root` recordings in that subtree ordered by `trashed_at DESC, id DESC`, while cascade-trashed descendants stay hidden behind their nearest explicit trash root. The Recording Studio API action `trashable_list_trash_bin` uses the same query, order, stripped `q`, and `page` / `per_page` (default 25, capped at 100). MCP titles, summaries, action text, and those field descriptions live in `Api::ActionCopy`. `Api::Catalog` reads them.
 
 Lifecycle actions redirect back by default. In standard form flows the controller can use the request referrer, and callers can still pass `back_path` when they need an explicit return location. Async callers can opt into JSON by sending `async: true` or using a JSON request format.
 

@@ -1,5 +1,9 @@
 # Upgrading
 
+## 1.2.4
+
+Install `recording_studio_trashable` 1.2.4. No Trashable migration. Action names and fields did not change. MCP and OpenAPI text for `trashable_trash`, `trashable_restore`, `trashable_purge`, and `trashable_list_trash_bin` did.
+
 ## 1.2.3
 
 Install `recording_studio_trashable` 1.2.3. No Trashable migration. The gemspec still requires `recording_studio >= 7.0`, `< 8.0` and `recording_studio_metrics >= 0.3.0`, `< 1.0`.

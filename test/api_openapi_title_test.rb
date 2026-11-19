@@ -62,7 +62,7 @@ class ApiOpenapiTitleTest < Minitest::Test
       assert_equal "Trash video", video.fetch(:title)
       assert_includes video.fetch(:description), "Returns"
       assert_equal "Trash", generic.fetch(:title)
-      assert_equal "Move to trash", generic.fetch(:summary)
+      assert_equal "Move this recording to the trash.", generic.fetch(:summary)
     end
   ensure
     RecordingStudioTrashable::Api::OpenapiOverrides.reset!

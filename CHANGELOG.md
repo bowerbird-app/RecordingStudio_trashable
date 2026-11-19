@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-11-19
+
+### Changed
+
+- Public MCP copy for `trashable_trash`, `trashable_restore`, `trashable_purge`, and `trashable_list_trash_bin`. Capability titles stay the short verbs (`Trash`, `Restore`, `Purge`, `List trash bin`) with `tag_suffix: "Trash"`. Summaries, action text, `recording_id`, and trash-bin field descriptions follow the Press Center MCP style. `Api::ActionCopy` holds those strings. `Api::Catalog` registers the actions.
+
+### Upgrade Notes
+
+- Bump to `1.2.4`. No Trashable migration. Action names and fields did not change.
+
 ## [1.2.3] - 2026-11-18
 
 ### Changed
@@ -595,7 +605,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.3...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.4...HEAD
+[1.2.4]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.0...v1.2.1
