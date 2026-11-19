@@ -10,13 +10,21 @@ class ApiCatalogDescriptionTest < Minitest::Test
     trashable_list_trash_bin
   ].freeze
   TITLES = {
-    trashable_trash: "Trash - Trash",
-    trashable_restore: "Trash - Restore",
-    trashable_purge: "Trash - Purge",
-    trashable_list_trash_bin: "Trash - List trash bin"
+    trashable_trash: "Trash",
+    trashable_restore: "Restore",
+    trashable_purge: "Purge",
+    trashable_list_trash_bin: "List trash bin"
   }.freeze
+  ROLE_WORDS = [
+    /\bAccess\b/,
+    /\brole\b/i,
+    /\badmin\b/i,
+    /:edit/,
+    /\bedit role\b/i,
+    /\badmin role\b/i
+  ].freeze
 
-  def test_openapi_titles_are_plain_names
+  def test_openapi_titles_match_main_short_verbs
     TITLES.each do |name, title|
       assert_equal title, openapi(name).fetch(:title), name.to_s
     end
@@ -34,30 +42,60 @@ class ApiCatalogDescriptionTest < Minitest::Test
     end
   end
 
-  def test_purge_description_warns_it_cannot_be_undone
+  def test_trash_description_keeps_main_facts
+    text = description(:trashable_trash)
+
+    assert_includes text, "Nested recordings under it are trashed"
+    assert_includes text, "already in the trash is rejected as not found"
+    assert_includes text, "Calling trash again after a successful trash is rejected the same way"
+    assert_includes text, "Returns this recording"
+    assert_includes text, "id, type, parent_id, root_id, created_at, and updated_at"
+    assert_includes text, "trashed_at is not a field"
+    assert_includes text, "label and recordable_type"
+    assert_includes text, "recording_id when called on the parent"
+  end
+
+  def test_restore_description_keeps_recording_id_and_422
+    text = description(:trashable_restore)
+
+    assert_includes text, "trashed on their own stay in the trash"
+    assert_includes text, "Pass optional recording_id"
+    assert_includes text, "List trash bin"
+    assert_includes text, "belong under this recording"
+    assert_includes text, "Without recording_id, this restores the recording in the path"
+    assert_includes text, "not in the trash is rejected"
+    refute_includes text, "not in the trash is rejected as not found"
+    assert_includes text, "Calling restore again after a successful restore is rejected the same way"
+    assert_includes text, "Returns this recording"
+    assert_includes text, "same fields Trash returns"
+  end
+
+  def test_purge_description_keeps_recording_id_and_422
     text = description(:trashable_purge)
 
     assert_includes text, "cannot be restored"
     assert_includes text, "permanently deletes this recording and nested trash"
     assert_includes text, "already in the trash"
-    assert_includes text, "trashable_list_trash_bin"
+    assert_includes text, "Pass optional recording_id"
+    assert_includes text, "Without recording_id, this purges the recording in the path"
+    assert_includes text, "still live, is rejected"
+    refute_includes text, "still live, is rejected as not found"
+    assert_includes text, "another call for the same id is rejected as not found"
+    assert_includes text, "purged true"
   end
 
-  def test_trash_restore_and_list_descriptions_name_the_choice
-    trash = description(:trashable_trash)
-    restore = description(:trashable_restore)
-    list = description(:trashable_list_trash_bin)
+  def test_list_description_keeps_search_order_and_shape
+    text = description(:trashable_list_trash_bin)
 
-    assert_includes trash, "Nested recordings under it are trashed"
-    assert_includes trash, "already in the trash is rejected as not found"
-    assert_includes trash, "Returns this recording"
-    assert_includes restore, "trashed on their own stay in the trash"
-    assert_includes restore, "not in the trash is rejected"
-    assert_includes restore, "Returns this recording"
-    assert_includes description(:trashable_purge), "purged true"
-    assert_includes list, "stay hidden"
-    assert_includes list, "Returns records"
-    assert_includes list, "q, page, or per_page"
+    assert_includes text, "stay hidden"
+    assert_includes text, "name, title, type, or id"
+    assert_includes text, "ignores case"
+    assert_includes text, "trashed_at descending, then id descending"
+    assert_includes text, "no page number and no total count"
+    assert_includes text, "page or per_page"
+    assert_includes text, "Calling list again returns the current page"
+    assert_includes text, "Returns records"
+    assert_includes text, "label and recordable_type"
   end
 
   def test_restore_and_purge_contracts_take_a_list_trash_bin_recording_id
@@ -66,9 +104,27 @@ class ApiCatalogDescriptionTest < Minitest::Test
 
       assert_equal false, field.fetch(:required), name.to_s
       assert_includes field.fetch(:description), "List trash bin"
+      assert_includes field.fetch(:description), "Optional"
+      assert_includes field.fetch(:description), "Omit it"
+      assert_includes field.fetch(:description), "belong under this recording"
     end
 
     assert_empty RecordingStudioTrashable::Api::Catalog.contract_for(:trashable_trash).fetch(:fields)
+  end
+
+  def test_copy_has_no_access_or_role_wording
+    recording_id = RecordingStudioTrashable::Api::Catalog.contract_for(:trashable_restore)
+                                                         .fetch(:fields).fetch(:recording_id).fetch(:description)
+    list_fields = RecordingStudioTrashable::Api::Catalog::LIST_TRASH_BIN_CONTRACT.fetch(:fields)
+    blobs = NAMES.map { |name| copy_blob(name) }
+    blobs << recording_id
+    blobs.concat(list_fields.values.map { |field| field.fetch(:description) })
+
+    blobs.each do |blob|
+      ROLE_WORDS.each do |pattern|
+        refute_match pattern, blob
+      end
+    end
   end
 
   private
@@ -79,5 +135,16 @@ class ApiCatalogDescriptionTest < Minitest::Test
 
   def description(name)
     openapi(name).fetch(:description)
+  end
+
+  def copy_blob(name)
+    spec = RecordingStudioTrashable::Api::Catalog::ACTIONS.fetch(name)
+    responses = openapi(name).fetch(:responses)
+    [
+      spec.fetch(:title),
+      spec.fetch(:summary),
+      spec.fetch(:description),
+      responses.values.map { |response| response[:description] }
+    ].join(" ")
   end
 end

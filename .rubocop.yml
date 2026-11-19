@@ -27,6 +27,7 @@ Metrics/ModuleLength:
   Exclude:
     - 'lib/recording_studio_trashable.rb'
     - 'lib/recording_studio_trashable/api/catalog.rb'
+    - 'lib/recording_studio_trashable/api/action_copy.rb'
 
 Metrics/MethodLength:
   Exclude:

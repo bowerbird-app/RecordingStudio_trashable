@@ -61,7 +61,7 @@ class ApiOpenapiTitleTest < Minitest::Test
       assert_equal "Trash", page.fetch(:tag_suffix)
       assert_equal "Trash video", video.fetch(:title)
       assert_includes video.fetch(:description), "Returns"
-      assert_equal "Trash - Trash", generic.fetch(:title)
+      assert_equal "Trash", generic.fetch(:title)
       assert_equal "Move this recording to the trash.", generic.fetch(:summary)
     end
   ensure
@@ -102,7 +102,7 @@ class ApiOpenapiTitleTest < Minitest::Test
     with_recordable_types("Page", "Video") do
       options = RecordingStudioTrashable::Api.action_options(:public, :trashable_trash)
 
-      assert_equal "Trash - Trash", options.fetch(:openapi).fetch(:title)
+      assert_equal "Trash", options.fetch(:openapi).fetch(:title)
       assert_equal "Trash", options.fetch(:openapi).fetch(:tag_suffix)
       assert_equal(
         "Trash page",

@@ -281,7 +281,7 @@ When Recording Studio API is loaded, this gem registers capability actions on ev
 | `trashable_purge` | POST | `:admin` | `recording_studio_trashable_purge!` |
 | `trashable_list_trash_bin` | GET | `:edit` | `SubtreeQuery.trashed_recordings_for_query` |
 
-Capability OpenAPI titles, summaries, and action text live in `Api::ActionCopy`. Each action's OpenAPI metadata includes `tag_suffix: "Trash"`. MCP uses that suffix to group a type's actions under a heading such as Video Trash.
+Capability OpenAPI titles, summaries, and action text live in `Api::ActionCopy`. Capability titles are the short verbs (`Trash`, `Restore`, `Purge`, `List trash bin`). Each action's OpenAPI metadata includes `tag_suffix: "Trash"`. MCP uses that suffix to group a type's actions under a heading such as Video Trash, and prefixes the capability title (`Trash - Trash`).
 
 MCP reads a per-type title from `openapi_for(type:, action:)`. The title is the short verb plus the recordable label, lowercased. A page is "Trash page", "Restore page", "Purge page", and "List page trash bin". A press center is "Trash press center" and "List press center trash bin". A type that is not in `recordable_types` returns nil, and MCP keeps the capability title from `ActionCopy`.
 

@@ -10,14 +10,7 @@ module RecordingStudioTrashable
       EMPTY_CONTRACT = { reject_unknown: false, fields: {} }.freeze
       RECORDING_ID_CONTRACT = {
         reject_unknown: false,
-        fields: {
-          recording_id: {
-            type: :string,
-            required: false,
-            allow_blank: true,
-            description: "Recording id from a List trash bin record."
-          }
-        }
+        fields: ActionCopy::RECORDING_ID_FIELDS
       }.freeze
       LIST_TRASH_BIN_CONTRACT = {
         reject_unknown: false,

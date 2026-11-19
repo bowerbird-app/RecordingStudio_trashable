@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Public MCP copy for `trashable_trash`, `trashable_restore`, `trashable_purge`, and `trashable_list_trash_bin`. Summaries, action text, and trash-bin field descriptions follow the Press Center MCP style. `Api::ActionCopy` holds those strings. `Api::Catalog` registers the actions.
+- Public MCP copy for `trashable_trash`, `trashable_restore`, `trashable_purge`, and `trashable_list_trash_bin`. Capability titles stay the short verbs (`Trash`, `Restore`, `Purge`, `List trash bin`) with `tag_suffix: "Trash"`. Summaries, action text, `recording_id`, and trash-bin field descriptions follow the Press Center MCP style. `Api::ActionCopy` holds those strings. `Api::Catalog` registers the actions.
 
 ### Upgrade Notes
 
