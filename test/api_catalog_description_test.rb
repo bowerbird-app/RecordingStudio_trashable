@@ -10,10 +10,10 @@ class ApiCatalogDescriptionTest < Minitest::Test
     trashable_list_trash_bin
   ].freeze
   TITLES = {
-    trashable_trash: "Trash",
-    trashable_restore: "Restore",
-    trashable_purge: "Purge",
-    trashable_list_trash_bin: "List trash bin"
+    trashable_trash: "Trash - Trash",
+    trashable_restore: "Trash - Restore",
+    trashable_purge: "Trash - Purge",
+    trashable_list_trash_bin: "Trash - List trash bin"
   }.freeze
 
   def test_openapi_titles_are_plain_names
@@ -37,10 +37,10 @@ class ApiCatalogDescriptionTest < Minitest::Test
   def test_purge_description_warns_it_cannot_be_undone
     text = description(:trashable_purge)
 
-    assert_includes text, "cannot be undone"
-    assert_includes text, "Permanently deletes this trashed item and everything trashed under it."
+    assert_includes text, "cannot be restored"
+    assert_includes text, "permanently deletes this recording and nested trash"
     assert_includes text, "already in the trash"
-    assert_includes text, "List trash bin"
+    assert_includes text, "trashable_list_trash_bin"
   end
 
   def test_trash_restore_and_list_descriptions_name_the_choice
@@ -48,19 +48,16 @@ class ApiCatalogDescriptionTest < Minitest::Test
     restore = description(:trashable_restore)
     list = description(:trashable_list_trash_bin)
 
-    assert_includes trash, "everything under the item"
-    assert_includes trash, "Restore can undo it."
-    assert_includes trash, "label and recordable_type"
-    assert_includes restore, "stay trashed"
-    assert_includes restore, "recording_id"
-    assert_includes restore, "called on the parent"
-    assert_includes description(:trashable_purge), "recording_id"
-    assert_includes description(:trashable_purge), "label and recordable_type"
-    assert_includes list, "top-level trashed items"
-    assert_includes list, "newest first"
-    assert_includes list, "per_page"
-    assert_includes list, "label and recordable_type"
-    assert_includes list, "recording_id"
+    assert_includes trash, "Nested recordings under it are trashed"
+    assert_includes trash, "already in the trash is rejected as not found"
+    assert_includes trash, "Returns this recording"
+    assert_includes restore, "trashed on their own stay in the trash"
+    assert_includes restore, "not in the trash is rejected"
+    assert_includes restore, "Returns this recording"
+    assert_includes description(:trashable_purge), "purged true"
+    assert_includes list, "stay hidden"
+    assert_includes list, "Returns records"
+    assert_includes list, "q, page, or per_page"
   end
 
   def test_restore_and_purge_contracts_take_a_list_trash_bin_recording_id
