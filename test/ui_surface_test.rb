@@ -245,7 +245,7 @@ class UiSurfaceTest < Minitest::Test
     assert_operator layout.index('stylesheet_link_tag "flat_pack/variables"'), :<,
                     layout.index('stylesheet_link_tag "tailwind.css"')
     assert_includes importmap, 'pin "@hotwired/turbo-rails", to: "turbo.min.js"'
-    assert_includes importmap, 'pin "flat_pack/heroicons"'
+    refute_includes importmap, 'pin "flat_pack/heroicons"'
     assert_includes javascript, 'import "@hotwired/turbo-rails"'
     assert_includes css, "vendor/bundle/**/flatpack/app/components/**/*.{rb,erb}"
     assert_includes css, "vendor/bundle/**/flat_pack/app/components/**/*.{rb,erb}"

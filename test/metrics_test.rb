@@ -12,8 +12,10 @@ class MetricsTest < Minitest::Test
     dummy_gemfile = File.read(File.expand_path("dummy/Gemfile", __dir__))
 
     assert_includes gemspec, 'spec.add_dependency "recording_studio_metrics", ">= 0.3.0", "< 1.0"'
-    assert_includes root_gemfile, 'tag: "v0.9.2"'
-    assert_includes dummy_gemfile, 'tag: "v0.9.2"'
+    assert_includes root_gemfile, 'tag: "v0.10.0"'
+    assert_includes dummy_gemfile, 'tag: "v0.10.0"'
+    assert_includes root_gemfile, '"~> 0.10"'
+    assert_includes dummy_gemfile, '"~> 0.10"'
   end
 
   def test_engine_registers_metrics_on_reload

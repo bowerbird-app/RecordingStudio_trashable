@@ -1,5 +1,15 @@
 # Upgrading
 
+## 1.3.0
+
+Install `recording_studio_trashable` 1.3.0. No Trashable migration. The gemspec still requires `recording_studio >= 7.0`, `< 8.0`, `flat_pack >= 0.1.315`, and `recording_studio_metrics >= 0.3.0`, `< 1.0`.
+
+Hosts MUST run the Recording Studio 7.4, 7.5 and 7.7 migrations if they have not. The dummy app does not copy those three.
+
+Development Gemfiles pin Recording Studio `v7.8.0` (`~> 7.8`), FlatPack `v0.2.0` (`~> 0.2`), and Metrics `v0.10.0` (`~> 0.10`). The dummy also pins Accessible `v0.56.0`, API `v1.19.0`, Admin `v2.19.1`, Logs `v0.8.2`, Moveable `v6.0.3`, Icons `v0.5.0`, and Internationalization `v0.3.1`.
+
+flat_pack 0.2.0 is supported; hosts moving to 0.2 must remove the manual `flat_pack/heroicons` importmap pin and any `flat-pack--icon` controller registration. Hosts that stay on FlatPack 0.1.x still resolve.
+
 ## 1.2.3
 
 Install `recording_studio_trashable` 1.2.3. No Trashable migration. The gemspec still requires `recording_studio >= 7.0`, `< 8.0` and `recording_studio_metrics >= 0.3.0`, `< 1.0`.
