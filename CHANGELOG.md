@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-19
+
+### Changed
+
+- Development Gemfiles pin `recording_studio` `~> 7.8` at tag `v7.8.0`, `flat_pack` `~> 0.2` at tag `v0.2.0`, and `recording_studio_metrics` `~> 0.10` at tag `v0.10.0`.
+- Dummy pins `recording_studio_accessible` `v0.56.0`, `recording_studio_api` `v1.19.0`, `recording_studio_admin` `v2.19.1`, `recording_studio_logs` `v0.8.2`, `recording_studio_moveable` `v6.0.3`, `recording_studio_icons` `v0.5.0`, and `recording_studio_internationalization` `v0.3.1`.
+- The dummy importmap drops the manual `flat_pack/heroicons` pin. The dummy app does not copy the Recording Studio 7.4, 7.5, or 7.7 migrations.
+
+### Upgrade Notes
+
+- Bump to `1.3.0`. No Trashable migration. The gemspec floors stay `recording_studio >= 7.0`, `< 8.0`, `flat_pack >= 0.1.315`, and `recording_studio_metrics >= 0.3.0`, `< 1.0`.
+- Hosts MUST run the Recording Studio 7.4, 7.5 and 7.7 migrations if they have not.
+- flat_pack 0.2.0 is supported; hosts moving to 0.2 must remove the manual `flat_pack/heroicons` importmap pin and any `flat-pack--icon` controller registration.
+
 ## [1.2.3] - 2026-11-18
 
 ### Changed
@@ -595,7 +609,8 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 - Comprehensive README and documentation
 - Basic test suite with Minitest
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.3...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.3...v1.3.0
 [1.2.3]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/bowerbird-app/RecordingStudio_trashable/compare/v1.2.0...v1.2.1

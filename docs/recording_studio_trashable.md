@@ -1,6 +1,6 @@
 # Recording Studio Trashable notes
 
-This addon requires RecordingStudio `>= 7.0`, `< 8.0` (development pin tag `v7.7.1`) and Flatpack `>= 0.1.315` (development pin tag `v0.1.378`). Create a missing root with `RecordingStudio.create_root_recording!`. `root_recording_for` only finds one. Recording Studio 6.9.0 and later write `root_recording_id` on events. Copy core migration `20261114090000_add_root_recording_id_to_recording_studio_events` into the host before using those releases. The dummy app includes that copy. Hosts moving to Recording Studio 7.7 must run the Recording Studio 7.4, 7.5, and 7.7 migrations. The dummy app does not copy those three. Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
+This addon requires RecordingStudio `>= 7.0`, `< 8.0` (development pin tag `v7.8.0`) and Flatpack `>= 0.1.315` (development pin tag `v0.2.0`). Create a missing root with `RecordingStudio.create_root_recording!`. `root_recording_for` only finds one. Recording Studio 6.9.0 and later write `root_recording_id` on events. Copy core migration `20261114090000_add_root_recording_id_to_recording_studio_events` into the host before using those releases. The dummy app includes that copy. Hosts moving to Recording Studio 7.7 must run the Recording Studio 7.4, 7.5, and 7.7 migrations. The dummy app does not copy those three. Host recordables stay opt-in through `RecordingStudio::Capabilities::Trashable.to(...)`.
 
 ## Capability registration
 
