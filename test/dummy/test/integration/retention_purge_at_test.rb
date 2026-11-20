@@ -176,7 +176,7 @@ class RetentionPurgeAtTest < ActionDispatch::IntegrationTest
 
     denied = @config.authorization_resolver
     @config.authorization_resolver = ->(action:, **) { action.to_sym != :purge }
-    error = assert_raises(ArgumentError) { purge(root, as_of: as_of, actor: @user) }
+    error = assert_raises(RecordingStudio::AuthorizationError) { purge(root, as_of: as_of, actor: @user) }
     assert_match(/Not authorized to purge/, error.message)
     assert fetch(child).trashed_at
     @config.authorization_resolver = denied

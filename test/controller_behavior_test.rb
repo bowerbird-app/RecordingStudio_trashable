@@ -171,6 +171,15 @@ class ControllerBehaviorTest < Minitest::Test
     assert_equal :editor, recording.lifecycle_calls[:purge][:actor]
   end
 
+  def test_lifecycle_rescues_authorization_error
+    klasses = RecordingStudioTrashable::RecordingsController.rescue_handlers.flat_map do |handler|
+      Array(handler.first)
+    end
+
+    assert_includes klasses, "RecordingStudio::AuthorizationError"
+    assert_includes klasses, "ArgumentError"
+  end
+
   def test_lifecycle_error_renders_async_json_payload
     controller = build_controller(RecordingStudioTrashable::RecordingsController)
     controller.define_singleton_method(:async_response?) { true }

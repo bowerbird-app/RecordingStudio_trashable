@@ -193,6 +193,7 @@ class AuthorizationTest < Minitest::Test
     )
 
     assert_includes source, "authorize_recording_action!(action, recording: @recording)"
+    assert_includes source, "RecordingStudio::AuthorizationError"
     assert_includes source, "return if performed?"
     assert_includes source, "lifecycle_flash("
     assert_includes source, '"flashes.trashed"'

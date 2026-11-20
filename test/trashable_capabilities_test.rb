@@ -345,12 +345,19 @@ class TrashableCapabilitiesTest < Minitest::Test
 
   def test_lifecycle_raises_when_not_authorized
     recording = FakeRecording.new(id: "page-1")
+    recording.trashed_at = Time.current
 
-    error = assert_raises(ArgumentError) do
-      stub_authorized(value: false) { recording.recording_studio_trashable_trash!(actor: :viewer) }
+    %i[trash restore purge].each do |action|
+      recording.destroyed = false
+      error = assert_raises(RecordingStudio::AuthorizationError) do
+        stub_authorized(value: false) do
+          recording.public_send(:"recording_studio_trashable_#{action}!", actor: :viewer)
+        end
+      end
+
+      refute_instance_of ArgumentError, error
+      assert_match(/Not authorized to #{action}/, error.message)
     end
-
-    assert_match(/Not authorized to trash/, error.message)
   end
 end
 
