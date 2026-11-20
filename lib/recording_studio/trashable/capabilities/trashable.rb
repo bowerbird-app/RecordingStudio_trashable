@@ -133,7 +133,7 @@ module RecordingStudio
             resolved_actor = recording_studio_trashable_actor(actor)
             return if RecordingStudioTrashable.authorized?(action: action, actor: resolved_actor, recording: self)
 
-            raise ArgumentError, RecordingStudioTrashable::Copy.t(
+            raise RecordingStudio::AuthorizationError, RecordingStudioTrashable::Copy.t(
               "errors.not_authorized",
               action: RecordingStudioTrashable::Copy.action_name(action),
               type: recordable_type

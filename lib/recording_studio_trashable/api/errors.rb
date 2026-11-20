@@ -13,6 +13,8 @@ module RecordingStudioTrashable
         yield
       rescue RecordingStudioApi::NotFoundError, RecordingStudioApi::AuthorizationError
         raise
+      rescue RecordingStudio::AuthorizationError => e
+        raise RecordingStudioApi::AuthorizationError, e.message
       rescue *INPUT_ERRORS => e
         raise RecordingStudioApi::InvalidActionInputError, e.message
       end

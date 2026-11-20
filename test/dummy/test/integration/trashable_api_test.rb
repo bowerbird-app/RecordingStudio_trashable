@@ -248,6 +248,53 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     RecordingStudioTrashable.configuration.authorization_resolver = previous
   end
 
+  test "host resolver denial on trash restore and purge is forbidden" do
+    previous = RecordingStudioTrashable.configuration.authorization_resolver
+    RecordingStudioTrashable.configuration.authorization_resolver = lambda { |**payload|
+      payload.fetch(:action).to_sym != :trash
+    }
+
+    denied = call(:post, "/pages/#{@page.id}/actions/trashable_trash", @editor_token)
+    assert_response :forbidden, response.body
+    assert_equal "forbidden", denied.dig("error", "code")
+    assert_match(/Not authorized to trash/, denied.dig("error", "message"))
+    assert @page.reload.recording_studio_trashable_kept?
+
+    RecordingStudioTrashable.configuration.authorization_resolver = previous
+    @page.recording_studio_trashable_trash!(actor: @owner)
+
+    RecordingStudioTrashable.configuration.authorization_resolver = lambda { |**payload|
+      !%i[restore purge].include?(payload.fetch(:action).to_sym)
+    }
+
+    denied_restore = call(:post, "/pages/#{@page.id}/actions/trashable_restore", @editor_token)
+    assert_response :forbidden, response.body
+    assert_equal "forbidden", denied_restore.dig("error", "code")
+    assert_match(/Not authorized to restore/, denied_restore.dig("error", "message"))
+    assert @page.reload.recording_studio_trashable_trashed?
+
+    denied_purge = call(:post, "/pages/#{@page.id}/actions/trashable_purge", @admin_token)
+    assert_response :forbidden, response.body
+    assert_equal "forbidden", denied_purge.dig("error", "code")
+    assert_match(/Not authorized to purge/, denied_purge.dig("error", "message"))
+    assert RecordingStudio::Recording.find_by(id: @page.id)
+  ensure
+    RecordingStudioTrashable.configuration.authorization_resolver = previous
+  end
+
+  test "api wrap maps domain authorization errors and leaves argument errors" do
+    error = assert_raises(RecordingStudioApi::AuthorizationError) do
+      RecordingStudioTrashable::Api::Errors.wrap do
+        raise RecordingStudio::AuthorizationError, "Not authorized to trash Page"
+      end
+    end
+    assert_equal "Not authorized to trash Page", error.message
+
+    assert_raises(ArgumentError) do
+      RecordingStudioTrashable::Api::Errors.wrap { raise ArgumentError, "bad argument" }
+    end
+  end
+
   test "registering the api twice does not raise" do
     2.times { RecordingStudioTrashable::Api.register! }
 

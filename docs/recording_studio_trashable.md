@@ -42,7 +42,7 @@ Per-recordable capability options can supply defaults such as `purge_after_days:
 
 ## Purge workflow
 
-Manual purge and retention-driven purge both require targeted recordings to already be trashed.
+Manual purge and retention-driven purge both require targeted recordings to already be trashed. A denied trash, restore, or purge raises `RecordingStudio::AuthorizationError` (not `ArgumentError`). Authorization still goes through Accessible / `RecordingStudioTrashable.authorized?`. API handlers wrap that as `RecordingStudioApi::AuthorizationError` so the response stays forbidden. The mounted UI still shows the not-authorized flash or lifecycle alert.
 
 ## Translating
 

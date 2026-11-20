@@ -2,7 +2,8 @@
 
 module RecordingStudioTrashable
   class RecordingsController < ApplicationController
-    rescue_from ActiveRecord::RecordInvalid, ArgumentError, RecordingStudio::CapabilityDisabled do |error|
+    rescue_from ActiveRecord::RecordInvalid, ArgumentError, RecordingStudio::AuthorizationError,
+                RecordingStudio::CapabilityDisabled do |error|
       respond_with_lifecycle_error(error.message)
     end
 

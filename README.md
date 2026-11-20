@@ -131,6 +131,7 @@ recording.recording_studio_trashable_purge!(actor: Current.actor)
 - direct trash marks the targeted recording as a `trash_root` and hides cascade-trashed descendants from the trash bin.
 - restore clears cascade-trashed descendants but leaves nested `trash_root` branches trashed until they are restored directly.
 - purge only deletes recordings that are already trashed; active recordings must be trashed first.
+- a denied trash, restore, or purge raises `RecordingStudio::AuthorizationError`. Argument bugs still raise `ArgumentError`.
 - purge destroys descendants before parents and logs `purged` before deletion. Because purge then removes the recording and its attached events, that log entry is not durable audit history unless the host app copies it to an external audit store.
 
 ## Query helpers

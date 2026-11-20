@@ -1,5 +1,9 @@
 # Upgrading
 
+## 1.3.1
+
+Install `recording_studio_trashable` 1.3.1. No migration. No host action unless a caller rescued `ArgumentError` when trash, restore, or purge was denied. Rescue `RecordingStudio::AuthorizationError` for that denial. Argument bugs still raise `ArgumentError`. API still returns forbidden. Mounted UI still shows the not-authorized message.
+
 ## 1.3.0
 
 Install `recording_studio_trashable` 1.3.0. No Trashable migration. The gemspec still requires `recording_studio >= 7.0`, `< 8.0`, `flat_pack >= 0.1.315`, and `recording_studio_metrics >= 0.3.0`, `< 1.0`.
