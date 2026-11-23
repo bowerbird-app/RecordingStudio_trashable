@@ -611,14 +611,8 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
 
     assert_includes types, "Page"
     %w[Folder Workspace AdminRoot].each { |type| refute_includes types, type }
-    assert_equal "trash_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_trash)
-    assert_equal "restore_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_restore)
-    assert_equal "purge_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_purge)
-    assert_equal "list_pages_trash_bin",
-                 RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_list_trash_bin)
-    %w[capability_action trashable_trash trashable_list_trash_bin].each do |name|
-      refute_equal name, RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_trash)
-    end
+    assert_nil RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_trash)
+    assert_nil RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_list_trash_bin)
   end
 
   test "mcp registration is a no-op without the mcp gem" do
@@ -629,9 +623,6 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
   end
 
   test "named trash tools allow an editor and deny a viewer" do
-    assert_equal "trash_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_trash)
-    assert_equal "purge_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_purge)
-
     call(:post, "/pages/#{@page.id}/actions/trashable_trash", @viewer_token)
     assert_response :forbidden, response.body
     refute @page.reload.recording_studio_trashable_trashed?

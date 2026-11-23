@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "active_support/core_ext/string/inflections"
 require_relative "mcp_copy/copy"
 
 module RecordingStudioTrashable
@@ -29,10 +28,10 @@ module RecordingStudioTrashable
     end
 
     def tool_name(type, action)
-      snake = type_snake(type)
-      return "list_#{snake.pluralize}_trash_bin" if action.to_sym == :trashable_list_trash_bin
+      return unless mcp_available? && mcp.respond_to?(:tool_name)
+      return "#{mcp.tool_name(type, :list)}_trash_bin" if action.to_sym == :trashable_list_trash_bin
 
-      "#{verb_for(action)}_#{snake}"
+      mcp.tool_name(type, verb_for(action))
     end
 
     def register_type_tools(type)
@@ -76,22 +75,6 @@ module RecordingStudioTrashable
       Copy::DESCRIPTIONS.fetch(action)
     end
 
-    def type_snake(type)
-      named = public_snake(type)
-      return named if named.present?
-
-      type.to_s.demodulize.underscore
-    end
-
-    def public_snake(type)
-      return unless mcp_available? && mcp.respond_to?(:tool_name)
-
-      named = mcp.tool_name(type, :show).to_s
-      return unless named.start_with?("show_")
-
-      named.delete_prefix("show_")
-    end
-
     def verb_for(action)
       {
         trashable_trash: "trash",
@@ -101,6 +84,6 @@ module RecordingStudioTrashable
     end
     private_class_method :register_type_tools, :register_type_copy, :type_described?,
                          :register_action_tool, :title_for, :description_for,
-                         :type_snake, :public_snake, :verb_for
+                         :verb_for
   end
 end

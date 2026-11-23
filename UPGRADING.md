@@ -4,7 +4,7 @@
 
 Install `recording_studio_trashable` 1.3.2. No migration. No host action when Recording Studio MCP is not loaded.
 
-Hosts that load Recording Studio MCP 0.45 or newer get one named tool per trashable type on the next boot. A page gets `trash_page`, `restore_page`, `purge_page`, and `list_pages_trash_bin`. Trash, restore, and purge stay singular. The trash bin tool pluralizes the snake public name, so a press center gets `list_press_centers_trash_bin`. Add `recording_studio_mcp`, `>= 0.45`, `< 0.46`, to the app Gemfile to load MCP. This gem does not require it.
+Hosts that load Recording Studio MCP 0.45 or newer get one named tool per trashable type on the next boot. Names come from `RecordingStudioMcp.tool_name`. A page gets `trash_page`, `restore_page`, `purge_page`, and `list_pages_trash_bin`. Trash, restore, and purge stay singular. The trash bin tool uses MCP's declared plural, so a plural label of "Press centres" is `list_press_centres_trash_bin`. Add `recording_studio_mcp`, `>= 0.45`, `< 0.46`, to the app Gemfile to load MCP. This gem does not require it.
 
 Set `public_name` on an API type only when two trashable types would share one snake_case tool name.
 
