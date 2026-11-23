@@ -320,18 +320,18 @@ RecordingStudioApi.register_recordable_type_api(
 
 When Recording Studio MCP 0.45 or newer is loaded, `RecordingStudioTrashable::Api.register!` registers one named tool per trashable type. The gem does not depend on MCP. If MCP is absent, that call does nothing.
 
-The tool name is the verb plus the public type in snake_case. A namespace is dropped. `Page` becomes `trash_page`, `restore_page`, `purge_page`, and `list_page_trash_bin`. `Admin::Page` uses those same names. Set `public_name` on the API registration only when two trashable types would share that snake_case name. This gem does not set `public_name`.
+The tool name is the verb plus the public type in snake_case. A namespace is dropped. Trash, restore, and purge stay singular. The trash bin tool pluralizes that snake name with ActiveSupport `pluralize`. `Page` becomes `trash_page`, `restore_page`, `purge_page`, and `list_pages_trash_bin`. `PressCenter` becomes `list_press_centers_trash_bin`. `Admin::Page` uses the same names as `Page`. Set `public_name` on the API registration only when two trashable types would share that snake_case name. This gem does not set `public_name`.
 
 | API action | Tool |
 | --- | --- |
 | `trashable_trash` | `trash_<type>` |
 | `trashable_restore` | `restore_<type>` |
 | `trashable_purge` | `purge_<type>` |
-| `trashable_list_trash_bin` | `list_<type>_trash_bin` |
+| `trashable_list_trash_bin` | `list_<plural type>_trash_bin` |
 
-`<type>` in that table is the snake_case public type, such as `page`.
+`<type>` in that table is the singular snake_case public type, such as `page`. The trash bin tool uses the plural, such as `pages`.
 
-`trash_<type>` moves the item and everything under it to the trash. The item must still be active. `restore_<type>` brings the item back, and it brings back the children that were trashed with it. The item must already be in the trash. `purge_<type>` permanently deletes the item and its children. It only works on an item that is already in the trash. If a child is still active, nothing is deleted. `list_<type>_trash_bin` lists trash roots so restore and purge have an id.
+`trash_<type>` moves the item and everything under it to the trash. The item must still be active. `restore_<type>` brings the item back, and it brings back the children that were trashed with it. The item must already be in the trash. `purge_<type>` permanently deletes the item and its children. It only works on an item that is already in the trash. If a child is still active, nothing is deleted. `list_<plural type>_trash_bin` lists trash roots so restore and purge have an id.
 
 `override_openapi` still replaces the title and description for one type and one action. Other types keep the derived title. The capability action names stay `trashable_trash`, `trashable_restore`, `trashable_purge`, and `trashable_list_trash_bin`. Those names are not MCP tool names. This gem does not register `capability_action`.
 

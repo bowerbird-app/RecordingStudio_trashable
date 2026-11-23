@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "active_support/core_ext/string/inflections"
 require_relative "mcp_copy/copy"
 
 module RecordingStudioTrashable
@@ -29,7 +30,7 @@ module RecordingStudioTrashable
 
     def tool_name(type, action)
       snake = type_snake(type)
-      return "list_#{snake}_trash_bin" if action.to_sym == :trashable_list_trash_bin
+      return "list_#{snake.pluralize}_trash_bin" if action.to_sym == :trashable_list_trash_bin
 
       "#{verb_for(action)}_#{snake}"
     end

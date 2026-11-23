@@ -88,7 +88,8 @@ class McpCopyTest < Minitest::Test
     puts "purge_title=#{purge.title}"
     puts "purge_description=#{purge.description}"
     puts "purge_recording_id=#{purge.input.key?('recording_id') ? 'yes' : 'no'}"
-    list = registry.tool("list_page_trash_bin")
+    list = registry.tool("list_pages_trash_bin")
+    puts "singular_list=#{registry.tool('list_page_trash_bin') ? 'present' : 'absent'}"
     puts "list_title=#{list.title}"
     puts "list_description=#{list.description}"
     puts "list_q=#{list.input.key?('q') ? 'yes' : 'no'}"
@@ -96,7 +97,7 @@ class McpCopyTest < Minitest::Test
     check(registry.type("Page").description == copy::TYPE, "type description")
 
     %w[folder project workspace admin_root].each do |snake|
-      present = registry.tool("trash_#{snake}") || registry.tool("list_#{snake}_trash_bin")
+      present = registry.tool("trash_#{snake}") || registry.tool("list_#{snake.pluralize}_trash_bin")
       puts "#{snake}_named=#{present ? 'present' : 'absent'}"
     end
     %w[trashable_trash trashable_restore trashable_purge trashable_list_trash_bin].each do |name|
@@ -137,11 +138,13 @@ class McpCopyTest < Minitest::Test
     configuration.instance_variable_set(:@capability_options, capability_options)
     RecordingStudio::RecordableDeclarations.replace_declarations!(declarations)
     puts "after_trash_page=#{registry.tool('trash_page') ? 'present' : 'absent'}"
+    puts "after_list=#{registry.tool('list_pages_trash_bin') ? 'present' : 'absent'}"
     puts "after_page_type=#{registry.type('Page') ? 'present' : 'absent'}"
     puts "after_capability=#{RecordingStudio.capability_enabled?(:trashable, for: 'Page') ? 'yes' : 'no'}"
     puts "after_types_match=#{configuration.recordable_types == recordable_types ? 'yes' : 'no'}"
     puts "tool_name_trash=#{RecordingStudioTrashable::McpCopy.tool_name('Admin::Page', :trashable_trash)}"
     puts "tool_name_list=#{RecordingStudioTrashable::McpCopy.tool_name('Admin::Page', :trashable_list_trash_bin)}"
+    puts "tool_name_press=#{RecordingStudioTrashable::McpCopy.tool_name('PressCenter', :trashable_list_trash_bin)}"
     puts "tool_name_purge=#{RecordingStudioTrashable::McpCopy.tool_name('Admin::Page', :trashable_purge)}"
     puts "registry_ok"
   RUBY
@@ -162,7 +165,7 @@ class McpCopyTest < Minitest::Test
     assert status.success?, output
     assert_includes output, "registry_ok"
     assert_equal "Page", probe_value(output, "trashable_types")
-    assert_equal "list_page_trash_bin,purge_page,restore_page,trash_page", probe_value(output, "added")
+    assert_equal "list_pages_trash_bin,purge_page,restore_page,trash_page", probe_value(output, "added")
     assert_equal "Page", probe_value(output, "trash_type")
     assert_equal "action", probe_value(output, "trash_kind")
     assert_equal "trashable_trash", probe_value(output, "trash_action")
@@ -179,6 +182,7 @@ class McpCopyTest < Minitest::Test
     assert_equal "List page trash bin", probe_value(output, "list_title")
     assert_equal copy::LIST, probe_value(output, "list_description")
     assert_equal "yes", probe_value(output, "list_q")
+    assert_equal "absent", probe_value(output, "singular_list")
     assert_equal copy::TYPE, probe_value(output, "type_description")
     %w[folder project workspace admin_root].each do |snake|
       assert_equal "absent", probe_value(output, "#{snake}_named"), snake
@@ -194,19 +198,23 @@ class McpCopyTest < Minitest::Test
     assert_equal "Host copy for pages.", probe_value(output, "host_description")
     assert_equal copy::TRASH, probe_value(output, "host_tool_description")
     assert_equal "absent", probe_value(output, "after_trash_page")
+    assert_equal "absent", probe_value(output, "after_list")
     assert_equal "absent", probe_value(output, "after_page_type")
     assert_equal "no", probe_value(output, "after_capability")
     assert_equal "yes", probe_value(output, "after_types_match")
     assert_equal "trash_page", probe_value(output, "tool_name_trash")
-    assert_equal "list_page_trash_bin", probe_value(output, "tool_name_list")
+    assert_equal "list_pages_trash_bin", probe_value(output, "tool_name_list")
+    assert_equal "list_press_centers_trash_bin", probe_value(output, "tool_name_press")
     refute_includes probe_value(output, "tool_name_purge"), "::"
   end
 
   def test_tool_names_drop_namespaces
     refute defined?(::RecordingStudioMcp)
     assert_equal "trash_page", RecordingStudioTrashable::McpCopy.tool_name("Admin::Page", :trashable_trash)
-    assert_equal "list_page_trash_bin",
+    assert_equal "list_pages_trash_bin",
                  RecordingStudioTrashable::McpCopy.tool_name("Admin::Page", :trashable_list_trash_bin)
+    assert_equal "list_press_centers_trash_bin",
+                 RecordingStudioTrashable::McpCopy.tool_name("PressCenter", :trashable_list_trash_bin)
     refute_includes RecordingStudioTrashable::McpCopy.tool_name("Admin::Page", :trashable_purge), "::"
     assert_equal "restore_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_restore)
   end

@@ -614,7 +614,7 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     assert_equal "trash_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_trash)
     assert_equal "restore_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_restore)
     assert_equal "purge_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_purge)
-    assert_equal "list_page_trash_bin",
+    assert_equal "list_pages_trash_bin",
                  RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_list_trash_bin)
     %w[capability_action trashable_trash trashable_list_trash_bin].each do |name|
       refute_equal name, RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_trash)

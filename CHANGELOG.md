@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Named Recording Studio MCP tools for each trashable type, when MCP 0.45 or newer is loaded. A page gets `trash_page`, `restore_page`, `purge_page`, and `list_page_trash_bin`. The tool name is the verb plus the public type in snake_case. A namespace is dropped. `Admin::Page` is still `trash_page`.
-- `list_<type>_trash_bin` lists trash roots so restore and purge have an id. Purge still deletes only an item that is already in the trash, and it deletes that subtree. Restore still brings back the item and the children that were trashed with it.
+- Named Recording Studio MCP tools for each trashable type, when MCP 0.45 or newer is loaded. A page gets `trash_page`, `restore_page`, `purge_page`, and `list_pages_trash_bin`. Trash, restore, and purge stay singular. The trash bin tool pluralizes the snake public name with ActiveSupport `pluralize`, so a press center gets `list_press_centers_trash_bin`. A namespace is dropped. `Admin::Page` is still `trash_page` and `list_pages_trash_bin`.
+- `list_<plural type>_trash_bin` lists trash roots so restore and purge have an id. Purge still deletes only an item that is already in the trash, and it deletes that subtree. Restore still brings back the item and the children that were trashed with it.
 
 ### Upgrade Notes
 
