@@ -193,7 +193,7 @@ class McpCopyTest < Minitest::Test
     assert_equal "", probe_value(output, "capability_action_type")
     assert_equal "no", probe_value(output, "capability_action_added")
     assert_equal "Bin this page", probe_value(output, "override_title")
-    assert_equal "Moves this page, and everything under it, to the trash.", probe_value(output, "override_description")
+    assert_equal copy::TRASH, probe_value(output, "override_description")
     assert_equal copy::RESTORE, probe_value(output, "override_restore_description")
     assert_equal "Host copy for pages.", probe_value(output, "host_description")
     assert_equal copy::TRASH, probe_value(output, "host_tool_description")

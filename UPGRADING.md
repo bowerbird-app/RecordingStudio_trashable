@@ -8,6 +8,8 @@ Hosts that load Recording Studio MCP 0.45 or newer get one named tool per trasha
 
 Set `public_name` on an API type only when two trashable types would share one snake_case tool name.
 
+OpenAPI descriptions for these actions now describe the endpoint, the subtree, and the 404 and 422 cases. MCP tool descriptions are unchanged. An `override_openapi` description changes the OpenAPI document only. A title override still changes the MCP tool title.
+
 ## 1.3.1
 
 Install `recording_studio_trashable` 1.3.1. No migration. No host action unless a caller rescued `ArgumentError` when trash, restore, or purge was denied. Rescue `RecordingStudio::AuthorizationError` for that denial. Argument bugs still raise `ArgumentError`. API still returns forbidden. Mounted UI still shows the not-authorized message.

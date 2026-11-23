@@ -72,10 +72,7 @@ module RecordingStudioTrashable
       title.presence || Api::Catalog::ACTIONS.fetch(action).fetch(:title)
     end
 
-    def description_for(type, action)
-      overlay = Api::OpenapiOverrides.fetch(type, action)
-      return overlay.fetch(:description) if overlay
-
+    def description_for(_type, action)
       Copy::DESCRIPTIONS.fetch(action)
     end
 

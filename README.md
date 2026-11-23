@@ -286,7 +286,7 @@ Capability OpenAPI titles stay Trash, Restore, Purge, and List trash bin. Each a
 
 MCP reads a per-type title from `openapi_for(type:, action:)`. The title is the verb plus the recordable label, lowercased. A page is "Trash page", "Restore page", "Purge page", and "List page trash bin". A press center is "Trash press center" and "List press center trash bin". A type that is not in `recordable_types` returns nil, and MCP keeps the capability title.
 
-Replace the title and description for one type when the derived words are wrong. The override wins. Other types keep the derived title. The capability title stays the short verb.
+Replace the OpenAPI title and description for one type when the derived words are wrong. The override wins on the API document. Other types keep the derived title and the shared description. The capability title stays the short verb. MCP tool descriptions stay on `McpCopy::Copy` and do not use this override. A title override still reaches the MCP tool.
 
 ```ruby
 RecordingStudioTrashable::Api.override_openapi(
@@ -333,7 +333,7 @@ The tool name is the verb plus the public type in snake_case. A namespace is dro
 
 `trash_<type>` moves the item and everything under it to the trash. The item must still be active. `restore_<type>` brings the item back, and it brings back the children that were trashed with it. The item must already be in the trash. `purge_<type>` permanently deletes the item and its children. It only works on an item that is already in the trash. If a child is still active, nothing is deleted. `list_<plural type>_trash_bin` lists trash roots so restore and purge have an id.
 
-`override_openapi` still replaces the title and description for one type and one action. Other types keep the derived title. The capability action names stay `trashable_trash`, `trashable_restore`, `trashable_purge`, and `trashable_list_trash_bin`. Those names are not MCP tool names. This gem does not register `capability_action`.
+MCP tool descriptions come from `McpCopy::Copy`. They do not fall back to the OpenAPI description, and an `override_openapi` description does not replace them. A title override still replaces the MCP tool title. The capability action names stay `trashable_trash`, `trashable_restore`, `trashable_purge`, and `trashable_list_trash_bin`. Those names are not MCP tool names. This gem does not register `capability_action`.
 
 ## Mounted UI
 
