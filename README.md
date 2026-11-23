@@ -286,7 +286,7 @@ Capability OpenAPI titles stay Trash, Restore, Purge, and List trash bin. Each a
 
 MCP reads a per-type title from `openapi_for(type:, action:)`. The title is the verb plus the recordable label, lowercased. A page is "Trash page", "Restore page", "Purge page", and "List page trash bin". A press center is "Trash press center" and "List press center trash bin". A type that is not in `recordable_types` returns nil, and MCP keeps the capability title.
 
-Replace the title and description for one type when the derived words are wrong. The override wins. Other types keep the derived title. The capability title stays the short verb.
+Replace the OpenAPI title and description for one type when the derived words are wrong. The override wins on the API document. Other types keep the derived title and the shared description. The capability title stays the short verb. MCP tool descriptions stay on `McpCopy::Copy` and do not use this override. A title override still reaches the MCP tool.
 
 ```ruby
 RecordingStudioTrashable::Api.override_openapi(
@@ -315,6 +315,25 @@ RecordingStudioApi.register_recordable_type_api(
 ```
 
 `trashable_list_trash_bin` accepts `q` (search, stripped), `page`, and `per_page` (default 25, capped at 100). Results are `trashed_at DESC`, then `id DESC`, matching the HTML trash bin. `trashable_trash` and `trashable_restore` return the same declared resource fields as show for that recording, including fields that depend on the caller's grant. Each trash-bin record is that same resource, plus `label` and `recordable_type`. `label` is the recordable title, then its name, then `"<Type> #<first 8 of id>"`. `trashable_purge` returns `id` and `purged`. Site-wide trash metrics stay on the operations API through `RecordingStudioTrashable::Metrics.register!` and are unchanged.
+
+## MCP tools
+
+When Recording Studio MCP 0.45 or newer is loaded, `RecordingStudioTrashable::Api.register!` registers one named tool per trashable type. The gem does not depend on MCP. If MCP is absent, that call does nothing.
+
+Recording Studio MCP names each tool. Trash, restore, and purge pass those verbs to `RecordingStudioMcp.tool_name`. The trash bin tool is that list name plus `_trash_bin`, so a declared plural label is used. `Page`, whose plural label is Pages, becomes `trash_page`, `restore_page`, `purge_page`, and `list_pages_trash_bin`. A plural label of "Press centres" becomes `list_press_centres_trash_bin`. `Admin::Page` uses the same names as `Page`. Set `public_name` on the API registration only when two trashable types would share that name. This gem does not set `public_name`.
+
+| API action | Tool |
+| --- | --- |
+| `trashable_trash` | `trash_<type>` |
+| `trashable_restore` | `restore_<type>` |
+| `trashable_purge` | `purge_<type>` |
+| `trashable_list_trash_bin` | `list_<plural type>_trash_bin` |
+
+`<type>` in that table is the singular public type MCP uses, such as `page`. The trash bin tool uses MCP's plural, such as `pages`.
+
+`trash_<type>` moves the item and everything under it to the trash. The item must still be active. `restore_<type>` brings the item back, and it brings back the children that were trashed with it. The item must already be in the trash. `purge_<type>` permanently deletes the item and its children. It only works on an item that is already in the trash. If a child is still active, nothing is deleted. `list_<plural type>_trash_bin` lists trash roots so restore and purge have an id.
+
+MCP tool descriptions come from `McpCopy::Copy`. They do not fall back to the OpenAPI description, and an `override_openapi` description does not replace them. A title override still replaces the MCP tool title. The capability action names stay `trashable_trash`, `trashable_restore`, `trashable_purge`, and `trashable_list_trash_bin`. Those names are not MCP tool names. This gem does not register `capability_action`.
 
 ## Mounted UI
 

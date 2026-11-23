@@ -30,6 +30,10 @@ class ApiOpenapiTitleTest < Minitest::Test
         assert_equal title, document.fetch(:title), action.to_s
         assert_equal "Trash", document.fetch(:tag_suffix)
         assert_includes document.fetch(:description), "Returns"
+        assert_equal RecordingStudioTrashable::Api::Catalog.openapi_for(action).fetch(:description),
+                     document.fetch(:description)
+        refute_equal RecordingStudioTrashable::McpCopy::Copy::DESCRIPTIONS.fetch(action),
+                     document.fetch(:description)
       end
 
       VIDEO_TITLES.each do |action, title|

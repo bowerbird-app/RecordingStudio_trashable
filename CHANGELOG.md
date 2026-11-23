@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-11-23
+
+### Added
+
+- Named Recording Studio MCP tools for each trashable type, when MCP 0.45 or newer is loaded. Names come from `RecordingStudioMcp.tool_name`. A page gets `trash_page`, `restore_page`, `purge_page`, and `list_pages_trash_bin`. Trash, restore, and purge stay singular. The trash bin tool uses MCP's declared plural, so a plural label of "Press centres" is `list_press_centres_trash_bin`. `Admin::Page` is still `trash_page` and `list_pages_trash_bin`.
+- `list_<plural type>_trash_bin` lists trash roots so restore and purge have an id. Purge still deletes only an item that is already in the trash, and it deletes that subtree. Restore still brings back the item and the children that were trashed with it.
+
+### Changed
+
+- OpenAPI descriptions for trash, restore, purge, and list trash bin describe the endpoint, the subtree, and the 404 and 422 cases. They do not name access roles. MCP tool descriptions stay in `McpCopy::Copy`. `override_openapi` still replaces the OpenAPI title and description. The description override does not change the MCP tool description. A title override still does.
+
+### Upgrade Notes
+
+- Bump to `1.3.2`. No migration. No host action. Screens are unchanged. OpenAPI descriptions for these four actions changed. Hosts that do not load Recording Studio MCP do not get the named tools.
+- To turn the tools on, add `recording_studio_mcp`, `>= 0.45`, `< 0.46`, to the app Gemfile. This gem does not depend on it. `RecordingStudioTrashable::Api.register!` registers the tools, and it does nothing when MCP is absent.
+- Set `public_name` on an API type only when two trashable types would share one snake_case name. This gem does not set `public_name`.
+- An `override_openapi` description changes the OpenAPI document only. A title override still changes the MCP tool title.
+
 ## [1.3.1] - 2026-11-20
 
 ### Fixed

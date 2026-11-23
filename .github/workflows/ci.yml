@@ -33,7 +33,12 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
-    
+
+    - name: Keep git from rewriting commit-graph during bundle install
+      run: |
+        git config --global fetch.writeCommitGraph false
+        git config --global core.commitGraph false
+
     - name: Set up Ruby ${{ matrix.ruby-version }}
       uses: ruby/setup-ruby@v1
       with:
@@ -43,7 +48,7 @@ jobs:
         BUNDLE_GITHUB__COM: x-access-token:${{ secrets.BOWERBIRD_ORG_CI_TOKEN }}
     
     - name: Install dummy app dependencies
-      run: bundle install
+      run: bundle install --jobs 1
       working-directory: test/dummy
       env:
         BUNDLE_GITHUB__COM: x-access-token:${{ secrets.BOWERBIRD_ORG_CI_TOKEN }}

@@ -4,6 +4,7 @@ require_relative "api/access"
 require_relative "api/actions"
 require_relative "api/catalog"
 require_relative "api/openapi_overrides"
+require_relative "mcp_copy"
 
 module RecordingStudioTrashable
   module Api
@@ -13,6 +14,7 @@ module RecordingStudioTrashable
       return unless defined?(::RecordingStudioApi)
 
       RecordingStudioApi.configuration.each_api { |api| register_api(api.name) }
+      McpCopy.register!
     end
 
     def register_api(api_name)
