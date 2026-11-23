@@ -606,6 +606,64 @@ class TrashableApiTest < ActionDispatch::IntegrationTest
     assert other.reload.recording_studio_trashable_trashed?
   end
 
+  test "tool names stay on trashable types" do
+    types = RecordingStudioTrashable::Api.trashable_types.map(&:to_s)
+
+    assert_includes types, "Page"
+    %w[Folder Workspace AdminRoot].each { |type| refute_includes types, type }
+    assert_equal "trash_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_trash)
+    assert_equal "restore_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_restore)
+    assert_equal "purge_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_purge)
+    assert_equal "list_page_trash_bin",
+                 RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_list_trash_bin)
+    %w[capability_action trashable_trash trashable_list_trash_bin].each do |name|
+      refute_equal name, RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_trash)
+    end
+  end
+
+  test "mcp registration is a no-op without the mcp gem" do
+    refute defined?(::RecordingStudioMcp)
+    refute RecordingStudioTrashable::McpCopy.mcp_available?
+
+    assert_nil RecordingStudioTrashable::McpCopy.register!
+  end
+
+  test "named trash tools allow an editor and deny a viewer" do
+    assert_equal "trash_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_trash)
+    assert_equal "purge_page", RecordingStudioTrashable::McpCopy.tool_name("Page", :trashable_purge)
+
+    call(:post, "/pages/#{@page.id}/actions/trashable_trash", @viewer_token)
+    assert_response :forbidden, response.body
+    refute @page.reload.recording_studio_trashable_trashed?
+
+    call(:post, "/pages/#{@page.id}/actions/trashable_trash", @editor_token)
+    assert_response :success, response.body
+    assert @page.reload.recording_studio_trashable_trashed?
+
+    call(:get, "/pages/#{@page.id}/actions/trashable_list_trash_bin", @viewer_token)
+    assert_response :forbidden, response.body
+    listed = call(:get, "/pages/#{@page.id}/actions/trashable_list_trash_bin", @editor_token)
+    assert_response :success, response.body
+    assert_equal [@page.id], listed.fetch("records").map { |row| row.fetch("id") }
+
+    call(:post, "/pages/#{@page.id}/actions/trashable_restore", @viewer_token)
+    assert_response :forbidden, response.body
+    assert @page.reload.recording_studio_trashable_trashed?
+    call(:post, "/pages/#{@page.id}/actions/trashable_restore", @editor_token)
+    assert_response :success, response.body
+    assert @page.reload.recording_studio_trashable_kept?
+
+    call(:post, "/pages/#{@page.id}/actions/trashable_trash", @editor_token)
+    assert_response :success, response.body
+    call(:post, "/pages/#{@page.id}/actions/trashable_purge", @editor_token)
+    assert_response :forbidden, response.body
+    assert @page.reload.recording_studio_trashable_trashed?
+    purged = call(:post, "/pages/#{@page.id}/actions/trashable_purge", @admin_token)
+    assert_response :success, response.body
+    assert_equal true, purged.fetch("purged")
+    assert_nil RecordingStudio::Recording.find_by(id: @page.id)
+  end
+
   private
 
   def user(name)

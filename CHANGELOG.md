@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-11-23
+
+### Added
+
+- Named Recording Studio MCP tools for each trashable type, when MCP 0.45 or newer is loaded. A page gets `trash_page`, `restore_page`, `purge_page`, and `list_page_trash_bin`. The tool name is the verb plus the public type in snake_case. A namespace is dropped. `Admin::Page` is still `trash_page`.
+- `list_<type>_trash_bin` lists trash roots so restore and purge have an id. Purge still deletes only an item that is already in the trash, and it deletes that subtree. Restore still brings back the item and the children that were trashed with it.
+
+### Upgrade Notes
+
+- Bump to `1.3.2`. No migration. No host action. Hosts that do not load Recording Studio MCP see the same API and screens.
+- To turn the tools on, add `recording_studio_mcp`, `>= 0.45`, `< 0.46`, to the app Gemfile. This gem does not depend on it. `RecordingStudioTrashable::Api.register!` registers the tools, and it does nothing when MCP is absent.
+- Set `public_name` on an API type only when two trashable types would share one snake_case name. This gem does not set `public_name`.
+
 ## [1.3.1] - 2026-11-20
 
 ### Fixed

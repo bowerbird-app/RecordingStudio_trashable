@@ -27,4 +27,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rails", "~> 8.1.0"
   spec.add_dependency "recording_studio", ">= 7.0", "< 8.0"
   spec.add_dependency "recording_studio_metrics", ">= 0.3.0", "< 1.0"
+  # recording_studio_mcp cannot be a runtime dependency. MCP depends on Oauth,
+  # and Oauth depends on this gem.
 end
